@@ -37,6 +37,8 @@ Revolutionary AI-powered testing framework for Solidity smart contracts using th
 
 ## 🚀 Quick Start
 
+> **Important**: Use `run_clean.py` for MCP client integration (Cursor, Claude Desktop). Use `run.py` only for development and debugging.
+
 ### Prerequisites
 
 - **Python 3.8+**
@@ -68,13 +70,13 @@ pip install -e .
 # Make sure your virtual environment is activated
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Start the MCP server (from project directory)
+# Start the MCP server for client integration (Cursor, Claude Desktop)
+python run_clean.py
+
+# Alternative: Development mode with verbose logging
 python run.py
 
-# Alternative: Run the server module directly
-python -m components.testing_server
-
-# For HTTP mode (instead of stdio)
+# For HTTP mode debugging (development only)
 export MCP_TRANSPORT_MODE=http
 python run.py
 ```
@@ -94,6 +96,8 @@ smart-contract-testing-mcp/
 │   ├── invariant_test_template.sol # Invariant test template
 │   └── integration_test_template.sol # Integration test template
 ├── docs/                          # Documentation
+├── run_clean.py                   # MCP client server runner (production)
+├── run.py                         # Development server runner (debugging)
 └── requirements.txt               # Python dependencies
 ```
 
@@ -104,9 +108,8 @@ smart-contract-testing-mcp/
 **Perfect for: New projects or developers starting fresh**
 
 ```python
-# MCP Tool Call
+# MCP Tool Call (via your MCP client)
 initialize_protocol_testing_agent(
-    project_path="./my-defi-protocol",
     analysis_mode="interactive"
 )
 ```
