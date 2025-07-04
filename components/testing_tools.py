@@ -274,13 +274,13 @@ class TestingTools:
             Execute a complete testing workflow with structured phases.
             
             Args:
-                workflow_type: "create_new_suite" or "evaluate_existing"
+                workflow_type: "create_new_suite", "comprehensive", or "evaluate_existing"
                 objectives: Specific testing goals and requirements
                 scope: Testing scope ("unit", "integration", "comprehensive")
                 session_id: Optional session ID to continue existing session
                 
             Returns:
-                Dictionary containing workflow execution plan
+                Dictionary containing workflow execution plan with detailed phases
             """
             try:
                 # Use current working directory
@@ -677,7 +677,8 @@ class TestingTools:
             "success_criteria": []
         }
         
-        if workflow_type == "create_new_suite":
+        # Handle different workflow types
+        if workflow_type in ["create_new_suite", "comprehensive"]:
             base_plan["execution_phases"] = [
                 {
                     "phase": 1,
@@ -692,14 +693,206 @@ class TestingTools:
                     ],
                     "deliverables": [
                         "Contract analysis report",
-                        "Dependency mapping",
+                        "Dependency mapping", 
                         "Critical function inventory",
                         "Security considerations document"
                     ],
                     "estimated_time": "30-45 minutes"
+                },
+                {
+                    "phase": 2,
+                    "title": "Test Architecture Design",
+                    "description": "Design comprehensive test structure and strategy",
+                    "actions": [
+                        "Design test file organization and naming conventions",
+                        "Define test categories (unit, integration, invariant, fuzz, security)",
+                        "Create test data management strategy",
+                        "Plan mock and helper contract architecture",
+                        "Define coverage targets and success criteria"
+                    ],
+                    "deliverables": [
+                        "Test architecture document",
+                        "Test file structure plan",
+                        "Testing strategy roadmap",
+                        "Coverage targets and metrics"
+                    ],
+                    "estimated_time": "45-60 minutes"
+                },
+                {
+                    "phase": 3,
+                    "title": "Core Test Implementation",
+                    "description": "Implement comprehensive test suites across all categories",
+                    "actions": [
+                        "Generate and implement unit tests for all functions",
+                        "Create integration tests for contract interactions",
+                        "Implement security tests for common vulnerabilities",
+                        "Design and implement invariant tests",
+                        "Create fuzz tests for edge case discovery",
+                        "Add gas optimization and performance tests"
+                    ],
+                    "deliverables": [
+                        "Complete unit test suite",
+                        "Integration test scenarios", 
+                        "Security test implementations",
+                        "Invariant test suite",
+                        "Fuzz testing framework",
+                        "Gas optimization tests"
+                    ],
+                    "estimated_time": "90-120 minutes"
+                },
+                {
+                    "phase": 4,
+                    "title": "Coverage Analysis & Optimization",
+                    "description": "Analyze coverage, optimize tests, and finalize documentation",
+                    "actions": [
+                        "Run comprehensive coverage analysis",
+                        "Identify and address coverage gaps",
+                        "Optimize test performance and gas usage",
+                        "Generate testing documentation",
+                        "Setup continuous integration testing",
+                        "Create deployment and maintenance guides"
+                    ],
+                    "deliverables": [
+                        "Coverage analysis report",
+                        "Gap remediation tests",
+                        "Performance optimization results",
+                        "Complete testing documentation",
+                        "CI/CD integration setup",
+                        "Maintenance guidelines"
+                    ],
+                    "estimated_time": "60-90 minutes"
                 }
             ]
-            base_plan["estimated_duration"] = "2.5-4 hours"
+            base_plan["estimated_duration"] = "4-6 hours"
+            base_plan["success_criteria"] = [
+                "95%+ line coverage achieved",
+                "90%+ branch coverage achieved", 
+                "All critical functions have comprehensive tests",
+                "Security vulnerabilities tested and prevented",
+                "Gas optimization validated",
+                "Complete documentation generated",
+                "CI/CD integration functional"
+            ]
+            
+        elif workflow_type == "evaluate_existing":
+            base_plan["execution_phases"] = [
+                {
+                    "phase": 1,
+                    "title": "Existing Test Analysis",
+                    "description": "Comprehensive evaluation of current testing infrastructure",
+                    "actions": [
+                        "Analyze existing test file structure and organization",
+                        "Evaluate test coverage metrics and gaps",
+                        "Review test quality and best practices adherence",
+                        "Identify performance bottlenecks",
+                        "Assess security testing completeness"
+                    ],
+                    "deliverables": [
+                        "Current test analysis report",
+                        "Coverage gap identification",
+                        "Quality assessment results",
+                        "Performance analysis",
+                        "Security testing audit"
+                    ],
+                    "estimated_time": "30-45 minutes"
+                },
+                {
+                    "phase": 2,
+                    "title": "Enhancement Strategy Design", 
+                    "description": "Design strategy for improving existing tests",
+                    "actions": [
+                        "Prioritize testing gaps by criticality",
+                        "Design refactoring strategy for existing tests",
+                        "Plan additional test categories needed",
+                        "Create enhancement roadmap with timelines",
+                        "Define improved coverage targets"
+                    ],
+                    "deliverables": [
+                        "Enhancement strategy document",
+                        "Prioritized improvement plan",
+                        "Refactoring roadmap",
+                        "Updated coverage targets",
+                        "Implementation timeline"
+                    ],
+                    "estimated_time": "30-45 minutes"
+                },
+                {
+                    "phase": 3,
+                    "title": "Test Enhancement Implementation",
+                    "description": "Implement improvements and fill identified gaps",
+                    "actions": [
+                        "Refactor existing tests for better organization",
+                        "Add missing unit and integration tests",
+                        "Implement security and edge case testing",
+                        "Add performance and gas optimization tests",
+                        "Enhance test documentation and comments"
+                    ],
+                    "deliverables": [
+                        "Refactored test suite",
+                        "Additional test implementations",
+                        "Enhanced security testing",
+                        "Performance test additions",
+                        "Improved documentation"
+                    ],
+                    "estimated_time": "60-90 minutes"
+                },
+                {
+                    "phase": 4,
+                    "title": "Validation & Final Optimization",
+                    "description": "Validate improvements and optimize final test suite",
+                    "actions": [
+                        "Run comprehensive coverage validation",
+                        "Performance test and optimize test execution",
+                        "Validate security test effectiveness",
+                        "Generate final documentation",
+                        "Setup maintenance and monitoring"
+                    ],
+                    "deliverables": [
+                        "Final coverage validation report",
+                        "Performance optimization results",
+                        "Security validation results",
+                        "Complete documentation update",
+                        "Monitoring and maintenance setup"
+                    ],
+                    "estimated_time": "45-60 minutes"
+                }
+            ]
+            base_plan["estimated_duration"] = "3-4.5 hours"
+            base_plan["success_criteria"] = [
+                "Coverage improved by 20%+ from baseline",
+                "All identified critical gaps addressed",
+                "Test execution performance optimized",
+                "Security testing comprehensive",
+                "Documentation updated and complete",
+                "Monitoring system functional"
+            ]
+        
+        else:
+            # Fallback for unrecognized workflow types
+            base_plan["execution_phases"] = [
+                {
+                    "phase": 1,
+                    "title": "Custom Workflow Analysis",
+                    "description": f"Custom analysis for {workflow_type} workflow",
+                    "actions": [
+                        "Analyze project requirements",
+                        "Design custom testing approach",
+                        "Implement testing strategy"
+                    ],
+                    "deliverables": [
+                        "Custom analysis report",
+                        "Tailored testing strategy",
+                        "Implementation plan"
+                    ],
+                    "estimated_time": "60-90 minutes"
+                }
+            ]
+            base_plan["estimated_duration"] = "1.5-3 hours"
+            base_plan["success_criteria"] = [
+                "Custom objectives met",
+                "Testing strategy implemented",
+                "Documentation complete"
+            ]
         
         return base_plan
     
