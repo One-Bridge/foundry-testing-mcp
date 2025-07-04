@@ -1,0 +1,61 @@
+# Smart Contract Testing MCP Server Dependencies
+# Core MCP Framework
+fastmcp>=0.1.0
+
+# Web Framework and HTTP Support
+httpx>=0.24.0
+uvicorn>=0.18.0
+starlette>=0.20.0
+
+# Async Support
+asyncio-extensions>=0.1.0
+aiofiles>=23.0.0
+
+# Data Validation and Serialization
+pydantic>=2.0.0
+
+# Configuration and Environment
+python-dotenv>=1.0.0
+toml>=0.10.2
+
+# Logging and CLI
+rich>=13.0.0
+click>=8.0.0
+
+# Testing Framework
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+
+# JSON and Data Processing
+orjson>=3.8.0
+
+# Type Hints and Development
+typing-extensions>=4.5.0
+mypy>=1.0.0
+
+# Subprocess and System Integration
+psutil>=5.9.0
+
+# Cryptography and Security (for smart contract analysis)
+cryptography>=40.0.0
+
+# File System Operations
+watchdog>=3.0.0
+
+# Optional: For enhanced contract analysis
+# solidity-parser>=0.1.0  # Uncomment if available
+# slither-analyzer>=0.9.0  # Uncomment if slither integration needed
+
+# Development Dependencies (install with: pip install -e ".[dev]")
+[dev]
+black>=23.0.0
+isort>=5.12.0
+flake8>=6.0.0
+pre-commit>=3.0.0
+
+# Documentation Dependencies (install with: pip install -e ".[docs]")
+[docs]
+mkdocs>=1.4.0
+mkdocs-material>=9.0.0
+mkdocs-mermaid2-plugin>=0.6.0 
