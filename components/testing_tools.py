@@ -219,8 +219,7 @@ class TestingTools:
                                 "Best practices implementation"
                             ],
                             "ideal_for": "New projects or complete testing overhauls",
-                            "estimated_phases": 4,
-                            "time_estimate": "2-4 hours"
+                            "phases": 4
                         },
                         "evaluate_existing": {
                             "title": "Evaluate & Enhance Existing Tests",
@@ -232,8 +231,7 @@ class TestingTools:
                                 "Performance optimization"
                             ],
                             "ideal_for": "Projects with existing tests that need enhancement",
-                            "estimated_phases": 4,
-                            "time_estimate": "1-3 hours"
+                            "phases": 4
                         }
                     },
                     "next_steps": {
@@ -673,7 +671,6 @@ class TestingTools:
             "objectives": objectives,
             "scope": scope,
             "execution_phases": [],
-            "estimated_duration": "",
             "success_criteria": []
         }
         
@@ -696,8 +693,7 @@ class TestingTools:
                         "Dependency mapping", 
                         "Critical function inventory",
                         "Security considerations document"
-                    ],
-                    "estimated_time": "30-45 minutes"
+                    ]
                 },
                 {
                     "phase": 2,
@@ -715,8 +711,7 @@ class TestingTools:
                         "Test file structure plan",
                         "Testing strategy roadmap",
                         "Coverage targets and metrics"
-                    ],
-                    "estimated_time": "45-60 minutes"
+                    ]
                 },
                 {
                     "phase": 3,
@@ -737,8 +732,7 @@ class TestingTools:
                         "Invariant test suite",
                         "Fuzz testing framework",
                         "Gas optimization tests"
-                    ],
-                    "estimated_time": "90-120 minutes"
+                    ]
                 },
                 {
                     "phase": 4,
@@ -759,11 +753,9 @@ class TestingTools:
                         "Complete testing documentation",
                         "CI/CD integration setup",
                         "Maintenance guidelines"
-                    ],
-                    "estimated_time": "60-90 minutes"
+                    ]
                 }
             ]
-            base_plan["estimated_duration"] = "4-6 hours"
             base_plan["success_criteria"] = [
                 "95%+ line coverage achieved",
                 "90%+ branch coverage achieved", 
@@ -793,8 +785,7 @@ class TestingTools:
                         "Quality assessment results",
                         "Performance analysis",
                         "Security testing audit"
-                    ],
-                    "estimated_time": "30-45 minutes"
+                    ]
                 },
                 {
                     "phase": 2,
@@ -813,8 +804,7 @@ class TestingTools:
                         "Refactoring roadmap",
                         "Updated coverage targets",
                         "Implementation timeline"
-                    ],
-                    "estimated_time": "30-45 minutes"
+                    ]
                 },
                 {
                     "phase": 3,
@@ -833,8 +823,7 @@ class TestingTools:
                         "Enhanced security testing",
                         "Performance test additions",
                         "Improved documentation"
-                    ],
-                    "estimated_time": "60-90 minutes"
+                    ]
                 },
                 {
                     "phase": 4,
@@ -853,11 +842,9 @@ class TestingTools:
                         "Security validation results",
                         "Complete documentation update",
                         "Monitoring and maintenance setup"
-                    ],
-                    "estimated_time": "45-60 minutes"
+                    ]
                 }
             ]
-            base_plan["estimated_duration"] = "3-4.5 hours"
             base_plan["success_criteria"] = [
                 "Coverage improved by 20%+ from baseline",
                 "All identified critical gaps addressed",
@@ -883,11 +870,9 @@ class TestingTools:
                         "Custom analysis report",
                         "Tailored testing strategy",
                         "Implementation plan"
-                    ],
-                    "estimated_time": "60-90 minutes"
+                    ]
                 }
             ]
-            base_plan["estimated_duration"] = "1.5-3 hours"
             base_plan["success_criteria"] = [
                 "Custom objectives met",
                 "Testing strategy implemented",

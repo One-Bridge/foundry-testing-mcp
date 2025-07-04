@@ -72,3 +72,35 @@
 2025-07-04 08:53:58,796 - components.testing_server - INFO - Usage: Navigate to your Solidity project directory and use the MCP tools
 2025-07-04 08:53:58,796 - components.testing_server - INFO - Starting MCP server in STDIO mode
 2025-07-04 08:53:58,800 - FastMCP.fastmcp.server.server - INFO - Starting MCP server 'smart-contract-testing' with transport 'stdio'
+2025-07-04 08:58:41,416 - components.foundry_adapter - INFO - Foundry adapter initialized with forge at: /Users/shaunmartinak/.foundry/bin/forge
+2025-07-04 08:58:41,416 - components.testing_tools - INFO - Testing tools initialized
+2025-07-04 08:58:41,416 - components.testing_resources - INFO - Testing resources initialized - Server root: /Users/shaunmartinak/ProjectDiamond/foundry-testing-mcp
+2025-07-04 08:58:41,416 - components.testing_prompts - INFO - Testing prompts initialized
+2025-07-04 08:58:41,419 - components.testing_tools - INFO - Testing tools registered successfully
+2025-07-04 08:58:41,419 - components.testing_server - INFO - Testing tools registered successfully
+2025-07-04 08:58:41,420 - components.testing_resources - INFO - Testing resources registered successfully
+2025-07-04 08:58:41,421 - components.testing_server - INFO - Testing resources registered successfully
+2025-07-04 08:58:41,422 - components.testing_prompts - INFO - Testing prompts registered successfully
+2025-07-04 08:58:41,422 - components.testing_server - INFO - Testing prompts registered successfully
+2025-07-04 08:58:41,423 - components.testing_server - INFO - Smart Contract Testing MCP Server initialized successfully
+2025-07-04 08:58:41,423 - components.testing_server - INFO - Usage: Navigate to your Solidity project directory and use the MCP tools
+2025-07-04 08:58:41,423 - components.testing_server - INFO - Starting MCP server in STDIO mode
+2025-07-04 08:58:41,426 - FastMCP.fastmcp.server.server - INFO - Starting MCP server 'smart-contract-testing' with transport 'stdio'
+2025-07-04 09:02:04,066 - components.foundry_adapter - INFO - Foundry adapter cleanup completed
+2025-07-04 09:02:04,091 - components.testing_server - INFO - Server cleanup completed
+2025-07-04 09:02:10,192 - components.foundry_adapter - INFO - Foundry adapter initialized with forge at: /Users/shaunmartinak/.foundry/bin/forge
+2025-07-04 09:02:10,192 - components.testing_tools - INFO - Testing tools initialized
+2025-07-04 09:02:10,192 - components.testing_resources - INFO - Testing resources initialized - Server root: /Users/shaunmartinak/ProjectDiamond/foundry-testing-mcp
+2025-07-04 09:02:10,192 - components.testing_prompts - INFO - Testing prompts initialized
+2025-07-04 09:02:10,194 - components.testing_tools - INFO - Testing tools registered successfully
+2025-07-04 09:02:10,194 - components.testing_server - INFO - Testing tools registered successfully
+2025-07-04 09:02:10,194 - components.testing_resources - INFO - Testing resources registered successfully
+2025-07-04 09:02:10,195 - components.testing_server - INFO - Testing resources registered successfully
+2025-07-04 09:02:10,196 - components.testing_prompts - INFO - Testing prompts registered successfully
+2025-07-04 09:02:10,196 - components.testing_server - INFO - Testing prompts registered successfully
+2025-07-04 09:02:10,196 - components.testing_server - INFO - Smart Contract Testing MCP Server initialized successfully
+2025-07-04 09:02:10,196 - components.testing_server - INFO - Usage: Navigate to your Solidity project directory and use the MCP tools
+2025-07-04 09:02:10,196 - components.testing_server - INFO - Starting MCP server in STDIO mode
+2025-07-04 09:02:10,199 - FastMCP.fastmcp.server.server - INFO - Starting MCP server 'smart-contract-testing' with transport 'stdio'
+2025-07-04 09:03:02,654 - components.foundry_adapter - INFO - Foundry adapter cleanup completed
+2025-07-04 09:03:02,677 - components.testing_server - INFO - Server cleanup completed

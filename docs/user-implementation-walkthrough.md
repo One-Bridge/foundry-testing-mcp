@@ -134,12 +134,11 @@ initialize_protocol_testing_agent()
     }
   },
   "available_workflows": {
-    "create_new_suite": {
-      "title": "Create New Test Suite from Scratch",
-      "ideal_for": "New projects or complete testing overhauls",
-      "estimated_phases": 4,
-      "time_estimate": "2-4 hours"
-    },
+            "create_new_suite": {
+          "title": "Create New Test Suite from Scratch",
+          "ideal_for": "New projects or complete testing overhauls",
+          "phases": 4
+        },
     "evaluate_existing": {
       "title": "Evaluate & Enhance Existing Tests"
     }
@@ -184,8 +183,7 @@ execute_testing_workflow(
         "Dependency mapping",
         "Critical function inventory",
         "Security considerations document"
-      ],
-      "estimated_time": "30-45 minutes"
+      ]
     }
   ],
   "current_phase_result": {

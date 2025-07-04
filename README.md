@@ -328,9 +328,9 @@ pytest tests/test_foundry_adapter.py -v
 - **Gas Optimization**: <50,000 gas for standard operations
 
 ### Performance Benchmarks
-- **Test Generation**: <30 seconds for typical contract
-- **Coverage Analysis**: <60 seconds for medium project
-- **Workflow Execution**: 2-4 hours for complete suite
+- **Test Generation**: Efficient automated generation for any contract size
+- **Coverage Analysis**: Fast analysis for projects of any complexity
+- **Workflow Execution**: Complete comprehensive test suite generation
 
 ## 🛡️ Security & Best Practices
 
