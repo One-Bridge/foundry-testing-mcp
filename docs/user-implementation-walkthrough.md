@@ -17,9 +17,65 @@ foundryup
 forge --version
 # Expected: forge 0.2.0 (or later)
 
-# 3. Ensure MCP server is running locally
-# (Typically started as a background process by your IDE/AI client)
+# 3. Install and configure MCP server
+cd /path/to/foundry-testing-mcp
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r requirements.txt
+
+# 4. Configure your MCP client (Cursor, Claude Desktop, etc.)
+# Use run_clean.py for MCP client integration
 ```
+
+### MCP Client Configuration
+
+**For Cursor:**
+```json
+{
+  "mcpServers": {
+    "foundry-testing": {
+      "command": "/path/to/foundry-testing-mcp/venv/bin/python",
+      "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
+      "env": {
+        "MCP_TRANSPORT_MODE": "stdio"
+      }
+    }
+  }
+}
+```
+
+**For Claude Desktop:**
+```json
+{
+  "mcpServers": {
+    "foundry-testing": {
+      "command": "python",
+      "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
+      "cwd": "/path/to/foundry-testing-mcp",
+      "env": {
+        "MCP_TRANSPORT_MODE": "stdio"
+      }
+    }
+  }
+}
+```
+
+### Verify MCP Integration
+
+**Test the server connection:**
+1. Start your MCP client (Cursor, Claude Desktop)
+2. Check that the server appears in the MCP connections
+3. Verify you can see the 5 available tools:
+   - `initialize_protocol_testing_agent`
+   - `execute_testing_workflow`
+   - `analyze_current_test_coverage`
+   - `validate_current_project`
+   - `get_server_info`
+
+**Important Notes:**
+- **Use `run_clean.py`** for MCP client integration (silent protocol communication)
+- **Use `run.py`** only for development and debugging (verbose output)
+- Ensure no other MCP server instances are running on the same configuration
 
 ### Example Protocol: TokenVault
 
@@ -726,3 +782,49 @@ vm.roll(block.number + 1000);
 ```
 
 This walkthrough provides a complete framework for creating world-class smart contract tests using the Foundry Testing MCP. The AI-guided approach ensures comprehensive coverage while maintaining development efficiency and security best practices. 
+
+### Troubleshooting Server Connection
+
+**If you see a red dot in your MCP client:**
+
+1. **Check server configuration:**
+```bash
+# Test the server can start
+/path/to/foundry-testing-mcp/venv/bin/python /path/to/foundry-testing-mcp/run_clean.py
+```
+
+2. **Verify paths in MCP configuration:**
+```json
+{
+  "mcpServers": {
+    "foundry-testing": {
+      "command": "/Users/yourname/foundry-testing-mcp/venv/bin/python",
+      "args": ["/Users/yourname/foundry-testing-mcp/run_clean.py"]
+    }
+  }
+}
+```
+
+3. **Check for conflicting servers:**
+```bash
+# Kill any existing server processes
+pkill -f "run_clean.py"
+pkill -f "run.py"
+```
+
+4. **Verify virtual environment:**
+```bash
+# Ensure FastMCP is installed in the virtual environment
+/path/to/foundry-testing-mcp/venv/bin/python -c "import fastmcp; print('FastMCP available')"
+```
+
+### Development vs Production Modes
+
+| Mode | Script | Use Case | Output |
+|------|--------|----------|--------|
+| **Production** | `run_clean.py` | MCP client integration | Silent (MCP protocol only) |
+| **Development** | `run.py` | Local debugging | Verbose logging and banner |
+
+**When to use each:**
+- **`run_clean.py`**: Always use for Cursor, Claude Desktop, or other MCP clients
+- **`run.py`**: Use for development, debugging, and understanding server behavior

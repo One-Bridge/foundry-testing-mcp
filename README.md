@@ -2,7 +2,7 @@
 
 > **Interactive AI-Powered Smart Contract Testing Workflows**
 
-An innovative MCP (Model Context Protocol) server that revolutionizes smart contract testing by providing guided, agentic workflows for designing, reviewing, and implementing comprehensive test suites using the Foundry toolchain.
+Revolutionary AI-powered testing framework for Solidity smart contracts using the Foundry toolchain. Transform your testing workflow from manual, ad-hoc processes into systematic, AI-guided experiences that achieve 95%+ coverage with comprehensive security testing.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -42,6 +42,7 @@ An innovative MCP (Model Context Protocol) server that revolutionizes smart cont
 - **Python 3.8+**
 - **Foundry Toolkit** - Install from [getfoundry.sh](https://getfoundry.sh/)
 - **Node.js** (for some integrations)
+- **MCP Client** - Cursor, Claude Desktop, or other MCP-compatible AI client
 
 ### Installation
 
@@ -385,3 +386,254 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Get started with the Smart Contract Testing MCP Server and experience AI-powered, systematic testing workflows that ensure your protocols are secure, reliable, and thoroughly tested.
 
 [Get Started](#-quick-start) | [Documentation](docs/) | [Examples](docs/examples.md) | [Community](https://github.com/your-org/smart-contract-testing-mcp/discussions) 
+
+## 🖥️ Usage
+
+### For MCP Clients (Cursor, Claude Desktop)
+
+**Use `run_clean.py` for MCP client integration:**
+
+```bash
+# This is the clean version for MCP protocol communication
+python run_clean.py
+```
+
+**Update your MCP client configuration:**
+
+```json
+{
+  "mcpServers": {
+    "foundry-testing": {
+      "command": "/path/to/foundry-testing-mcp/venv/bin/python",
+      "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
+      "env": {
+        "MCP_TRANSPORT_MODE": "stdio"
+      }
+    }
+  }
+}
+```
+
+### For Development and Debugging
+
+**Use `run.py` for development with full logging:**
+
+```bash
+# Development version with detailed output and logging
+python run.py
+
+# Run in HTTP mode for debugging
+MCP_TRANSPORT_MODE=http python run.py
+
+# Run with debug logging
+LOG_LEVEL=DEBUG python run.py
+```
+
+### Key Differences:
+
+| Feature | `run_clean.py` | `run.py` |
+|---------|----------------|----------|
+| **Purpose** | MCP client integration | Development & debugging |
+| **Output** | Silent (MCP protocol only) | Verbose logging & banner |
+| **Logging** | Disabled | Full logging to console |
+| **Use Case** | Cursor, Claude Desktop | Local development |
+| **Startup** | Instant | Shows startup progress |
+
+## 🛠️ Available Tools
+
+Once connected through your MCP client:
+
+### Core Workflow Tools
+
+1. **`initialize_protocol_testing_agent()`**
+   - Initialize testing session in your project directory
+   - Analyzes project structure and recommends workflows
+
+2. **`execute_testing_workflow()`**
+   - Execute 4-phase structured testing workflow
+   - Supports "create_new_suite" and "evaluate_existing" modes
+
+3. **`analyze_current_test_coverage()`**
+   - Generate comprehensive coverage reports
+   - Identifies gaps and provides actionable recommendations
+
+4. **`validate_current_project()`**
+   - Validates Foundry project structure
+   - Provides setup guidance and troubleshooting
+
+### AI Analysis Tools
+
+5. **`get_server_info()`**
+   - Server status and usage instructions
+   - Troubleshooting guidance
+
+## 📚 Resources Available
+
+- **`testing/foundry-patterns`**: Best practices and testing patterns
+- **`testing/templates/unit`**: Unit test templates
+- **`testing/templates/integration`**: Integration test templates
+- **`testing/templates/invariant`**: Invariant test templates
+- **`testing/templates/fuzz`**: Fuzz test templates
+- **`testing/templates/security`**: Security test templates
+
+## 🎯 Quick Start Example
+
+1. **Navigate to your Foundry project:**
+```bash
+cd /path/to/your-solidity-project
+```
+
+2. **Initialize testing (via MCP client):**
+```
+initialize_protocol_testing_agent()
+```
+
+3. **Execute comprehensive testing workflow:**
+```
+execute_testing_workflow(
+  workflow_type="create_new_suite",
+  objectives="Create comprehensive test suite with 95% coverage and security focus"
+)
+```
+
+4. **Analyze coverage:**
+```
+analyze_current_test_coverage(target_coverage=95)
+```
+
+## 🔍 Troubleshooting
+
+### MCP Client Issues
+
+**Red dot in Cursor/Claude Desktop:**
+- Ensure you're using `run_clean.py` (not `run.py`)
+- Verify virtual environment path in MCP configuration
+- Check that no other server instances are running
+
+**Server not recognized:**
+- Verify Python path points to your virtual environment
+- Test configuration: `/path/to/venv/bin/python run_clean.py`
+- Check MCP server logs for errors
+
+### Common Solutions
+
+**"Foundry not found" error:**
+```bash
+# Install Foundry
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+
+# Verify installation
+forge --version
+```
+
+**Permission errors:**
+```bash
+# Make scripts executable
+chmod +x run_clean.py run.py
+
+# Check virtual environment activation
+source venv/bin/activate
+```
+
+**Module import errors:**
+```bash
+# Reinstall dependencies
+pip install -r requirements.txt
+
+# Install in development mode
+pip install -e .
+```
+
+## 🏗️ Development Setup
+
+### Running Tests
+
+```bash
+# Run all tests
+python -m pytest
+
+# Run with coverage
+python -m pytest --cov=components
+
+# Run specific test file
+python -m pytest tests/test_foundry_adapter.py -v
+```
+
+### Code Quality
+
+```bash
+# Format code
+black components/ tests/
+
+# Lint code
+flake8 components/ tests/
+
+# Type checking
+mypy components/
+```
+
+## 🔗 Integration Examples
+
+### Cursor Integration
+
+```json
+{
+  "mcpServers": {
+    "foundry-testing": {
+      "command": "/Users/yourname/foundry-testing-mcp/venv/bin/python",
+      "args": ["/Users/yourname/foundry-testing-mcp/run_clean.py"],
+      "env": {
+        "MCP_TRANSPORT_MODE": "stdio"
+      }
+    }
+  }
+}
+```
+
+### Claude Desktop Integration
+
+```json
+{
+  "mcpServers": {
+    "foundry-testing": {
+      "command": "python",
+      "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
+      "cwd": "/path/to/foundry-testing-mcp",
+      "env": {
+        "MCP_TRANSPORT_MODE": "stdio"
+      }
+    }
+  }
+}
+```
+
+## 📖 Documentation
+
+- **[Executive Summary](docs/executive-summary.md)**: Business case and strategic value
+- **[Technical Architecture](docs/technical-architecture-guide.md)**: Detailed technical specifications
+- **[User Implementation Walkthrough](docs/user-implementation-walkthrough.md)**: Step-by-step usage guide
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Foundry](https://github.com/foundry-rs/foundry) for the excellent testing framework
+- [FastMCP](https://github.com/jlowin/fastmcp) for the MCP server implementation
+- The broader smart contract security community for testing best practices
+
+---
+
+**Transform your smart contract testing today!** 🚀
+
+*For support, please open an issue or contact the maintainers.* 

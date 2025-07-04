@@ -105,7 +105,10 @@ The Foundry Testing MCP introduces an intelligent, automated approach to smart c
 
 The Foundry Testing MCP integrates directly into existing development environments, requiring minimal changes to current workflows:
 
-- **IDE Integration**: Works within popular development environments like Cursor and Claude
+- **IDE Integration**: Works within popular development environments like Cursor and Claude Desktop
+- **Dual Operation Modes**: 
+  - **Production Mode** (`run_clean.py`): Silent operation for MCP client integration
+  - **Development Mode** (`run.py`): Verbose logging for debugging and development
 - **Project-Based Operation**: Operates within existing Foundry projects without structural changes
 - **Backward Compatibility**: Fully compatible with existing testing infrastructure
 - **Incremental Adoption**: Can be implemented gradually across different projects and teams
@@ -114,9 +117,26 @@ The Foundry Testing MCP integrates directly into existing development environmen
 
 **Minimal Infrastructure Impact**:
 - Runs locally on developer machines or centralized development servers
-- No external dependencies or cloud services required
+- **Virtual Environment Isolation**: Clean dependency management with Python virtual environments
+- **Protocol Compatibility**: Optimized for MCP (Model Context Protocol) communication
+- **No External Dependencies**: No cloud services required for core functionality
 - Compatible with existing CI/CD pipelines
 - Scales from individual developers to large enterprise teams
+
+### Deployment Advantages
+
+**Production-Ready Integration**:
+- **Silent Protocol Operation**: Clean MCP communication without interference
+- **Error Isolation**: Errors logged to files rather than disrupting protocol
+- **Graceful Shutdown**: Proper handling of interrupts and exceptions
+- **Resource Management**: Efficient memory and process management
+- **Health Monitoring**: Built-in health checks and status reporting
+
+**Development-Friendly Debugging**:
+- **Verbose Logging**: Detailed output for troubleshooting
+- **Startup Diagnostics**: Clear visualization of component initialization
+- **HTTP Mode Support**: Alternative transport for debugging scenarios
+- **Component Tracking**: Real-time monitoring of tool and resource registration
 
 ## Implementation Strategy
 

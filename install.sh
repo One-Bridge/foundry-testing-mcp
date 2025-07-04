@@ -151,6 +151,7 @@ setup_scripts() {
     print_step "Setting up scripts..."
     
     chmod +x run.py
+    chmod +x run_clean.py
     chmod +x install.sh
     
     print_success "Scripts made executable"
@@ -176,6 +177,23 @@ except Exception as e:
     fi
 }
 
+# Test server startup
+test_server_startup() {
+    print_step "Testing server startup..."
+    
+    # Test the clean runner
+    timeout 3 $PYTHON_CMD run_clean.py &
+    clean_pid=$!
+    sleep 1
+    
+    if kill -0 $clean_pid 2>/dev/null; then
+        kill $clean_pid 2>/dev/null
+        print_success "Clean server startup test passed"
+    else
+        print_warning "Clean server startup test failed"
+    fi
+}
+
 # Main installation flow
 main() {
     echo "Starting installation process..."
@@ -189,31 +207,40 @@ main() {
     setup_environment
     setup_scripts
     run_tests
+    test_server_startup
     
     echo ""
     echo "🎉 Installation completed successfully!"
     echo ""
     echo "📋 Next steps:"
+    echo ""
+    echo "For MCP Client Integration (Cursor, Claude Desktop):"
+    echo "1. Configure your MCP client with:"
+    echo "   Command: $(pwd)/venv/bin/python"
+    echo "   Args: $(pwd)/run_clean.py"
+    echo "   Environment: MCP_TRANSPORT_MODE=stdio"
+    echo ""
+    echo "For Development and Debugging:"
     echo "1. Activate the virtual environment: source venv/bin/activate"
     echo "2. Configure .env file if needed"
-    echo "3. Start the server: python run.py"
+    echo "3. Start the development server: python run.py"
     echo ""
-    echo "🔗 Integration with Cursor/Claude:"
-    echo "Add this to your MCP configuration:"
-    echo '{
-  "mcpServers": {
-    "smart-contract-testing": {
-      "command": "python",
-      "args": ["'$(pwd)'/run.py"],
-      "env": {
-        "MCP_TRANSPORT_MODE": "stdio"
-      }
-    }
-  }
-}'
+    echo "📝 Script Usage:"
+    echo "• run_clean.py - For MCP client integration (silent mode)"
+    echo "• run.py       - For development and debugging (verbose mode)"
     echo ""
-    echo "📚 Documentation: README.md"
-    echo "🐛 Issues: https://github.com/your-org/smart-contract-testing-mcp/issues"
+    echo "🔧 Available tools after connection:"
+    echo "• initialize_protocol_testing_agent"
+    echo "• execute_testing_workflow"
+    echo "• analyze_current_test_coverage"
+    echo "• validate_current_project"
+    echo "• get_server_info"
+    echo ""
+    echo "📖 Documentation:"
+    echo "• README.md - Quick start guide"
+    echo "• docs/user-implementation-walkthrough.md - Detailed usage guide"
+    echo "• docs/technical-architecture-guide.md - Technical details"
+    echo ""
 }
 
 # Run main installation

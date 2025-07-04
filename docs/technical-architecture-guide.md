@@ -374,35 +374,83 @@ async def test_run_tests_success(mock_subprocess):
 
 ## Deployment Architecture
 
-### Local Development Setup
+### MCP Client Integration (Production)
+
+**For MCP clients like Cursor, Claude Desktop, use `run_clean.py`:**
 
 ```bash
-# Clone repository
-git clone <repo-url>
-cd foundry-testing-mcp
-
-# Setup virtual environment
-python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Install in development mode
-pip install -e .
-
-# Run server
-python -m components.testing_server
+# MCP client integration - silent protocol communication
+python run_clean.py
 ```
+
+**Key Features of `run_clean.py`:**
+- **Silent Operation**: No stdout/stderr interference with MCP protocol
+- **Error Logging**: Errors logged to `/tmp/mcp_server_error.log` instead of console
+- **Optimized for MCP**: Designed specifically for MCP protocol communication
+- **Graceful Shutdown**: Handles KeyboardInterrupt and exceptions silently
+
+**MCP Client Configuration:**
+```json
+{
+  "mcpServers": {
+    "foundry-testing": {
+      "command": "/path/to/foundry-testing-mcp/venv/bin/python",
+      "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
+      "env": {
+        "MCP_TRANSPORT_MODE": "stdio"
+      }
+    }
+  }
+}
+```
+
+### Local Development Setup
+
+**For development and debugging, use `run.py`:**
+
+```bash
+# Development version with full logging and output
+python run.py
+
+# With debug logging
+LOG_LEVEL=DEBUG python run.py
+
+# HTTP mode for debugging
+MCP_TRANSPORT_MODE=http python run.py
+```
+
+**Development Features:**
+- **Verbose Logging**: Full console output and logging
+- **Startup Banner**: Visual confirmation of server startup
+- **Debug Information**: Component registration details
+- **Error Details**: Full stack traces and error context
+
+### Architecture Comparison
+
+| Feature | `run_clean.py` | `run.py` |
+|---------|----------------|----------|
+| **Target** | MCP clients | Development |
+| **Protocol** | MCP stdio only | MCP stdio/http |
+| **Logging** | Silent (file only) | Full console |
+| **Startup** | Instant | With banner |
+| **Debugging** | Error file | Full traces |
+| **Use Case** | Production integration | Local development |
 
 ### Production Deployment
 
-**Docker Container**:
+**Docker Container for MCP Integration:**
 ```dockerfile
 FROM python:3.11-slim
 
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install Foundry
 RUN curl -L https://foundry.paradigm.xyz | bash
+ENV PATH="/root/.foundry/bin:${PATH}"
 RUN foundryup
 
 # Copy and install MCP server
@@ -410,11 +458,11 @@ COPY . /app
 WORKDIR /app
 RUN pip install -r requirements.txt
 
-# Run server
-CMD ["python", "-m", "components.testing_server"]
+# Use clean runner for production
+CMD ["python", "run_clean.py"]
 ```
 
-**systemd Service**:
+**systemd Service for MCP Integration:**
 ```ini
 [Unit]
 Description=Foundry Testing MCP Server
@@ -424,9 +472,11 @@ After=network.target
 Type=simple
 User=mcp
 WorkingDirectory=/opt/foundry-testing-mcp
-ExecStart=/opt/foundry-testing-mcp/venv/bin/python -m components.testing_server
+ExecStart=/opt/foundry-testing-mcp/venv/bin/python run_clean.py
 Restart=always
 RestartSec=10
+StandardOutput=null
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
@@ -434,26 +484,98 @@ WantedBy=multi-user.target
 
 ### Environment Configuration
 
-**Production Environment Variables**:
+**MCP Client Environment Variables:**
 ```bash
-# Server Configuration
-export MCP_SERVER_HOST=127.0.0.1
-export MCP_SERVER_PORT=8002
+# Required: Transport mode for MCP protocol
 export MCP_TRANSPORT_MODE=stdio
 
-# Foundry Configuration
-export FOUNDRY_PROFILE=production
-export MAX_FUZZ_RUNS=50000
-export INVARIANT_RUNS=1000
+# Optional: Server configuration
+export MCP_SERVER_HOST=127.0.0.1
+export MCP_SERVER_PORT=8002
 
-# Testing Configuration
-export COVERAGE_TARGET=95
+# Optional: Foundry configuration
+export FOUNDRY_PROFILE=default
+export MAX_FUZZ_RUNS=10000
+export INVARIANT_RUNS=256
+
+# Optional: Testing configuration
+export COVERAGE_TARGET=90
 export ENABLE_GAS_OPTIMIZATION=true
-
-# Logging
-export LOG_LEVEL=INFO
-export LOG_FORMAT=json
 ```
+
+**Development Environment Variables:**
+```bash
+# Development logging
+export LOG_LEVEL=DEBUG
+export LOG_FORMAT=console
+
+# Development server options
+export MCP_TRANSPORT_MODE=http  # For HTTP debugging
+export MCP_SERVER_PORT=8002
+
+# Development Foundry settings
+export FOUNDRY_PROFILE=development
+export MAX_FUZZ_RUNS=1000  # Faster for development
+```
+
+## Server Startup Patterns
+
+### MCP Client Startup (`run_clean.py`)
+
+```python
+async def main():
+    """Clean main entry point for MCP protocol."""
+    # Setup silent logging first
+    setup_silent_logging()
+    
+    # Load environment silently
+    load_environment_silent()
+    
+    # Set MCP transport mode to stdio
+    os.environ["MCP_TRANSPORT_MODE"] = "stdio"
+    
+    try:
+        # Import and run server
+        from components.testing_server import TestingMCPServer
+        
+        # Create and run server
+        server = TestingMCPServer()
+        await server.run_server()
+        
+    except Exception as e:
+        # Log errors to file, not console
+        with open("/tmp/mcp_server_error.log", "w") as f:
+            f.write(f"Server error: {e}\n{traceback.format_exc()}")
+        sys.exit(1)
+```
+
+### Development Startup (`run.py`)
+
+```python
+async def main():
+    """Development entry point with full logging."""
+    print_banner()
+    setup_logging()
+    
+    if not check_dependencies():
+        sys.exit(1)
+    
+    load_environment()
+    
+    try:
+        from components.testing_server import main as server_main
+        
+        print("🔄 Initializing Smart Contract Testing MCP Server...")
+        print("📡 Starting server...")
+        
+        await server_main()
+        
+    except KeyboardInterrupt:
+        print("\n👋 Server shutdown requested by user")
+    except Exception as e:
+        logging.error(f"Server error: {e}")
+        print(f"❌ Server error: {e}")
+        sys.exit(1)
 
 ## Monitoring and Observability
 
