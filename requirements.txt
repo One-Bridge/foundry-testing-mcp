@@ -8,7 +8,6 @@ uvicorn>=0.18.0
 starlette>=0.20.0
 
 # Async Support
-asyncio-extensions>=0.1.0
 aiofiles>=23.0.0
 
 # Data Validation and Serialization
@@ -32,7 +31,6 @@ orjson>=3.8.0
 
 # Type Hints and Development
 typing-extensions>=4.5.0
-mypy>=1.0.0
 
 # Subprocess and System Integration
 psutil>=5.9.0
@@ -45,17 +43,4 @@ watchdog>=3.0.0
 
 # Optional: For enhanced contract analysis
 # solidity-parser>=0.1.0  # Uncomment if available
-# slither-analyzer>=0.9.0  # Uncomment if slither integration needed
-
-# Development Dependencies (install with: pip install -e ".[dev]")
-[dev]
-black>=23.0.0
-isort>=5.12.0
-flake8>=6.0.0
-pre-commit>=3.0.0
-
-# Documentation Dependencies (install with: pip install -e ".[docs]")
-[docs]
-mkdocs>=1.4.0
-mkdocs-material>=9.0.0
-mkdocs-mermaid2-plugin>=0.6.0 
+# slither-analyzer>=0.9.0  # Uncomment if slither integration needed 

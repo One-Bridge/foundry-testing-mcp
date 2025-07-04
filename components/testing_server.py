@@ -39,9 +39,7 @@ class TestingMCPServer:
         """
         self.config = config or self._load_default_config()
         self.mcp = FastMCP(
-            name="smart-contract-testing",
-            version="1.0.0",
-            description="Interactive AI-powered smart contract testing workflows (call from within your project directory)"
+            name="smart-contract-testing"
         )
         
         # Initialize components
@@ -157,13 +155,13 @@ class TestingMCPServer:
             
             if transport_mode == "stdio":
                 logger.info("Starting MCP server in STDIO mode")
-                await self.mcp.run(transport="stdio")
+                await self.mcp.run_async(transport="stdio")
             
             elif transport_mode == "http":
                 host = self.config["server"]["host"]
                 port = self.config["server"]["port"]
                 logger.info(f"Starting MCP server in HTTP mode at {host}:{port}")
-                await self.mcp.run(transport="http", host=host, port=port)
+                await self.mcp.run_async(transport="http", host=host, port=port)
             
             else:
                 raise ValueError(f"Unsupported transport mode: {transport_mode}")

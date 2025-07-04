@@ -1,0 +1,74 @@
+2025-07-04 08:47:12,117 - root - ERROR - Server error: FastMCP.__init__() got an unexpected keyword argument 'description'
+2025-07-04 08:48:05,780 - components.foundry_adapter - INFO - Foundry adapter initialized with forge at: /Users/shaunmartinak/.foundry/bin/forge
+2025-07-04 08:48:05,781 - components.testing_tools - INFO - Testing tools initialized
+2025-07-04 08:48:05,781 - components.testing_resources - INFO - Testing resources initialized - Server root: /Users/shaunmartinak/ProjectDiamond/foundry-testing-mcp
+2025-07-04 08:48:05,781 - components.testing_prompts - INFO - Testing prompts initialized
+2025-07-04 08:48:05,783 - components.testing_tools - INFO - Testing tools registered successfully
+2025-07-04 08:48:05,784 - components.testing_server - INFO - Testing tools registered successfully
+2025-07-04 08:48:05,784 - components.testing_server - ERROR - Failed to register components: 1 validation error for function-wrap[wrap_val()]
+  Input should be a valid URL, relative URL without a base [type=url_parsing, input_value='testing/foundry-patterns', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/url_parsing
+2025-07-04 08:48:05,784 - root - ERROR - Server error: 1 validation error for function-wrap[wrap_val()]
+  Input should be a valid URL, relative URL without a base [type=url_parsing, input_value='testing/foundry-patterns', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/url_parsing
+2025-07-04 08:50:08,442 - components.foundry_adapter - INFO - Foundry adapter initialized with forge at: /Users/shaunmartinak/.foundry/bin/forge
+2025-07-04 08:50:08,442 - components.testing_tools - INFO - Testing tools initialized
+2025-07-04 08:50:08,442 - components.testing_resources - INFO - Testing resources initialized - Server root: /Users/shaunmartinak/ProjectDiamond/foundry-testing-mcp
+2025-07-04 08:50:08,442 - components.testing_prompts - INFO - Testing prompts initialized
+2025-07-04 08:50:08,444 - components.testing_tools - INFO - Testing tools registered successfully
+2025-07-04 08:50:08,444 - components.testing_server - INFO - Testing tools registered successfully
+2025-07-04 08:50:08,445 - components.testing_resources - INFO - Testing resources registered successfully
+2025-07-04 08:50:08,445 - components.testing_server - INFO - Testing resources registered successfully
+2025-07-04 08:50:08,447 - components.testing_prompts - INFO - Testing prompts registered successfully
+2025-07-04 08:50:08,448 - components.testing_server - INFO - Testing prompts registered successfully
+2025-07-04 08:50:08,448 - components.testing_server - INFO - Smart Contract Testing MCP Server initialized successfully
+2025-07-04 08:50:08,448 - components.testing_server - INFO - Usage: Navigate to your Solidity project directory and use the MCP tools
+2025-07-04 08:50:08,448 - root - ERROR - Server error: 'TestingMCPServer' object has no attribute 'start'
+2025-07-04 08:51:00,200 - components.foundry_adapter - INFO - Foundry adapter initialized with forge at: /Users/shaunmartinak/.foundry/bin/forge
+2025-07-04 08:51:00,200 - components.testing_tools - INFO - Testing tools initialized
+2025-07-04 08:51:00,201 - components.testing_resources - INFO - Testing resources initialized - Server root: /Users/shaunmartinak/ProjectDiamond/foundry-testing-mcp
+2025-07-04 08:51:00,201 - components.testing_prompts - INFO - Testing prompts initialized
+2025-07-04 08:51:00,203 - components.testing_tools - INFO - Testing tools registered successfully
+2025-07-04 08:51:00,203 - components.testing_server - INFO - Testing tools registered successfully
+2025-07-04 08:51:00,204 - components.testing_resources - INFO - Testing resources registered successfully
+2025-07-04 08:51:00,205 - components.testing_server - INFO - Testing resources registered successfully
+2025-07-04 08:51:00,206 - components.testing_prompts - INFO - Testing prompts registered successfully
+2025-07-04 08:51:00,206 - components.testing_server - INFO - Testing prompts registered successfully
+2025-07-04 08:51:00,207 - components.testing_server - INFO - Smart Contract Testing MCP Server initialized successfully
+2025-07-04 08:51:00,207 - components.testing_server - INFO - Usage: Navigate to your Solidity project directory and use the MCP tools
+2025-07-04 08:51:00,207 - components.testing_server - INFO - Starting MCP server in STDIO mode
+2025-07-04 08:51:00,207 - components.testing_server - ERROR - Server error: Already running asyncio in this thread
+2025-07-04 08:51:00,207 - components.foundry_adapter - INFO - Foundry adapter cleanup completed
+2025-07-04 08:51:00,207 - components.testing_server - INFO - Server cleanup completed
+2025-07-04 08:51:00,207 - root - ERROR - Server error: Already running asyncio in this thread
+2025-07-04 08:52:21,578 - components.foundry_adapter - INFO - Foundry adapter initialized with forge at: /Users/shaunmartinak/.foundry/bin/forge
+2025-07-04 08:52:21,578 - components.testing_tools - INFO - Testing tools initialized
+2025-07-04 08:52:21,578 - components.testing_resources - INFO - Testing resources initialized - Server root: /Users/shaunmartinak/ProjectDiamond/foundry-testing-mcp
+2025-07-04 08:52:21,578 - components.testing_prompts - INFO - Testing prompts initialized
+2025-07-04 08:52:21,580 - components.testing_tools - INFO - Testing tools registered successfully
+2025-07-04 08:52:21,580 - components.testing_server - INFO - Testing tools registered successfully
+2025-07-04 08:52:21,581 - components.testing_resources - INFO - Testing resources registered successfully
+2025-07-04 08:52:21,582 - components.testing_server - INFO - Testing resources registered successfully
+2025-07-04 08:52:21,584 - components.testing_prompts - INFO - Testing prompts registered successfully
+2025-07-04 08:52:21,584 - components.testing_server - INFO - Testing prompts registered successfully
+2025-07-04 08:52:21,584 - components.testing_server - INFO - Smart Contract Testing MCP Server initialized successfully
+2025-07-04 08:52:21,584 - components.testing_server - INFO - Usage: Navigate to your Solidity project directory and use the MCP tools
+2025-07-04 08:52:21,584 - components.testing_server - INFO - Starting MCP server in STDIO mode
+2025-07-04 08:52:21,584 - components.testing_server - ERROR - Server error: Already running asyncio in this thread
+2025-07-04 08:52:21,584 - components.foundry_adapter - INFO - Foundry adapter cleanup completed
+2025-07-04 08:52:21,584 - components.testing_server - INFO - Server cleanup completed
+2025-07-04 08:52:21,585 - root - ERROR - Server error: Already running asyncio in this thread
+2025-07-04 08:53:58,788 - components.foundry_adapter - INFO - Foundry adapter initialized with forge at: /Users/shaunmartinak/.foundry/bin/forge
+2025-07-04 08:53:58,788 - components.testing_tools - INFO - Testing tools initialized
+2025-07-04 08:53:58,789 - components.testing_resources - INFO - Testing resources initialized - Server root: /Users/shaunmartinak/ProjectDiamond/foundry-testing-mcp
+2025-07-04 08:53:58,789 - components.testing_prompts - INFO - Testing prompts initialized
+2025-07-04 08:53:58,791 - components.testing_tools - INFO - Testing tools registered successfully
+2025-07-04 08:53:58,791 - components.testing_server - INFO - Testing tools registered successfully
+2025-07-04 08:53:58,794 - components.testing_resources - INFO - Testing resources registered successfully
+2025-07-04 08:53:58,794 - components.testing_server - INFO - Testing resources registered successfully
+2025-07-04 08:53:58,796 - components.testing_prompts - INFO - Testing prompts registered successfully
+2025-07-04 08:53:58,796 - components.testing_server - INFO - Testing prompts registered successfully
+2025-07-04 08:53:58,796 - components.testing_server - INFO - Smart Contract Testing MCP Server initialized successfully
+2025-07-04 08:53:58,796 - components.testing_server - INFO - Usage: Navigate to your Solidity project directory and use the MCP tools
+2025-07-04 08:53:58,796 - components.testing_server - INFO - Starting MCP server in STDIO mode
+2025-07-04 08:53:58,800 - FastMCP.fastmcp.server.server - INFO - Starting MCP server 'smart-contract-testing' with transport 'stdio'

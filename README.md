@@ -50,21 +50,32 @@ An innovative MCP (Model Context Protocol) server that revolutionizes smart cont
 git clone https://github.com/your-org/smart-contract-testing-mcp.git
 cd smart-contract-testing-mcp
 
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 # Install dependencies
 pip install -r requirements.txt
 
-# Install in development mode
+# Optional: Install in development mode
 pip install -e .
 ```
 
 ### Quick Demo
 
 ```bash
-# Start the MCP server
+# Make sure your virtual environment is activated
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Start the MCP server (from project directory)
+python run.py
+
+# Alternative: Run the server module directly
 python -m components.testing_server
 
-# Or use the CLI command
-smart-contract-testing-mcp
+# For HTTP mode (instead of stdio)
+export MCP_TRANSPORT_MODE=http
+python run.py
 ```
 
 ## 🏗️ Architecture

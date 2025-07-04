@@ -79,7 +79,7 @@ Interactive AI-Powered Testing Workflows
     
     print("=====================================\n")
 
-async def main():
+def main():
     """Main entry point."""
     print_banner()
     setup_logging()
@@ -90,16 +90,14 @@ async def main():
     load_environment()
     
     try:
-        # Import and start the server
-        from components.testing_server import TestingMCPServer
+        # Import and start the server using its built-in main function
+        from components.testing_server import main as server_main
         
         print("🔄 Initializing Smart Contract Testing MCP Server...")
-        server = TestingMCPServer()
-        
-        print("🎯 Server initialized successfully!")
         print("📡 Starting server...")
         
-        await server.start()
+        # Let the server handle everything including event loop management
+        asyncio.run(server_main())
         
     except KeyboardInterrupt:
         print("\n👋 Server shutdown requested by user")
@@ -112,7 +110,7 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        main()
     except KeyboardInterrupt:
         print("\n👋 Goodbye!")
     except Exception as e:

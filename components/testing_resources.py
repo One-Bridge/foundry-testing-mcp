@@ -46,7 +46,7 @@ class TestingResources:
             mcp: FastMCP server instance
         """
         # Foundry testing patterns resource
-        @mcp.resource("testing/foundry-patterns")
+        @mcp.resource("testing://foundry-patterns")
         async def get_foundry_testing_patterns() -> Dict[str, Any]:
             """
             Access comprehensive Foundry testing patterns and best practices.
@@ -129,7 +129,7 @@ test/
             }
         
         # Test templates resource
-        @mcp.resource("testing/templates/{template_type}")
+        @mcp.resource("testing://templates/{template_type}")
         async def get_test_template(template_type: str) -> Dict[str, Any]:
             """
             Get test templates for different testing scenarios.
@@ -154,7 +154,7 @@ test/
             }
         
         # Current project analysis resource
-        @mcp.resource("testing/project-analysis")
+        @mcp.resource("testing://project-analysis")
         async def get_current_project_analysis() -> Dict[str, Any]:
             """
             Get analysis of the current project directory.
@@ -189,7 +189,7 @@ test/
                 }
         
         # Test coverage resource
-        @mcp.resource("testing/coverage-report")
+        @mcp.resource("testing://coverage-report")
         async def get_current_coverage_report() -> Dict[str, Any]:
             """
             Get current test coverage report for the project.
@@ -224,7 +224,7 @@ test/
                 }
         
         # Testing documentation resource
-        @mcp.resource("testing/documentation")
+        @mcp.resource("testing://documentation")
         async def get_testing_documentation() -> Dict[str, Any]:
             """
             Get comprehensive testing documentation.
@@ -260,7 +260,7 @@ test/
             }
         
         # Available templates list resource
-        @mcp.resource("testing/templates")
+        @mcp.resource("testing://templates")
         async def get_available_templates() -> Dict[str, Any]:
             """
             Get list of available test templates.
