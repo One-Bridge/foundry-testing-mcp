@@ -131,6 +131,8 @@ The Foundry Testing MCP integrates directly into existing development environmen
 - **Graceful Shutdown**: Proper handling of interrupts and exceptions
 - **Resource Management**: Efficient memory and process management
 - **Health Monitoring**: Built-in health checks and status reporting
+- **Enhanced Reliability**: Intelligent directory detection with MCP client context awareness
+- **Troubleshooting Tools**: Built-in debugging capabilities for configuration issues
 
 **Development-Friendly Debugging**:
 - **Verbose Logging**: Detailed output for troubleshooting

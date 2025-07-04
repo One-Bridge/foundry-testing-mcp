@@ -470,6 +470,10 @@ Once connected through your MCP client:
    - Server status and usage instructions
    - Troubleshooting guidance
 
+6. **`debug_directory_detection()`**
+   - Debug directory detection issues
+   - Provides specific troubleshooting advice for path resolution problems
+
 ## 📚 Resources Available
 
 - **`testing/foundry-patterns`**: Best practices and testing patterns
@@ -547,6 +551,61 @@ pip install -r requirements.txt
 # Install in development mode
 pip install -e .
 ```
+
+### Directory Detection Issues
+
+**"Project path is /Users/username instead of my project directory":**
+
+This is a common issue where the MCP server detects the wrong project directory. The server might show:
+- `"project_path": "/Users/username"` (home directory)
+- But your actual project is at `/Users/username/path/to/your-project`
+
+**Root Cause:**
+The MCP server is using its own working directory instead of your project directory.
+
+**Solutions:**
+
+1. **Set environment variables in MCP client configuration:**
+```json
+{
+  "mcpServers": {
+    "foundry-testing": {
+      "command": "/path/to/venv/bin/python",
+      "args": ["/path/to/run_clean.py"],
+      "cwd": "/path/to/your-project",
+      "env": {
+        "MCP_CLIENT_CWD": "/path/to/your-project",
+        "MCP_PROJECT_PATH": "/path/to/your-project"
+      }
+    }
+  }
+}
+```
+
+2. **Use the debugging tool:**
+```
+debug_directory_detection()
+```
+This will show you exactly what directory the server is detecting and provide specific troubleshooting advice.
+
+3. **Pass project path explicitly:**
+```
+initialize_protocol_testing_agent()
+validate_current_project()
+```
+These tools will work with any detected directory and provide guidance if it's incorrect.
+
+4. **Check MCP client logs:**
+The server now logs directory detection information to help diagnose issues:
+```
+Using MCP client working directory: /path/to/your-project
+```
+
+**Directory Detection Priority:**
+1. Explicitly provided project path
+2. `MCP_CLIENT_CWD` environment variable  
+3. `MCP_PROJECT_PATH` environment variable
+4. Server's current working directory (fallback with warning)
 
 ## 🏗️ Development Setup
 

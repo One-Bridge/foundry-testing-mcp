@@ -61,7 +61,7 @@ class FoundryAdapter:
     
     def _resolve_project_path(self, project_path: str = "") -> str:
         """
-        Resolve project path, defaulting to current working directory.
+        Resolve project path, with improved logic for MCP client context.
         
         Args:
             project_path: Optional project path, defaults to current directory
@@ -69,10 +69,39 @@ class FoundryAdapter:
         Returns:
             Absolute path to the project directory
         """
-        if not project_path or project_path in ["", "."]:
-            project_path = os.getcwd()
+        # If project_path is explicitly provided, use it
+        if project_path and project_path not in ["", "."]:
+            resolved_path = str(Path(project_path).resolve())
+            logger.debug(f"Using explicitly provided project path: {resolved_path}")
+            return resolved_path
         
-        return str(Path(project_path).resolve())
+        # Check for MCP_CLIENT_CWD environment variable (set by MCP client)
+        mcp_client_cwd = os.getenv("MCP_CLIENT_CWD")
+        if mcp_client_cwd:
+            resolved_path = str(Path(mcp_client_cwd).resolve())
+            logger.debug(f"Using MCP client working directory: {resolved_path}")
+            return resolved_path
+        
+        # Check for MCP_PROJECT_PATH environment variable
+        mcp_project_path = os.getenv("MCP_PROJECT_PATH")
+        if mcp_project_path:
+            resolved_path = str(Path(mcp_project_path).resolve())
+            logger.debug(f"Using MCP project path: {resolved_path}")
+            return resolved_path
+        
+        # Fall back to server's current working directory
+        server_cwd = os.getcwd()
+        resolved_path = str(Path(server_cwd).resolve())
+        
+        # Log warning if this might be incorrect
+        if Path(resolved_path).name in ["Users", os.path.expanduser("~").split("/")[-1]]:
+            logger.warning(f"Directory detection may be incorrect. Server CWD: {resolved_path}")
+            logger.warning("This often happens when the MCP server is running from a different directory than the client.")
+            logger.warning("To fix this, ensure the MCP client sets MCP_CLIENT_CWD or MCP_PROJECT_PATH environment variables.")
+        else:
+            logger.debug(f"Using server working directory: {resolved_path}")
+        
+        return resolved_path
     
     async def _run_command(self, command: List[str], cwd: str = None) -> Tuple[int, str, str]:
         """

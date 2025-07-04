@@ -292,22 +292,62 @@ FoundryError (base)
 
 **Challenge**: Separate MCP server installation from target projects
 
-**Solution**: Dual path resolution
+**Solution**: Multi-layer path resolution with MCP client context awareness
+
+**Project Path Resolution (`_resolve_project_path`)**:
+```python
+def _resolve_project_path(self, project_path: str = "") -> str:
+    # 1. Explicit project path (highest priority)
+    if project_path and project_path not in ["", "."]:
+        return str(Path(project_path).resolve())
+    
+    # 2. MCP client working directory
+    mcp_client_cwd = os.getenv("MCP_CLIENT_CWD")
+    if mcp_client_cwd:
+        return str(Path(mcp_client_cwd).resolve())
+    
+    # 3. MCP project path environment variable
+    mcp_project_path = os.getenv("MCP_PROJECT_PATH")
+    if mcp_project_path:
+        return str(Path(mcp_project_path).resolve())
+    
+    # 4. Server working directory (fallback with warning)
+    server_cwd = os.getcwd()
+    resolved_path = str(Path(server_cwd).resolve())
+    
+    # Log warning if likely incorrect
+    if Path(resolved_path).name in ["Users", os.path.expanduser("~").split("/")[-1]]:
+        logger.warning("Directory detection may be incorrect")
+        logger.warning("Set MCP_CLIENT_CWD or MCP_PROJECT_PATH environment variables")
+    
+    return resolved_path
+```
+
+**Server Resource Resolution (`_get_server_root`)**:
 ```python
 def _get_server_root(self) -> Path:
     # MCP server installation directory
     current_file = Path(__file__)
     return current_file.parent.parent.resolve()
-
-def _get_current_project_path(self) -> Path:
-    # User's working project directory
-    return Path.cwd()
 ```
 
+**Path Resolution Priority**:
+1. **Explicitly provided project path** - Direct parameter override
+2. **MCP_CLIENT_CWD environment variable** - Set by MCP client to pass working directory
+3. **MCP_PROJECT_PATH environment variable** - Manual override for project location  
+4. **Server's current working directory** - Fallback with warning if suspicious
+
 **Use Cases**:
-- Templates load from server installation
-- Project analysis works on current directory
-- Session management tracks project switches
+- Templates load from server installation (`_get_server_root`)
+- Project analysis works on client's directory (`_resolve_project_path`)
+- Session management tracks project switches with proper context
+- Debug tool helps diagnose path resolution issues
+
+**Common Issues & Solutions**:
+- **Issue**: Server detects `/Users/username` instead of actual project
+- **Cause**: MCP server process runs from different directory than client
+- **Solution**: MCP client sets `MCP_CLIENT_CWD` environment variable
+- **Debug**: Use `debug_directory_detection()` tool for analysis
 
 ### Configuration Management
 
@@ -711,22 +751,46 @@ class SessionMigration:
 
 **Common Issues**:
 
-1. **Foundry Not Found**:
+1. **Directory Detection Problems**:
+   - **Symptom**: Server reports project path as `/Users/username` instead of actual project
+   - **Cause**: MCP server process runs from different directory than client
+   - **Solutions**:
+     - Set `MCP_CLIENT_CWD` environment variable in MCP client configuration
+     - Set `MCP_PROJECT_PATH` environment variable
+     - Use `debug_directory_detection()` tool for diagnosis
+   - **MCP Client Configuration Example**:
+     ```json
+     {
+       "mcpServers": {
+         "foundry-testing": {
+           "command": "/path/to/venv/bin/python",
+           "args": ["/path/to/run_clean.py"],
+           "cwd": "/path/to/your-project",
+           "env": {
+             "MCP_CLIENT_CWD": "/path/to/your-project"
+           }
+         }
+       }
+     }
+     ```
+
+2. **Foundry Not Found**:
    - Check PATH environment variable
    - Verify installation with `forge --version`
    - Install Foundry using official installer
 
-2. **Project Validation Failures**:
+3. **Project Validation Failures**:
    - Ensure foundry.toml exists
    - Check directory structure (src/, test/)
-   - Verify working directory
+   - Use `debug_directory_detection()` to verify path resolution
+   - Verify working directory matches project location
 
-3. **Coverage Generation Issues**:
+4. **Coverage Generation Issues**:
    - Ensure tests exist and pass
    - Check forge coverage command availability
    - Verify contract compilation success
 
-4. **Session Management Issues**:
+5. **Session Management Issues**:
    - Clear stale sessions periodically
    - Monitor memory usage growth
    - Implement session timeout policies
@@ -817,6 +881,11 @@ class SonarQubeIntegration(TestingIntegration):
 #### `validate_current_project()`
 - **Purpose**: Validate current directory as Foundry project
 - **Returns**: Validation results and setup recommendations
+
+#### `debug_directory_detection()`
+- **Purpose**: Debug directory detection issues and provide troubleshooting guidance
+- **Returns**: Directory detection analysis, environment variables, and specific recommendations
+- **Use Case**: Diagnose path resolution problems when server detects wrong project directory
 
 ### Core Resources
 

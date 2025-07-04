@@ -818,6 +818,60 @@ pkill -f "run.py"
 /path/to/foundry-testing-mcp/venv/bin/python -c "import fastmcp; print('FastMCP available')"
 ```
 
+### Troubleshooting Directory Detection
+
+**If the server detects the wrong project directory:**
+
+**Symptom**: Server reports project path as `/Users/username` instead of your actual project directory like `/Users/username/path/to/your-project`.
+
+**Diagnosis**:
+```
+debug_directory_detection()
+```
+
+This tool will show you exactly what directory the server is detecting and provide specific troubleshooting advice.
+
+**Solutions**:
+
+1. **Set environment variables in MCP client configuration:**
+```json
+{
+  "mcpServers": {
+    "foundry-testing": {
+      "command": "/path/to/foundry-testing-mcp/venv/bin/python",
+      "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
+      "cwd": "/path/to/your-project",
+      "env": {
+        "MCP_CLIENT_CWD": "/path/to/your-project",
+        "MCP_PROJECT_PATH": "/path/to/your-project"
+      }
+    }
+  }
+}
+```
+
+2. **Verify your MCP client is running from the correct directory:**
+   - Ensure your MCP client (Cursor, Claude Desktop) is working within your project directory
+   - Check the `cwd` (current working directory) in your MCP configuration
+
+3. **Manual verification:**
+```bash
+# Check if you're in the right directory
+ls foundry.toml  # Should exist in your project root
+ls src/          # Should contain your contracts
+ls test/         # Should contain or be ready for tests
+```
+
+**Expected directory structure:**
+```
+your-project/              ← MCP should detect this path
+├── foundry.toml          ← Foundry configuration
+├── src/                  ← Your contracts
+├── test/                 ← Test files  
+├── script/               ← Deploy scripts
+└── lib/                  ← Dependencies
+```
+
 ### Development vs Production Modes
 
 | Mode | Script | Use Case | Output |

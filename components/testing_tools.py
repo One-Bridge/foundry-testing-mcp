@@ -65,7 +65,7 @@ class TestingTools:
     
     def _resolve_project_path(self, project_path: str = "") -> str:
         """
-        Resolve project path, defaulting to current working directory.
+        Resolve project path, with improved logic for MCP client context.
         
         Args:
             project_path: Optional project path, defaults to current directory
@@ -73,11 +73,39 @@ class TestingTools:
         Returns:
             Absolute path to the project directory
         """
-        if not project_path or project_path in ["", "."]:
-            # Default to current working directory when called from within repo
-            project_path = os.getcwd()
+        # If project_path is explicitly provided, use it
+        if project_path and project_path not in ["", "."]:
+            resolved_path = str(Path(project_path).resolve())
+            logger.debug(f"Using explicitly provided project path: {resolved_path}")
+            return resolved_path
         
-        return str(Path(project_path).resolve())
+        # Check for MCP_CLIENT_CWD environment variable (set by MCP client)
+        mcp_client_cwd = os.getenv("MCP_CLIENT_CWD")
+        if mcp_client_cwd:
+            resolved_path = str(Path(mcp_client_cwd).resolve())
+            logger.debug(f"Using MCP client working directory: {resolved_path}")
+            return resolved_path
+        
+        # Check for MCP_PROJECT_PATH environment variable
+        mcp_project_path = os.getenv("MCP_PROJECT_PATH")
+        if mcp_project_path:
+            resolved_path = str(Path(mcp_project_path).resolve())
+            logger.debug(f"Using MCP project path: {resolved_path}")
+            return resolved_path
+        
+        # Fall back to server's current working directory
+        server_cwd = os.getcwd()
+        resolved_path = str(Path(server_cwd).resolve())
+        
+        # Log warning if this might be incorrect
+        if Path(resolved_path).name in ["Users", os.path.expanduser("~").split("/")[-1]]:
+            logger.warning(f"Directory detection may be incorrect. Server CWD: {resolved_path}")
+            logger.warning("This often happens when the MCP server is running from a different directory than the client.")
+            logger.warning("To fix this, ensure the MCP client sets MCP_CLIENT_CWD or MCP_PROJECT_PATH environment variables.")
+        else:
+            logger.debug(f"Using server working directory: {resolved_path}")
+        
+        return resolved_path
     
     def _validate_foundry_project(self, project_path: str) -> Dict[str, Any]:
         """
@@ -435,6 +463,98 @@ class TestingTools:
                     "status": "error",
                     "error": str(e),
                     "current_directory": os.getcwd()
+                }
+        
+        # Directory detection debugging tool
+        @mcp.tool(
+            name="debug_directory_detection",
+            description="Debug directory detection and provide troubleshooting guidance"
+        )
+        async def debug_directory_detection() -> Dict[str, Any]:
+            """
+            Debug directory detection and provide troubleshooting guidance.
+            
+            Returns:
+                Dictionary containing directory detection analysis and troubleshooting tips
+            """
+            try:
+                # Get current directory detection
+                resolved_path = self._resolve_project_path()
+                
+                # Collect debugging information
+                debug_info = {
+                    "resolved_project_path": resolved_path,
+                    "server_cwd": os.getcwd(),
+                    "environment_variables": {
+                        "MCP_CLIENT_CWD": os.getenv("MCP_CLIENT_CWD"),
+                        "MCP_PROJECT_PATH": os.getenv("MCP_PROJECT_PATH"),
+                        "PWD": os.getenv("PWD"),
+                        "OLDPWD": os.getenv("OLDPWD")
+                    },
+                    "path_analysis": {
+                        "is_home_directory": resolved_path == os.path.expanduser("~"),
+                        "is_parent_of_home": resolved_path in os.path.expanduser("~"),
+                        "contains_foundry_toml": (Path(resolved_path) / "foundry.toml").exists(),
+                        "contains_src_dir": (Path(resolved_path) / "src").exists(),
+                        "contains_test_dir": (Path(resolved_path) / "test").exists()
+                    }
+                }
+                
+                # Determine if directory detection is likely correct
+                likely_correct = (
+                    debug_info["path_analysis"]["contains_foundry_toml"] or
+                    (debug_info["path_analysis"]["contains_src_dir"] and 
+                     debug_info["path_analysis"]["contains_test_dir"])
+                )
+                
+                # Generate troubleshooting recommendations
+                recommendations = []
+                
+                if not likely_correct:
+                    recommendations.extend([
+                        "❌ Directory detection appears incorrect",
+                        "🔍 The detected directory doesn't look like a Foundry project",
+                        "",
+                        "💡 Solutions:",
+                        "1. Set MCP_CLIENT_CWD environment variable to your project directory",
+                        "2. Set MCP_PROJECT_PATH environment variable to your project directory",
+                        "3. Configure your MCP client to set the working directory",
+                        "4. Pass the project path explicitly to MCP tools",
+                        "",
+                        "📋 Example MCP client configuration:",
+                        "```",
+                        "servers:",
+                        "  foundry-testing:",
+                        "    command: python",
+                        "    args: ['/path/to/run_clean.py']",
+                        "    cwd: /path/to/your/project",
+                        "    env:",
+                        "      MCP_CLIENT_CWD: /path/to/your/project",
+                        "```"
+                    ])
+                else:
+                    recommendations.extend([
+                        "✅ Directory detection appears correct",
+                        "🎯 The detected directory looks like a valid Foundry project"
+                    ])
+                
+                return {
+                    "status": "debug_complete",
+                    "directory_detection_correct": likely_correct,
+                    "debug_info": debug_info,
+                    "recommendations": recommendations
+                }
+                
+            except Exception as e:
+                logger.error(f"Error debugging directory detection: {e}")
+                return {
+                    "status": "error",
+                    "error": str(e),
+                    "recommendations": [
+                        "❌ Error occurred during directory detection debugging",
+                        "🔍 Check server logs for more details",
+                        "💡 Try setting MCP_CLIENT_CWD environment variable"
+                    ]
                 }
         
         logger.info("Testing tools registered successfully")
