@@ -237,21 +237,28 @@ ENABLE_GAS_OPTIMIZATION=true
 
 ### Integration with Cursor/Claude
 
-Add to your MCP configuration:
+Add to your MCP configuration (`~/.cursor/mcp.json` or Claude Desktop settings):
 
 ```json
 {
   "mcpServers": {
-    "smart-contract-testing": {
-      "command": "python",
-      "args": ["-m", "components.testing_server"],
+    "foundry-testing": {
+      "command": "/path/to/foundry-testing-mcp/venv/bin/python",
+      "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
+      "cwd": "/path/to/your-project",
       "env": {
-        "MCP_TRANSPORT_MODE": "stdio"
+        "MCP_TRANSPORT_MODE": "stdio",
+        "MCP_CLIENT_CWD": "/path/to/your-project"
       }
     }
   }
 }
 ```
+
+**Important**: 
+- Replace `/path/to/foundry-testing-mcp` with the actual path to your MCP server installation
+- Replace `/path/to/your-project` with the path to your Foundry project directory
+- The `cwd` and `MCP_CLIENT_CWD` settings ensure the server detects the correct project directory
 
 ## 🎨 Usage Examples
 
@@ -409,8 +416,10 @@ python run_clean.py
     "foundry-testing": {
       "command": "/path/to/foundry-testing-mcp/venv/bin/python",
       "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
+      "cwd": "/path/to/your-project",
       "env": {
-        "MCP_TRANSPORT_MODE": "stdio"
+        "MCP_TRANSPORT_MODE": "stdio",
+        "MCP_CLIENT_CWD": "/path/to/your-project"
       }
     }
   }
