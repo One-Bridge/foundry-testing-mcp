@@ -304,25 +304,32 @@ class FoundryAdapter:
     async def generate_coverage_report(self, project_path: str = "", 
                                      format: str = "lcov") -> Dict[str, Any]:
         """
-        Generate a detailed coverage report.
+        Generate a detailed coverage report using actual forge coverage output.
+        
+        This addresses the tool integration disconnect by properly parsing
+        and using real Foundry coverage data rather than generic analysis.
         
         Args:
             project_path: Path to the project directory (defaults to current directory)
-            format: Coverage report format (lcov, json, html)
+            format: Coverage report format (lcov, summary, json)
             
         Returns:
-            Dictionary containing coverage analysis
+            Dictionary containing comprehensive coverage analysis
         """
         project_path = self._resolve_project_path(project_path)
         
+        # First, run tests to ensure coverage data is available
+        test_result = await self.run_tests(project_path, coverage=True)
+        
+        # Then generate the coverage report
         command = [self.forge_path, "coverage"]
         
-        if format == "lcov":
-            command.append("--report")
-            command.append("lcov")
+        if format == "summary":
+            command.extend(["--report", "summary"])
+        elif format == "lcov":
+            command.extend(["--report", "lcov"])
         elif format == "json":
-            command.append("--report")
-            command.append("json")
+            command.extend(["--report", "json"])
         
         returncode, stdout, stderr = await self._run_command(command, cwd=project_path)
         
@@ -332,7 +339,8 @@ class FoundryAdapter:
             "stdout": stdout,
             "stderr": stderr,
             "coverage_data": None,
-            "summary": None
+            "summary": None,
+            "test_execution": test_result
         }
         
         if returncode == 0:
@@ -340,14 +348,18 @@ class FoundryAdapter:
             try:
                 if format == "lcov":
                     result["coverage_data"] = self._parse_lcov_coverage(stdout)
+                elif format == "summary":
+                    result["coverage_data"] = self._parse_summary_coverage(stdout)
                 elif format == "json":
                     result["coverage_data"] = json.loads(stdout)
                 
-                # Generate summary statistics
+                # Generate enhanced summary statistics
                 result["summary"] = self._generate_coverage_summary(result["coverage_data"])
                 
             except Exception as e:
                 logger.warning(f"Could not parse coverage data: {e}")
+                # Try to extract basic coverage info from stderr
+                result["summary"] = self._extract_basic_coverage_info(stderr)
         
         return result
     
@@ -383,44 +395,211 @@ class FoundryAdapter:
         
         return coverage_data
     
+    def _parse_summary_coverage(self, summary_output: str) -> Dict[str, Any]:
+        """
+        Parse forge coverage --report summary output.
+        
+        This addresses the tool integration disconnect by parsing actual
+        Foundry summary output format rather than generic coverage data.
+        """
+        coverage_data = {
+            "files": [],
+            "totals": {
+                "functions": {"hit": 0, "found": 0},
+                "lines": {"hit": 0, "found": 0},
+                "branches": {"hit": 0, "found": 0}
+            },
+            "format": "summary"
+        }
+        
+        lines = summary_output.split('\n')
+        in_file_section = False
+        
+        for line in lines:
+            line = line.strip()
+            
+            # Look for file coverage information
+            if line.startswith('|') and '.sol' in line:
+                parts = [p.strip() for p in line.split('|') if p.strip()]
+                if len(parts) >= 4:
+                    try:
+                        file_name = parts[0]
+                        lines_pct = self._extract_percentage(parts[1])
+                        functions_pct = self._extract_percentage(parts[2]) if len(parts) > 2 else 0
+                        branches_pct = self._extract_percentage(parts[3]) if len(parts) > 3 else 0
+                        
+                        coverage_data["files"].append({
+                            "file": file_name,
+                            "lines_pct": lines_pct,
+                            "functions_pct": functions_pct,
+                            "branches_pct": branches_pct
+                        })
+                    except (ValueError, IndexError):
+                        continue
+            
+            # Look for total coverage information
+            elif "Total" in line or "Overall" in line:
+                parts = [p.strip() for p in line.split('|') if p.strip()]
+                if len(parts) >= 2:
+                    try:
+                        total_pct = self._extract_percentage(parts[1])
+                        coverage_data["totals"]["overall_percentage"] = total_pct
+                    except (ValueError, IndexError):
+                        continue
+        
+        return coverage_data
+    
+    def _extract_percentage(self, text: str) -> float:
+        """Extract percentage value from text like '85.5%' or '85.5% (17/20)'."""
+        import re
+        match = re.search(r'(\d+\.?\d*)%', text)
+        if match:
+            return float(match.group(1))
+        return 0.0
+    
+    def _extract_basic_coverage_info(self, stderr_output: str) -> Dict[str, Any]:
+        """
+        Extract basic coverage info from stderr when detailed parsing fails.
+        
+        Foundry sometimes outputs coverage summary to stderr.
+        """
+        summary = {
+            "coverage_percentage": 0,
+            "analysis": "Could not parse detailed coverage data",
+            "source": "stderr_extraction"
+        }
+        
+        lines = stderr_output.split('\n')
+        for line in lines:
+            # Look for coverage percentage in various formats
+            if '%' in line and any(keyword in line.lower() for keyword in ['coverage', 'total', 'overall']):
+                try:
+                    percentage = self._extract_percentage(line)
+                    if percentage > 0:
+                        summary["coverage_percentage"] = percentage
+                        summary["analysis"] = f"Basic coverage extracted: {percentage}%"
+                        break
+                except:
+                    continue
+        
+        return summary
+    
     def _generate_coverage_summary(self, coverage_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate coverage summary statistics."""
-        if not coverage_data or not coverage_data.get("totals"):
+        """
+        Generate enhanced coverage summary statistics with context awareness.
+        
+        This addresses the context blindness issue by providing nuanced analysis
+        that recognizes different levels of coverage achievement.
+        """
+        if not coverage_data:
             return {"coverage_percentage": 0, "analysis": "No coverage data available"}
         
-        totals = coverage_data["totals"]
+        # Handle different coverage data formats
+        if coverage_data.get("format") == "summary":
+            # Parse summary format data
+            overall_pct = coverage_data.get("totals", {}).get("overall_percentage", 0)
+            files = coverage_data.get("files", [])
+            
+            # Calculate detailed metrics from file data
+            if files:
+                avg_lines = sum(f.get("lines_pct", 0) for f in files) / len(files)
+                avg_functions = sum(f.get("functions_pct", 0) for f in files) / len(files)
+                avg_branches = sum(f.get("branches_pct", 0) for f in files) / len(files)
+            else:
+                avg_lines = avg_functions = avg_branches = overall_pct
+            
+            return {
+                "coverage_percentage": round(overall_pct, 2),
+                "lines_coverage": round(avg_lines, 2),
+                "functions_coverage": round(avg_functions, 2),
+                "branches_coverage": round(avg_branches, 2),
+                "files_analyzed": len(files),
+                "analysis": self._generate_contextual_coverage_analysis(overall_pct, files),
+                "format": "summary"
+            }
         
-        # Calculate line coverage percentage
-        lines_found = totals["lines"]["found"]
-        lines_hit = totals["lines"]["hit"]
+        elif coverage_data.get("totals"):
+            # Handle LCOV format data
+            totals = coverage_data["totals"]
+            
+            # Calculate line coverage percentage
+            lines_found = totals["lines"]["found"]
+            lines_hit = totals["lines"]["hit"]
+            
+            coverage_percentage = (lines_hit / lines_found * 100) if lines_found > 0 else 0
+            
+            return {
+                "coverage_percentage": round(coverage_percentage, 2),
+                "lines_covered": lines_hit,
+                "lines_total": lines_found,
+                "functions_covered": totals["functions"]["hit"],
+                "functions_total": totals["functions"]["found"],
+                "branches_covered": totals["branches"]["hit"],
+                "branches_total": totals["branches"]["found"],
+                "analysis": self._generate_contextual_coverage_analysis(coverage_percentage, []),
+                "format": "lcov"
+            }
         
-        coverage_percentage = (lines_hit / lines_found * 100) if lines_found > 0 else 0
-        
-        return {
-            "coverage_percentage": round(coverage_percentage, 2),
-            "lines_covered": lines_hit,
-            "lines_total": lines_found,
-            "functions_covered": totals["functions"]["hit"],
-            "functions_total": totals["functions"]["found"],
-            "branches_covered": totals["branches"]["hit"],
-            "branches_total": totals["branches"]["found"],
-            "analysis": self._generate_coverage_analysis(coverage_percentage)
-        }
-    
-    def _generate_coverage_analysis(self, coverage_percentage: float) -> str:
-        """Generate coverage analysis text."""
-        if coverage_percentage >= 95:
-            return "Excellent coverage! Consider adding edge case and integration tests."
-        elif coverage_percentage >= 90:
-            return "Very good coverage. Focus on branch coverage and edge cases."
-        elif coverage_percentage >= 80:
-            return "Good coverage. Add tests for uncovered functions and branches."
-        elif coverage_percentage >= 70:
-            return "Fair coverage. Significant testing gaps need attention."
-        elif coverage_percentage >= 50:
-            return "Poor coverage. Major testing improvements needed."
         else:
-            return "Very poor coverage. Comprehensive testing strategy required."
+            # Handle basic or unknown format
+            coverage_pct = coverage_data.get("coverage_percentage", 0)
+            return {
+                "coverage_percentage": coverage_pct,
+                "analysis": coverage_data.get("analysis", "Basic coverage data"),
+                "format": "basic"
+            }
+    
+    def _generate_contextual_coverage_analysis(self, coverage_percentage: float, 
+                                              files: List[Dict[str, Any]] = None) -> str:
+        """
+        Generate contextual coverage analysis that recognizes good work.
+        
+        This addresses the context blindness issue by providing appropriate
+        feedback based on actual coverage levels rather than generic responses.
+        """
+        files = files or []
+        
+        # Enhanced analysis based on coverage levels
+        if coverage_percentage >= 95:
+            analysis = f"Excellent coverage achieved ({coverage_percentage}%)! "
+            if files:
+                low_coverage_files = [f for f in files if f.get("lines_pct", 0) < 90]
+                if low_coverage_files:
+                    analysis += f"Consider addressing {len(low_coverage_files)} files with lower coverage for completeness."
+                else:
+                    analysis += "Consider adding property-based testing and formal verification for production readiness."
+            else:
+                analysis += "Ready for production deployment. Consider adding invariant and integration tests."
+                
+        elif coverage_percentage >= 90:
+            analysis = f"Very good coverage ({coverage_percentage}%)! "
+            if files:
+                uncovered_areas = len([f for f in files if f.get("lines_pct", 0) < 85])
+                analysis += f"Focus on improving coverage in {uncovered_areas} remaining areas and add security testing."
+            else:
+                analysis += "Add edge cases, security tests, and integration scenarios to reach production standards."
+                
+        elif coverage_percentage >= 80:
+            analysis = f"Good coverage foundation ({coverage_percentage}%). "
+            analysis += "Add tests for uncovered functions, edge cases, and security scenarios to reach professional standards."
+            
+        elif coverage_percentage >= 70:
+            analysis = f"Moderate coverage ({coverage_percentage}%). "
+            analysis += "Systematic testing expansion needed - focus on critical functions and error conditions first."
+            
+        elif coverage_percentage >= 50:
+            analysis = f"Basic coverage present ({coverage_percentage}%). "
+            analysis += "Significant testing expansion needed for production readiness."
+            
+        elif coverage_percentage >= 30:
+            analysis = f"Limited coverage ({coverage_percentage}%). "
+            analysis += "Comprehensive testing strategy required - start with critical functions."
+            
+        else:
+            analysis = f"Minimal coverage ({coverage_percentage}%). "
+            analysis += "Begin with unit tests for core contract functions and build systematically."
+        
+        return analysis
     
     async def run_invariant_tests(self, project_path: str = "", 
                                  contract_name: str = "") -> Dict[str, Any]:

@@ -6,6 +6,7 @@ This module provides guided prompts for testing workflows and analysis.
 
 import logging
 from typing import Dict, Any, List
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -380,25 +381,30 @@ Provide specific, actionable optimizations with implementation examples.
     
     # System prompt generators
     async def _get_contract_analysis_system_prompt(self) -> str:
-        """Generate system prompt for contract analysis."""
-        return """
-You are an expert smart contract testing advisor with deep knowledge of Solidity, Foundry, and security best practices.
+        """Generate system prompt for contract analysis with security guidance."""
+        # Load security audit guidance
+        security_guidance = await self._load_security_audit_guidance()
+        
+        return f"""
+{security_guidance}
+
+You are operating as a world-class smart contract testing advisor with deep expertise in Solidity, Foundry, and security best practices.
 
 Your role is to:
-1. Analyze smart contracts for testability and security
-2. Identify critical testing requirements
-3. Recommend comprehensive testing strategies
-4. Provide specific, actionable test cases
-5. Consider security implications and edge cases
+1. Analyze smart contracts for testability and security using world-class audit methodologies
+2. Identify critical testing requirements based on professional security practices
+3. Recommend comprehensive testing strategies incorporating industry best practices
+4. Provide specific, actionable test cases with security considerations
+5. Apply the security audit guidance provided above to all recommendations
 
 Always provide:
-- Clear, actionable recommendations
-- Specific test case examples
-- Security considerations
-- Performance implications
-- Best practices alignment
+- Clear, actionable recommendations based on professional audit practices
+- Specific test case examples that follow security best practices
+- Security considerations aligned with Trail of Bits, OpenZeppelin, and ConsenSys methodologies
+- Performance implications and gas optimization considerations
+- Best practices alignment with world-class security standards
 
-Focus on practical, implementable advice that improves code quality and security.
+Focus on practical, implementable advice that meets production-ready security standards.
         """
     
     async def _get_test_strategy_system_prompt(self) -> str:
@@ -486,5 +492,100 @@ Provide optimizations that:
 - Enhance maintainability
 - Scale with project growth
 
-Always balance speed with coverage and quality.
+        Always balance speed with coverage and quality.
+        """
+    
+    async def _load_security_audit_guidance(self) -> str:
+        """Load security audit guidance from the guidance document."""
+        try:
+            # Try to load from the docs directory
+            guidance_path = Path(__file__).parent.parent / "docs" / "security-audit-guidance.md"
+            if guidance_path.exists():
+                with open(guidance_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # Extract key sections for LLM context
+                sections_to_include = [
+                    "## AI IDENTITY AND EXPERTISE",
+                    "## CORE SECURITY AUDIT METHODOLOGY",
+                    "## AI CODING AGENT FAILURE PATTERNS",
+                    "## SECURITY CHECKLIST BY PROTOCOL TYPE"
+                ]
+                
+                extracted_content = []
+                lines = content.split('\n')
+                current_section = None
+                include_line = False
+                
+                for line in lines:
+                    # Check if this is a section header we want to include
+                    if any(section in line for section in sections_to_include):
+                        current_section = line
+                        include_line = True
+                        extracted_content.append(line)
+                        continue
+                    
+                    # Check if we're at a new section we don't want
+                    if line.startswith("## ") and current_section and not any(section in line for section in sections_to_include):
+                        include_line = False
+                        current_section = None
+                        continue
+                    
+                    # Include line if we're in a section we want
+                    if include_line:
+                        extracted_content.append(line)
+                
+                return '\n'.join(extracted_content)
+            else:
+                logger.warning(f"Security audit guidance not found at {guidance_path}")
+                return self._get_fallback_security_guidance()
+                
+        except Exception as e:
+            logger.error(f"Error loading security audit guidance: {e}")
+            return self._get_fallback_security_guidance()
+    
+    def _get_fallback_security_guidance(self) -> str:
+        """Fallback security guidance if file cannot be loaded."""
+        return """
+## AI IDENTITY AND EXPERTISE
+
+**YOU ARE A WORLD CLASS AI ENGINEER THAT HAS DEEP KNOWLEDGE OF BUILDING MCPS, YOU HAVE ALSO SPENT OVER A DECADE WORKING AT AN EXPERT LEVEL AS A SOLIDITY ENGINEER, PROTOCOL ARCHITECT, AND AS AN AUDITOR FOR A TOP SMART CONTRACT SECURITY FIRM AS ONE OF THE BEST PERFORMING AUDITORS**
+
+Your expertise includes:
+- Deep knowledge of the Ethereum Virtual Machine and Solidity language internals
+- Extensive experience with DeFi protocols, cross-chain bridges, and complex financial primitives
+- Mastery of formal verification techniques and symbolic execution
+- Expert-level understanding of economic attack vectors and MEV exploitation
+- Comprehensive knowledge of all major smart contract vulnerabilities and their exploitations
+
+## CORE SECURITY AUDIT METHODOLOGY
+
+Always apply these critical security patterns:
+
+### Access Control Vulnerabilities
+- Verify all privileged functions have appropriate access controls
+- Test privilege escalation scenarios
+- Validate role-based permissions are correctly implemented
+
+### Reentrancy Vulnerabilities
+- Follow Checks-Effects-Interactions pattern
+- Test all external calls for reentrancy potential
+- Verify ReentrancyGuard usage
+
+### Common Attack Vectors
+- Flash loan attacks and oracle manipulation
+- MEV exploitation and front-running
+- Integer overflow/underflow conditions
+- Signature replay and malleability
+
+## AI CODING AGENT FAILURE PATTERNS
+
+**YOU ARE AN EXPERT SOLIDITY SECURITY ENGINEER CONSTANTLY ANNOYED BY THE CIRCULAR LOGIC AND THE CHEATING TO ACCOMPLISH TEST GOALS THAT ARE PRODUCED BY AI CODING AGENTS AND LLMS**
+
+Watch for these AI failures:
+- Circular logic testing (testing implementation against itself)
+- Mock cheating (mocks that always return expected values)
+- Insufficient edge case coverage
+- Missing security scenarios
+- Always-passing tests that provide no validation
         """ 

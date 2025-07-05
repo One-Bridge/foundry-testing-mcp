@@ -1,882 +1,415 @@
-# Foundry Testing MCP - User Implementation Walkthrough
+# Foundry Testing MCP v2.0 - User Implementation Walkthrough
 
 ## Quick Start Guide
 
-This walkthrough demonstrates how to use the Foundry Testing MCP to create comprehensive, world-class tests for a new Solidity smart contract protocol. We'll walk through the complete process from initial setup to advanced testing scenarios.
+This walkthrough demonstrates how to use the Foundry Testing MCP v2.0 to create comprehensive, professional-grade tests for smart contracts. The enhanced system provides context-aware guidance that understands your current project state and adapts workflows to your testing maturity level, integrating professional security methodologies and real Foundry tool analysis.
 
 ## Prerequisites
 
 ### Environment Setup
 
 ```bash
-# 1. Ensure Foundry is installed
+# 1. Install Foundry (if not already installed)
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
 
-# 2. Verify installation
+# 2. Verify Foundry installation
 forge --version
-# Expected: forge 0.2.0 (or later)
+# Expected output: forge 0.x.x (hash, timestamp)
 
-# 3. Install and configure MCP server
-cd /path/to/foundry-testing-mcp
-python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-pip install -r requirements.txt
+# 3. Navigate to your smart contract project
+cd /path/to/your/smart-contract-project
 
-# 4. Configure your MCP client (Cursor, Claude Desktop, etc.)
-# Use run_clean.py for MCP client integration
+# 4. Initialize Foundry project (if needed)
+forge init --force
+
+# 5. Verify project structure
+ls -la
+# Should see: foundry.toml, src/, test/, script/
 ```
 
-### MCP Client Configuration
+### MCP Server Setup
 
-**For Cursor:**
+The Foundry Testing MCP v2.0 is designed to work with MCP clients like Cursor with Claude. Ensure your MCP client is configured to connect to the testing server.
+
+## Core Workflow: Context-Aware Testing
+
+### Step 1: Initialize with Context Analysis
+
+**Always start here** - The MCP will analyze your current project state and provide tailored guidance.
+
+**Tool**: `initialize_protocol_testing_agent`
+
+```
+USER: I want to improve the testing for my DeFi protocol. We have some basic tests but need better coverage and security testing.
+
+ASSISTANT: I'll analyze your current project and recommend the best testing approach. Let me start by understanding your current state.
+
+[Calls: initialize_protocol_testing_agent with analysis_mode="interactive"]
+```
+
+**Enhanced Response**: The system now provides:
+- **Current State Summary**: Testing phase, test count, coverage estimate, identified patterns
+- **Contextual Workflow Options**: Six specialized workflows based on your project maturity
+- **Effort Estimates**: Realistic timelines (1-4 weeks) based on current state
+- **Next Steps**: Clear guidance tailored to your specific situation
+
+### Step 2: Choose Context-Appropriate Workflow
+
+Based on your project analysis, you'll receive workflow options like:
+
+#### For New Projects (No Tests)
 ```json
 {
-  "mcpServers": {
-    "foundry-testing": {
-      "command": "/path/to/foundry-testing-mcp/venv/bin/python",
-      "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
-      "env": {
-        "MCP_TRANSPORT_MODE": "stdio"
-      }
-    }
+  "create_foundational_suite": {
+    "title": "Create Foundational Test Suite",
+    "phases": 3,
+    "effort": "1-2 weeks",
+    "focus": "Establishing testing infrastructure from scratch"
   }
 }
 ```
 
-**For Claude Desktop:**
+#### For Basic Tests (< 10 tests)
 ```json
 {
-  "mcpServers": {
-    "foundry-testing": {
-      "command": "python",
-      "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
-      "cwd": "/path/to/foundry-testing-mcp",
-      "env": {
-        "MCP_TRANSPORT_MODE": "stdio"
-      }
-    }
+  "expand_test_coverage": {
+    "title": "Expand Test Coverage & Quality", 
+    "phases": 3,
+    "effort": "1 week",
+    "focus": "Building on existing tests to achieve comprehensive coverage"
   }
 }
 ```
 
-### Verify MCP Integration
-
-**Test the server connection:**
-1. Start your MCP client (Cursor, Claude Desktop)
-2. Check that the server appears in the MCP connections
-3. Verify you can see the 5 available tools:
-   - `initialize_protocol_testing_agent`
-   - `execute_testing_workflow`
-   - `analyze_current_test_coverage`
-   - `validate_current_project`
-   - `get_server_info`
-
-**Important Notes:**
-- **Use `run_clean.py`** for MCP client integration (silent protocol communication)
-- **Use `run.py`** only for development and debugging (verbose output)
-- Ensure no other MCP server instances are running on the same configuration
-
-### Example Protocol: TokenVault
-
-For this walkthrough, we'll create comprehensive tests for a `TokenVault` protocol with the following contracts:
-
-```solidity
-// src/TokenVault.sol - Main vault contract
-// src/VaultToken.sol - ERC20 vault shares
-// src/interfaces/ITokenVault.sol - Interface definitions
-// src/libraries/VaultMath.sol - Mathematical operations
+#### For Solid Foundations (Good Coverage)
+```json
+{
+  "enhance_security_testing": {
+    "title": "Advanced Security & Integration Testing",
+    "phases": 4, 
+    "effort": "1-2 weeks",
+    "focus": "Adding sophisticated security testing and integration scenarios"
+  }
+}
 ```
 
-## Step 1: Project Initialization
+#### For DeFi Protocols
+```json
+{
+  "defi_security_testing": {
+    "title": "DeFi Protocol Security Testing",
+    "phases": 4,
+    "effort": "2-3 weeks", 
+    "focus": "Economic attacks and DeFi-specific vulnerabilities"
+  }
+}
+```
 
-### Navigate to Your Protocol Directory
+### Step 3: Execute Contextual Workflow
+
+**Tool**: `execute_testing_workflow`
+
+```
+USER: Let's go with the "enhance_security_testing" workflow since we have good basic coverage but need security focus.
+
+ASSISTANT: Perfect choice! I can see you have solid test foundations. Let me create a security-focused workflow that builds on your existing 45 tests and 78% coverage.
+
+[Calls: execute_testing_workflow with workflow_type="enhance_security_testing", objectives="Add comprehensive security testing for DeFi protocol", scope="comprehensive"]
+```
+
+**Enhanced Workflow Planning**: The system now analyzes your current context and provides:
+
+**Current Context Integration**:
+```json
+{
+  "current_context": {
+    "testing_phase": "intermediate", 
+    "security_level": "basic",
+    "test_count": 45,
+    "coverage_pct": 78.5,
+    "has_security_tests": true,
+    "contract_types": ["defi", "governance"]
+  }
+}
+```
+
+**Adaptive Phases**: Instead of generic phases, you get contextual phases that build on your work:
+
+**Phase 1: Security Assessment & Gap Analysis**
+- Audit existing security tests for completeness
+- Identify missing attack vector coverage
+- Assess contract risk patterns and vulnerabilities  
+- Map security requirements to contract types
+
+**Phase 2: Vulnerability Testing Implementation**
+- Add access control and privilege escalation tests
+- Implement reentrancy attack simulations
+- Create oracle manipulation test scenarios
+- Add flash loan attack resistance testing
+
+**Phase 3: Advanced Security Testing**
+- Implement property-based security testing
+- Add invariant tests for critical security properties
+- Create fuzz tests for input validation
+- Add economic attack scenario testing
+
+## Advanced Features
+
+### Real Coverage Analysis
+
+**Tool**: `analyze_current_test_coverage`
+
+The MCP now parses actual `forge coverage` output instead of providing generic analysis:
 
 ```bash
-cd /path/to/your-protocol
+# The MCP runs this internally:
+forge test --coverage
+forge coverage --report summary
+
+# Then provides contextual analysis:
 ```
 
-**Verify project structure:**
-```
-your-protocol/
-├── foundry.toml
-├── src/
-│   ├── TokenVault.sol
-│   ├── VaultToken.sol
-│   ├── interfaces/
-│   └── libraries/
-├── test/ (may be empty initially)
-├── script/
-└── lib/
-```
+**Before (Generic)**: "Very poor coverage. Comprehensive testing strategy required."
+**After (Context-Aware)**: "Very good coverage (92%)! Add edge cases, security tests, and integration scenarios to reach production standards."
 
-### Initialize the Testing Agent
+**Enhanced Coverage Insights**:
+- **File-by-file breakdown** from actual Foundry output
+- **Contextual recommendations** based on testing phase
+- **Gap identification** with specific uncovered areas
+- **Priority-based improvement suggestions**
 
-Use your MCP-enabled AI client (Cursor, Claude, etc.) and call:
+### AI Quality Assurance
+
+**Tool**: `analyze_project_context` (with AI failure detection)
+
+The system now detects common AI-generated test failures:
 
 ```
-initialize_protocol_testing_agent()
+USER: Can you check if our AI-generated tests have any quality issues?
+
+ASSISTANT: I'll analyze your tests for common AI failure patterns that could provide false confidence.
+
+[Calls: analyze_project_context with include_ai_failure_detection=true]
 ```
 
-**Expected Response:**
+**AI Failure Detection Results**:
 ```json
 {
-  "status": "initialized",
-  "session_id": "uuid-session-123",
-  "project_path": "/path/to/your-protocol",
-  "project_info": {
-    "is_foundry_project": true,
-    "contracts": ["src/TokenVault.sol", "src/VaultToken.sol", ...],
-    "tests": [],
-    "analysis": {
-      "is_new_project": true,
-      "recommended_workflow": "create_new_suite"
-    }
-  },
-  "available_workflows": {
-            "create_new_suite": {
-          "title": "Create New Test Suite from Scratch",
-          "ideal_for": "New projects or complete testing overhauls",
-          "phases": 4
-        },
-    "evaluate_existing": {
-      "title": "Evaluate & Enhance Existing Tests"
-    }
-  },
-  "recommendations": [
-    "🚀 **Start Fresh**: Create a comprehensive test suite from scratch",
-    "📋 **Plan First**: Begin with contract analysis and testing strategy",
-    "🎯 **Set Goals**: Define coverage targets and testing objectives"
-  ]
-}
-```
-
-## Step 2: Execute Testing Workflow
-
-### Launch Comprehensive Testing Workflow
-
-```
-execute_testing_workflow(
-  workflow_type="create_new_suite",
-  objectives="Create comprehensive test suite for TokenVault protocol with focus on security, gas optimization, and edge cases. Target 95% coverage with emphasis on deposit/withdrawal flows, access control, and economic attacks.",
-  scope="comprehensive"
-)
-```
-
-**Workflow Response:**
-```json
-{
-  "status": "workflow_ready",
-  "session_id": "uuid-session-123",
-  "execution_phases": [
-    {
-      "phase": 1,
-      "title": "Contract Analysis & Discovery",
-      "actions": [
-        "Scan project structure and identify all contracts",
-        "Analyze contract dependencies and inheritance hierarchy",
-        "Identify critical functions and state variables",
-        "Map potential attack vectors and edge cases"
-      ],
-      "deliverables": [
-        "Contract analysis report",
-        "Dependency mapping",
-        "Critical function inventory",
-        "Security considerations document"
-      ]
-    }
-  ],
-  "current_phase_result": {
-    "phase": 1,
-    "status": "completed",
-    "contracts_analyzed": [
+  "ai_failure_analysis": {
+    "status": "moderate_issues",
+    "failures_detected": [
       {
-        "name": "TokenVault",
-        "critical_functions": ["deposit", "withdraw", "emergencyPause"],
-        "security_considerations": ["reentrancy", "access_control", "arithmetic"]
+        "type": "circular_logic",
+        "file": "test/TokenTest.t.sol", 
+        "line": 45,
+        "description": "Test validates contract against its own implementation",
+        "severity": "high",
+        "remediation": "Test against expected behavior, not implementation"
+      },
+      {
+        "type": "mock_cheating",
+        "file": "test/OracleTest.t.sol",
+        "line": 67,
+        "description": "Mock always returns expected value without validation",
+        "severity": "medium", 
+        "remediation": "Add realistic mock behavior and edge cases"
       }
     ]
   }
 }
 ```
 
-## Step 3: Interactive Contract Analysis
+### Professional Security Integration
 
-### Analyze Individual Contracts
+The MCP now integrates methodologies from leading security audit firms:
 
-Use the AI prompts for detailed contract analysis:
+**Trail of Bits Framework**:
+- Access control maturity assessment (Level 1-4)
+- Architectural risk evaluation
+- Invariant-driven development
 
-```
-analyze-contract-for-testing src/TokenVault.sol
-```
+**OpenZeppelin Standards**:
+- Security pattern validation
+- Comprehensive checklists
+- Quality measures compliance
 
-**AI Response Example:**
-```markdown
-## Contract Analysis: TokenVault.sol
+**ConsenSys Practices**: 
+- Vulnerability pattern analysis
+- Threat modeling approaches
+- Economic attack scenarios
 
-### Contract Overview
-- **Purpose**: Secure vault for ERC20 token deposits with yield distribution
-- **Key Functions**: deposit(), withdraw(), claimRewards(), pause()/unpause()
-- **Access Control**: Owner-based with emergency pause functionality
+### DeFi-Specific Security Testing
 
-### Critical Testing Requirements
+For DeFi protocols, the system provides specialized security testing:
 
-1. **Deposit Flow Testing**
-   - Valid deposits with various token amounts
-   - Zero amount deposit rejection
-   - Insufficient allowance handling
-   - Share calculation accuracy
-
-2. **Withdrawal Flow Testing**
-   - Valid withdrawals within balance limits
-   - Withdrawal amount validation
-   - Share burning mechanics
-   - Emergency withdrawal scenarios
-
-3. **Security Testing Priorities**
-   - Reentrancy attack prevention
-   - Access control bypass attempts
-   - Integer overflow/underflow scenarios
-   - Pause mechanism effectiveness
-
-### Recommended Test Cases
+**Economic Attack Scenarios**:
 ```solidity
-function testDepositValidAmount() public {
-    // Test successful deposit with proper share minting
+// Flash loan attack simulation
+function testFlashLoanAttack() public {
+    // Setup: Deploy vulnerable contract
+    // Execute: Simulate flash loan attack
+    // Verify: Attack is prevented/mitigated
 }
 
-function testWithdrawExceedsBalance() public {
-    // Test withdrawal attempt exceeding user balance
-    vm.expectRevert("Insufficient balance");
+// Oracle manipulation testing  
+function testOracleManipulation() public {
+    // Setup: Mock oracle with manipulated price
+    // Execute: Attempt price manipulation exploit
+    // Verify: System responds appropriately
 }
 
-function testReentrancyAttack() public {
-    // Test reentrancy protection on withdraw function
-}
-```
-```
-
-## Step 4: Generate Test Templates
-
-### Access Test Templates
-
-```
-Get resource: testing/templates/unit
-```
-
-**Response:** Complete unit test template with:
-- Setup patterns for TokenVault testing
-- Mock ERC20 token configuration
-- User account management
-- Common assertion patterns
-
-### Create Initial Test Files
-
-Based on the templates, create test files:
-
-```solidity
-// test/unit/TokenVault.t.sol
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "forge-std/Test.sol";
-import "../src/TokenVault.sol";
-import "../src/VaultToken.sol";
-import "./mocks/MockERC20.sol";
-
-contract TokenVaultTest is Test {
-    TokenVault public vault;
-    VaultToken public vaultToken;
-    MockERC20 public underlying;
-    
-    address public owner = address(0x1);
-    address public user1 = address(0x2);
-    address public user2 = address(0x3);
-    
-    uint256 constant INITIAL_SUPPLY = 1000000e18;
-    
-    function setUp() public {
-        vm.prank(owner);
-        underlying = new MockERC20("Test Token", "TEST", INITIAL_SUPPLY);
-        vaultToken = new VaultToken("Vault Shares", "vTEST");
-        vault = new TokenVault(address(underlying), address(vaultToken));
-        
-        // Setup user balances
-        underlying.transfer(user1, 10000e18);
-        underlying.transfer(user2, 10000e18);
-        
-        // Setup approvals
-        vm.prank(user1);
-        underlying.approve(address(vault), type(uint256).max);
-        vm.prank(user2);
-        underlying.approve(address(vault), type(uint256).max);
-    }
-    
-    function testDepositSuccess() public {
-        uint256 depositAmount = 1000e18;
-        
-        vm.prank(user1);
-        vault.deposit(depositAmount);
-        
-        assertEq(vault.balanceOf(user1), depositAmount);
-        assertEq(underlying.balanceOf(address(vault)), depositAmount);
-    }
-    
-    function testWithdrawSuccess() public {
-        // Setup: user1 deposits first
-        vm.prank(user1);
-        vault.deposit(1000e18);
-        
-        uint256 withdrawAmount = 500e18;
-        uint256 initialBalance = underlying.balanceOf(user1);
-        
-        vm.prank(user1);
-        vault.withdraw(withdrawAmount);
-        
-        assertEq(vault.balanceOf(user1), 500e18);
-        assertEq(underlying.balanceOf(user1), initialBalance + withdrawAmount);
-    }
+// MEV protection validation
+function testMEVProtection() public {
+    // Setup: Simulate MEV extraction attempt
+    // Execute: Front-running/sandwich attack
+    // Verify: Protection mechanisms work
 }
 ```
 
-## Step 5: Advanced Testing Scenarios
+## Workflow Examples
 
-### Generate Security Tests
+### Example 1: New DeFi Project
 
-```
-design-security-tests contract_types="DeFi vault" threat_model="comprehensive"
-```
-
-**AI Guidance for Security Tests:**
-
-```solidity
-// test/security/TokenVaultSecurity.t.sol
-contract TokenVaultSecurityTest is Test {
-    // ... setup similar to unit tests ...
-    
-    function testReentrancyProtection() public {
-        MaliciousReentrant attacker = new MaliciousReentrant(vault, underlying);
-        
-        // Fund attacker
-        underlying.transfer(address(attacker), 1000e18);
-        
-        // Attempt reentrancy attack
-        vm.expectRevert("ReentrancyGuard: reentrant call");
-        attacker.attack();
-    }
-    
-    function testAccessControlBypass() public {
-        vm.prank(user1); // Non-owner
-        vm.expectRevert("Ownable: caller is not the owner");
-        vault.emergencyPause();
-    }
-    
-    function testFlashLoanAttack() public {
-        // Simulate flash loan attack scenario
-        FlashLoanAttacker attacker = new FlashLoanAttacker();
-        
-        // Attack should fail due to vault protections
-        vm.expectRevert("Attack prevented");
-        attacker.executeFlashLoan(address(vault), 1000000e18);
-    }
-}
-```
-
-### Create Invariant Tests
+**Starting Point**: Empty project with contracts but no tests
 
 ```
-Get resource: testing/templates/invariant
+1. initialize_protocol_testing_agent()
+   → Detects: No tests, DeFi contracts, high risk
+   → Recommends: "create_foundational_suite" workflow
+
+2. execute_testing_workflow("create_foundational_suite", "Create comprehensive test suite for AMM protocol")
+   → Phase 1: Contract analysis and risk assessment
+   → Phase 2: Test architecture design
+   → Phase 3: Core test implementation
+
+3. analyze_current_test_coverage()
+   → Progress tracking and gap identification
 ```
 
-```solidity
-// test/invariant/TokenVaultInvariant.t.sol
-contract TokenVaultInvariantTest is Test {
-    TokenVault public vault;
-    MockERC20 public underlying;
-    
-    function setUp() public {
-        // ... setup similar to unit tests ...
-        targetContract(address(vault));
-    }
-    
-    function invariant_totalSupplyEqualsDeposits() public {
-        // Total vault token supply should equal total underlying deposits
-        assertEq(
-            vault.totalSupply(),
-            underlying.balanceOf(address(vault))
-        );
-    }
-    
-    function invariant_userBalancesNeverExceedDeposits() public {
-        // Sum of all user balances should never exceed vault total supply
-        uint256 totalUserBalances = 0;
-        address[] memory users = vault.getAllUsers();
-        
-        for (uint256 i = 0; i < users.length; i++) {
-            totalUserBalances += vault.balanceOf(users[i]);
-        }
-        
-        assertLe(totalUserBalances, vault.totalSupply());
-    }
-    
-    function invariant_vaultNeverInsolvent() public {
-        // Vault should always have enough underlying tokens to satisfy withdrawals
-        assertGe(
-            underlying.balanceOf(address(vault)),
-            vault.totalSupply()
-        );
-    }
-}
-```
+### Example 2: Existing Project Enhancement
 
-### Generate Fuzz Tests
-
-```solidity
-// test/fuzz/TokenVaultFuzz.t.sol
-contract TokenVaultFuzzTest is Test {
-    // ... setup ...
-    
-    function testFuzzDeposit(uint256 amount) public {
-        amount = bound(amount, 1, 1000000e18);
-        
-        // Ensure user has enough tokens
-        vm.assume(underlying.balanceOf(user1) >= amount);
-        
-        uint256 vaultBalanceBefore = underlying.balanceOf(address(vault));
-        uint256 userSharesBefore = vault.balanceOf(user1);
-        
-        vm.prank(user1);
-        vault.deposit(amount);
-        
-        assertEq(
-            underlying.balanceOf(address(vault)),
-            vaultBalanceBefore + amount
-        );
-        assertEq(
-            vault.balanceOf(user1),
-            userSharesBefore + amount
-        );
-    }
-    
-    function testFuzzWithdrawPartial(uint256 depositAmount, uint256 withdrawAmount) public {
-        depositAmount = bound(depositAmount, 1000, 1000000e18);
-        withdrawAmount = bound(withdrawAmount, 1, depositAmount);
-        
-        // Setup deposit
-        vm.prank(user1);
-        vault.deposit(depositAmount);
-        
-        // Test withdrawal
-        vm.prank(user1);
-        vault.withdraw(withdrawAmount);
-        
-        assertEq(vault.balanceOf(user1), depositAmount - withdrawAmount);
-    }
-}
-```
-
-## Step 6: Coverage Analysis and Optimization
-
-### Run Coverage Analysis
+**Starting Point**: Project with 25 tests, 65% coverage, basic security
 
 ```
-analyze_current_test_coverage(target_coverage=95, include_branches=true)
+1. initialize_protocol_testing_agent()
+   → Detects: Intermediate phase, needs security focus
+   → Recommends: "enhance_security_testing" workflow
+
+2. analyze_project_context(include_ai_failure_detection=true)
+   → Identifies: AI test quality issues, security gaps
+   → Provides: Prioritized improvement plan
+
+3. execute_testing_workflow("enhance_security_testing", "Add comprehensive security testing")
+   → Builds on existing 25 tests
+   → Focuses on security gaps and attack vectors
+   → Progressive enhancement rather than restart
 ```
 
-**Coverage Report Example:**
-```json
-{
-  "status": "success",
-  "project_path": "/path/to/your-protocol",
-  "coverage_summary": {
-    "coverage_percentage": 87.5,
-    "lines_covered": 175,
-    "lines_total": 200,
-    "functions_covered": 18,
-    "functions_total": 20,
-    "branches_covered": 85,
-    "branches_total": 100
-  },
-  "gaps_identified": [
-    "Emergency pause functionality not fully tested",
-    "Edge case: withdrawal when vault is empty",
-    "Admin function: updateFeeRate not covered"
-  ],
-  "recommendations": [
-    "Add tests for emergency pause/unpause scenarios",
-    "Test withdrawal attempts when vault balance is zero",
-    "Create admin function tests for fee management"
-  ]
-}
-```
+### Example 3: Production Preparation
 
-### Address Coverage Gaps
-
-Based on the analysis, add missing tests:
-
-```solidity
-// Additional tests to reach 95% coverage
-function testEmergencyPause() public {
-    vm.prank(owner);
-    vault.pause();
-    
-    vm.prank(user1);
-    vm.expectRevert("Pausable: paused");
-    vault.deposit(1000e18);
-}
-
-function testWithdrawFromEmptyVault() public {
-    vm.prank(user1);
-    vm.expectRevert("Insufficient vault balance");
-    vault.withdraw(1e18);
-}
-
-function testUpdateFeeRate() public {
-    uint256 newFeeRate = 100; // 1%
-    
-    vm.prank(owner);
-    vault.updateFeeRate(newFeeRate);
-    
-    assertEq(vault.feeRate(), newFeeRate);
-}
-```
-
-## Step 7: Integration Testing
-
-### Create Integration Test Suite
+**Starting Point**: Mature project preparing for audit
 
 ```
-Get resource: testing/templates/integration
+1. initialize_protocol_testing_agent()
+   → Detects: Advanced phase, audit preparation needed
+   → Recommends: "comprehensive_audit_prep" workflow
+
+2. execute_testing_workflow("comprehensive_audit_prep", "Prepare for security audit")
+   → Phase 1: Comprehensive coverage review (95%+ target)
+   → Phase 2: Security testing validation
+   → Phase 3: Documentation and evidence preparation
+   → Phase 4: Formal verification preparation
+   → Phase 5: Audit documentation packages
 ```
 
-```solidity
-// test/integration/VaultIntegration.t.sol
-contract VaultIntegrationTest is Test {
-    TokenVault public vault;
-    VaultToken public vaultToken;
-    MockERC20 public underlying;
-    
-    function testCompleteUserJourney() public {
-        // 1. User deposits tokens
-        vm.prank(user1);
-        vault.deposit(1000e18);
-        
-        // 2. Vault accumulates yield (simulate)
-        underlying.transfer(address(vault), 100e18); // 10% yield
-        
-        // 3. User partially withdraws
-        vm.prank(user1);
-        vault.withdraw(500e18);
-        
-        // 4. User claims rewards
-        vm.prank(user1);
-        uint256 rewards = vault.claimRewards();
-        
-        // Verify final state
-        assertGt(rewards, 0);
-        assertEq(vault.balanceOf(user1), 500e18);
-    }
-    
-    function testMultiUserScenario() public {
-        // Multiple users interact with vault
-        vm.prank(user1);
-        vault.deposit(1000e18);
-        
-        vm.prank(user2);
-        vault.deposit(2000e18);
-        
-        // Simulate yield
-        underlying.transfer(address(vault), 300e18); // 10% total yield
-        
-        // Users withdraw proportionally
-        vm.prank(user1);
-        vault.withdraw(500e18);
-        
-        vm.prank(user2);
-        vault.withdraw(1000e18);
-        
-        // Verify proportional rewards
-        uint256 user1Rewards = vault.pendingRewards(user1);
-        uint256 user2Rewards = vault.pendingRewards(user2);
-        
-        assertApproxEqRel(user1Rewards * 2, user2Rewards, 1e16); // 1% tolerance
-    }
-}
-```
+## Troubleshooting and Validation
 
-## Step 8: Gas Optimization Testing
+### Project Validation
 
-### Create Gas Tests
+**Tool**: `validate_current_project`
 
-```solidity
-// test/gas/TokenVaultGas.t.sol
-contract TokenVaultGasTest is Test {
-    // ... setup ...
-    
-    function testDepositGasUsage() public {
-        uint256 gasBefore = gasleft();
-        
-        vm.prank(user1);
-        vault.deposit(1000e18);
-        
-        uint256 gasUsed = gasBefore - gasleft();
-        
-        // Assert gas usage is within reasonable bounds
-        assertLt(gasUsed, 100000); // Should use less than 100k gas
-    }
-    
-    function testBatchDepositOptimization() public {
-        // Compare single vs batch deposits
-        uint256[] memory amounts = new uint256[](5);
-        for (uint256 i = 0; i < 5; i++) {
-            amounts[i] = 200e18;
-        }
-        
-        uint256 gasBefore = gasleft();
-        vm.prank(user1);
-        vault.batchDeposit(amounts);
-        uint256 batchGasUsed = gasBefore - gasleft();
-        
-        // Individual deposits gas usage
-        uint256 individualGasUsed = 0;
-        for (uint256 i = 0; i < 5; i++) {
-            gasBefore = gasleft();
-            vm.prank(user2);
-            vault.deposit(200e18);
-            individualGasUsed += (gasBefore - gasleft());
-        }
-        
-        // Batch should be more efficient
-        assertLt(batchGasUsed, individualGasUsed);
-    }
-}
-```
-
-## Step 9: Final Validation and Documentation
-
-### Run Complete Test Suite
-
-```bash
-# Run all tests with coverage
-forge test --coverage
-
-# Run specific test categories
-forge test --match-path "test/unit/*" -vvv
-forge test --match-path "test/security/*" -vvv
-forge test --match-path "test/integration/*" -vvv
-
-# Run invariant tests
-forge test --invariant -vvv
-
-# Generate gas report
-forge test --gas-report
-```
-
-### Validate Final Coverage
+If you encounter issues, start with project validation:
 
 ```
-analyze_current_test_coverage(target_coverage=95)
+USER: The MCP tools aren't finding my contracts properly.
+
+ASSISTANT: Let me validate your project setup and diagnose any issues.
+
+[Calls: validate_current_project()]
 ```
 
-**Expected Final Results:**
-```json
-{
-  "status": "success",
-  "coverage_summary": {
-    "coverage_percentage": 96.2,
-    "lines_covered": 192,
-    "lines_total": 200,
-    "analysis": "Excellent coverage! Consider adding edge case and integration tests."
-  },
-  "meets_target": true,
-  "recommendations": [
-    "✅ Excellent coverage achieved",
-    "🛡️ Comprehensive security testing implemented",
-    "⚡ Gas optimization tests included",
-    "🔄 Integration scenarios covered"
-  ]
-}
-```
+**Enhanced Validation**:
+- **Foundry Installation Check**: Versions and accessibility
+- **Project Structure Analysis**: foundry.toml, src/, test/ validation  
+- **Environment Diagnostics**: Path resolution and permissions
+- **Setup Recommendations**: Specific fixes for identified issues
 
-## Step 10: Advanced Optimization
+### Directory Detection Debugging  
 
-### Review and Optimize
+**Tool**: `debug_directory_detection`
+
+For advanced troubleshooting when the MCP seems to be working in the wrong directory:
 
 ```
-optimize-test-performance performance_issues="general" optimization_goals="speed and coverage"
+USER: The MCP thinks I'm in my home directory but I'm in my project folder.
+
+ASSISTANT: Let me debug the directory detection and provide specific configuration fixes.
+
+[Calls: debug_directory_detection()]
 ```
 
-**AI Optimization Guidance:**
+**Enhanced Debugging**:
+- **Environment Variable Analysis**: MCP_CLIENT_CWD, MCP_PROJECT_PATH inspection
+- **Path Resolution Debugging**: Shows resolved vs actual paths
+- **Client Configuration Examples**: Specific MCP client setup guidance
+- **Troubleshooting Instructions**: Step-by-step resolution guide
 
-1. **Parallel Test Execution**
-```bash
-# Use parallel testing for faster execution
-forge test --jobs 4
-```
+## Best Practices
 
-2. **Test Organization**
-```solidity
-// Group related tests in the same contract
-contract TokenVaultDepositTests is Test { /* deposit tests */ }
-contract TokenVaultWithdrawTests is Test { /* withdraw tests */ }
-```
+### Context-Aware Development
 
-3. **Efficient Setup Patterns**
-```solidity
-// Use shared setup for similar test scenarios
-abstract contract TokenVaultTestBase is Test {
-    // Common setup code
-}
+1. **Always Start with Analysis**: Use `initialize_protocol_testing_agent` to understand current state
+2. **Build Progressively**: Choose workflows that build on existing work
+3. **Monitor Quality**: Use AI failure detection to catch test quality issues
+4. **Use Real Data**: Leverage actual coverage analysis instead of estimates
+5. **Apply Security Standards**: Follow integrated professional methodologies
 
-contract TokenVaultUnitTest is TokenVaultTestBase {
-    // Specific unit tests
-}
-```
+### Professional Security Integration
 
-## Expected Outcomes
+1. **Risk-Based Testing**: Focus on high-risk contracts and functions first
+2. **Attack Vector Coverage**: Include DeFi-specific economic attacks
+3. **Property Validation**: Use invariant testing for critical system properties
+4. **Audit Preparation**: Build toward professional audit standards from the start
 
-### Test Suite Metrics
-- **Coverage**: 95%+ line coverage, 90%+ branch coverage
-- **Test Count**: 50+ comprehensive test cases
-- **Security Tests**: 15+ security-focused scenarios
-- **Performance Tests**: Gas usage validation for all functions
-- **Integration Tests**: Complete user journey testing
+### Tool Integration Best Practices
 
-### Quality Indicators
-- **Zero Critical Vulnerabilities**: All common attack vectors tested
-- **Comprehensive Edge Cases**: Boundary conditions and error scenarios covered
-- **Gas Optimization**: Efficient execution patterns validated
-- **Documentation**: Clear test descriptions and setup instructions
+1. **Foundry Alignment**: Ensure recommendations align with actual `forge` capabilities
+2. **Coverage Validation**: Use real coverage reports for decision making
+3. **Progressive Enhancement**: Build on existing infrastructure rather than replacing
+4. **Quality Assurance**: Regular AI failure detection to maintain test quality
 
-### Development Benefits
-- **Faster Debugging**: Specific test failures pinpoint issues
-- **Confident Deployment**: Comprehensive coverage reduces deployment risk
-- **Maintainable Code**: Well-organized test suite supports future development
-- **Security Assurance**: Proactive vulnerability testing and prevention
+## Success Metrics
 
-## Troubleshooting Common Issues
+### Context Awareness Success
 
-### Coverage Generation Fails
-```bash
-# Ensure tests pass first
-forge test
+- **Accurate State Detection**: MCP correctly identifies your testing phase
+- **Relevant Recommendations**: Workflow suggestions match your actual needs
+- **Progressive Guidance**: Builds on existing work rather than restarting
+- **Appropriate Effort Estimates**: Realistic timelines based on current state
 
-# Try coverage with specific parameters
-forge coverage --report lcov --report-file coverage.lcov
-```
+### Quality Assurance Success
 
-### Fuzz Tests Timeout
-```solidity
-// Adjust fuzz run configuration in foundry.toml
-[fuzz]
-runs = 1000  # Reduce if tests timeout
-```
+- **Coverage Accuracy**: Analysis matches actual `forge coverage` output
+- **AI Quality Detection**: Identifies and helps fix AI-generated test issues  
+- **Security Integration**: Professional audit methodologies applied consistently
+- **Tool Integration**: Seamless integration with existing Foundry workflows
 
-### Integration Test Failures
-```solidity
-// Use vm.roll() and vm.warp() for time-dependent tests
-vm.warp(block.timestamp + 1 days);
-vm.roll(block.number + 1000);
-```
+### Professional Standards Achievement
 
-This walkthrough provides a complete framework for creating world-class smart contract tests using the Foundry Testing MCP. The AI-guided approach ensures comprehensive coverage while maintaining development efficiency and security best practices. 
+- **Security Methodology Compliance**: Tests follow Trail of Bits/OpenZeppelin/ConsenSys standards
+- **Audit Readiness**: Test suites meet professional audit preparation requirements
+- **DeFi Security Coverage**: Economic attack scenarios and vulnerability testing
+- **Production Standards**: High-quality, maintainable, and comprehensive test suites
 
-### Troubleshooting Server Connection
-
-**If you see a red dot in your MCP client:**
-
-1. **Check server configuration:**
-```bash
-# Test the server can start
-/path/to/foundry-testing-mcp/venv/bin/python /path/to/foundry-testing-mcp/run_clean.py
-```
-
-2. **Verify paths in MCP configuration:**
-```json
-{
-  "mcpServers": {
-    "foundry-testing": {
-      "command": "/Users/yourname/foundry-testing-mcp/venv/bin/python",
-      "args": ["/Users/yourname/foundry-testing-mcp/run_clean.py"]
-    }
-  }
-}
-```
-
-3. **Check for conflicting servers:**
-```bash
-# Kill any existing server processes
-pkill -f "run_clean.py"
-pkill -f "run.py"
-```
-
-4. **Verify virtual environment:**
-```bash
-# Ensure FastMCP is installed in the virtual environment
-/path/to/foundry-testing-mcp/venv/bin/python -c "import fastmcp; print('FastMCP available')"
-```
-
-### Troubleshooting Directory Detection
-
-**If the server detects the wrong project directory:**
-
-**Symptom**: Server reports project path as `/Users/username` instead of your actual project directory like `/Users/username/path/to/your-project`.
-
-**Diagnosis**:
-```
-debug_directory_detection()
-```
-
-This tool will show you exactly what directory the server is detecting and provide specific troubleshooting advice.
-
-**Solutions**:
-
-1. **Set environment variables in MCP client configuration:**
-```json
-{
-  "mcpServers": {
-    "foundry-testing": {
-      "command": "/path/to/foundry-testing-mcp/venv/bin/python",
-      "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
-      "cwd": "/path/to/your-project",
-      "env": {
-        "MCP_CLIENT_CWD": "/path/to/your-project",
-        "MCP_PROJECT_PATH": "/path/to/your-project"
-      }
-    }
-  }
-}
-```
-
-2. **Verify your MCP client is running from the correct directory:**
-   - Ensure your MCP client (Cursor, Claude Desktop) is working within your project directory
-   - Check the `cwd` (current working directory) in your MCP configuration
-
-3. **Manual verification:**
-```bash
-# Check if you're in the right directory
-ls foundry.toml  # Should exist in your project root
-ls src/          # Should contain your contracts
-ls test/         # Should contain or be ready for tests
-```
-
-**Expected directory structure:**
-```
-your-project/              ← MCP should detect this path
-├── foundry.toml          ← Foundry configuration
-├── src/                  ← Your contracts
-├── test/                 ← Test files  
-├── script/               ← Deploy scripts
-└── lib/                  ← Dependencies
-```
-
-### Development vs Production Modes
-
-| Mode | Script | Use Case | Output |
-|------|--------|----------|--------|
-| **Production** | `run_clean.py` | MCP client integration | Silent (MCP protocol only) |
-| **Development** | `run.py` | Local debugging | Verbose logging and banner |
-
-**When to use each:**
-- **`run_clean.py`**: Always use for Cursor, Claude Desktop, or other MCP clients
-- **`run.py`**: Use for development, debugging, and understanding server behavior
+The Foundry Testing MCP v2.0 transforms smart contract testing from generic AI guidance into professional-grade consulting that understands your project, builds on your work, and applies industry-leading security methodologies throughout your development process.
