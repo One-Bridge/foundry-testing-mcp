@@ -274,7 +274,7 @@ class FoundryAdapter:
             command.append("--gas-report")
         
         # Add verbose output for better parsing
-        command.extend(["-vvv", "--json"])
+        command.extend(["-vvvvv", "--json"])
         
         returncode, stdout, stderr = await self._run_command(command, cwd=project_path)
         
