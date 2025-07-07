@@ -30,10 +30,10 @@ Revolutionary AI-powered testing framework for Solidity smart contracts using th
 - **Security Test Patterns** - Access control and vulnerability testing
 
 ### 📊 **Intelligent Analysis & Reporting**
-- **AI Failure Detection** - Prevents false confidence from flawed AI-generated tests
-- **Professional Security Integration** - Trail of Bits, OpenZeppelin, ConsenSys methodologies
-- **Real Coverage Analysis** - Parses actual `forge coverage` output for accurate gap identification
-- **Context-Aware Recommendations** - Builds on your existing work instead of restarting
+- **AI Failure Detection** - Detects 8 critical failure types: circular logic, mock cheating, always-passing tests, missing edge cases, security gaps, inadequate randomization, missing negative tests, implementation dependency
+- **Professional Security Integration** - Trail of Bits, OpenZeppelin, ConsenSys methodologies with DeFi-specific attack scenarios
+- **Real Coverage Analysis** - Parses actual `forge coverage` output in multiple formats (lcov, summary, json) for accurate gap identification
+- **Context-Aware Recommendations** - 5-tier project maturity assessment that builds on your existing work instead of restarting
 
 ## 🚀 Quick Start
 
@@ -84,22 +84,47 @@ python run.py
 ## 🏗️ Architecture
 
 ```
-smart-contract-testing-mcp/
-├── components/                    # Core MCP components
-│   ├── testing_server.py         # Main FastMCP server
-│   ├── foundry_adapter.py        # Foundry CLI integration
-│   ├── testing_tools.py          # Interactive workflow tools  
-│   ├── testing_resources.py      # MCP resources (docs, templates)
-│   └── testing_prompts.py        # AI guidance prompts
-├── templates/                     # Solidity test templates
-│   ├── test_contract_template.sol # Unit test template
-│   ├── invariant_test_template.sol # Invariant test template
+foundry-testing-mcp/
+├── components/                      # Core MCP components
+│   ├── testing_server.py           # Main FastMCP server and MCP protocol handling
+│   ├── foundry_adapter.py          # Foundry CLI integration and tool coordination
+│   ├── testing_tools.py            # Interactive workflow tools and MCP tool definitions
+│   ├── project_analyzer.py         # Project state analysis and testing maturity assessment
+│   ├── ai_failure_detector.py      # AI-generated test quality assurance (8 failure types)
+│   ├── testing_resources.py        # MCP resources (docs, templates, patterns)
+│   ├── testing_prompts.py          # Professional testing guidance and prompts
+│   └── __init__.py                 # Component initialization and exports
+├── templates/                       # Solidity test templates
+│   ├── test_contract_template.sol   # Unit test template
+│   ├── invariant_test_template.sol  # Invariant test template
 │   └── integration_test_template.sol # Integration test template
-├── docs/                          # Documentation
-├── run_clean.py                   # MCP client server runner (production)
-├── run.py                         # Development server runner (debugging)
-└── requirements.txt               # Python dependencies
+├── docs/                            # Comprehensive documentation
+│   ├── executive-summary.md         # Business overview and value proposition
+│   ├── function-map.md              # Complete technical function reference
+│   └── technical-architecture-guide.md # Implementation details
+├── run_clean.py                     # MCP client server runner (production)
+├── run.py                           # Development server runner (debugging)
+└── requirements.txt                 # Python dependencies
 ```
+
+### Component Architecture
+
+**Core System Components:**
+- **`testing_server.py`**: FastMCP server that coordinates all MCP protocol communication
+- **`testing_tools.py`**: Defines all 7 MCP tools available to AI clients with parameter validation
+- **`project_analyzer.py`**: Analyzes project state, testing maturity (5 levels), and calculates contract risk scores
+- **`ai_failure_detector.py`**: Detects 8 types of AI-generated test failures to prevent false confidence
+- **`foundry_adapter.py`**: Real Foundry tool integration parsing `forge coverage`, `forge test` output
+- **`testing_resources.py`**: Dynamic MCP resources providing templates and professional guidance
+- **`testing_prompts.py`**: Professional testing methodologies from leading security audit firms
+
+**Integration Flow:**
+1. **MCP Client** connects via `testing_server.py`
+2. **User calls tools** defined in `testing_tools.py`
+3. **Project analysis** via `project_analyzer.py` determines current state
+4. **AI failure detection** via `ai_failure_detector.py` ensures test quality
+5. **Foundry integration** via `foundry_adapter.py` provides real tool coordination
+6. **Professional guidance** via `testing_prompts.py` and `testing_resources.py`
 
 ## 🎯 Core Workflows
 
