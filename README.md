@@ -13,9 +13,9 @@ Revolutionary AI-powered testing framework for Solidity smart contracts using th
 
 ### 🤖 **Interactive AI-Guided Workflows**
 - **Initialize Protocol Testing Agent** - Choose from guided workflow paths
-- **Multi-Phase Testing Execution** - Structured 4-phase testing approach  
-- **Real-time Recommendations** - AI-powered testing strategy suggestions
-- **Session Management** - Save, load, and continue testing sessions
+- **Context-Aware Analysis** - Understands your current project state and testing maturity
+- **AI Failure Detection** - Identifies 8 types of problematic AI-generated test patterns
+- **Adaptive Workflows** - Six specialized workflows that build on existing work
 
 ### 🔧 **Deep Foundry Integration**
 - **Comprehensive CLI Integration** - `forge test`, `forge coverage`, gas analysis
@@ -30,10 +30,10 @@ Revolutionary AI-powered testing framework for Solidity smart contracts using th
 - **Security Test Patterns** - Access control and vulnerability testing
 
 ### 📊 **Intelligent Analysis & Reporting**
-- **Coverage Gap Analysis** - Identify untested code paths
-- **Security Assessment** - Vulnerability detection and testing
-- **Performance Metrics** - Gas optimization recommendations
-- **Documentation Generation** - Automated testing documentation
+- **AI Failure Detection** - Prevents false confidence from flawed AI-generated tests
+- **Professional Security Integration** - Trail of Bits, OpenZeppelin, ConsenSys methodologies
+- **Real Coverage Analysis** - Parses actual `forge coverage` output for accurate gap identification
+- **Context-Aware Recommendations** - Builds on your existing work instead of restarting
 
 ## 🚀 Quick Start
 
@@ -123,40 +123,34 @@ initialize_protocol_testing_agent(
 
 ### 2. Execute Testing Workflow
 
-**4-Phase Structured Approach:**
+**Six Adaptive Workflow Types:**
 
-#### Phase 1: Contract Analysis & Discovery
-- Scan and analyze all contracts
-- Map dependencies and inheritance
-- Identify critical functions and attack vectors
-- Generate security assessment
+**For New Projects:**
+- **`create_foundational_suite`** - Build testing infrastructure from scratch
+- **`create_new_suite`** - Comprehensive new test suite creation
 
-#### Phase 2: Test Architecture Design  
-- Design comprehensive test structure
-- Define coverage strategy and targets
-- Plan test categories and organization
-- Create implementation roadmap
+**For Existing Projects:**
+- **`evaluate_existing`** - Enhance and build on current tests
+- **`comprehensive`** - Full-scope testing improvement
+- **`security`** - Security-focused testing enhancement
+- **`defi_security_testing`** - DeFi-specific vulnerability testing
 
-#### Phase 3: Test Implementation
-- Generate professional test templates
-- Implement unit, integration, and security tests
-- Create invariant and fuzz test suites
-- Setup test utilities and helpers
-
-#### Phase 4: Coverage Analysis & Optimization
-- Run comprehensive coverage analysis
-- Identify and address gaps
-- Optimize test performance
-- Generate documentation and CI/CD integration
+**Each workflow includes:**
+- Context-aware phase planning based on current project state
+- Professional security methodology integration  
+- AI failure detection and quality assurance
+- Real Foundry tool coordination for accurate analysis
 
 ## 🛠️ MCP Components
 
 ### Tools
-- `initialize_protocol_testing_agent` - Main workflow entry point
-- `execute_testing_workflow` - Structured testing execution
-- `analyze_test_coverage` - Coverage analysis with recommendations
-- `generate_comprehensive_tests` - Automated test generation
-- `manage_testing_session` - Session state management
+- `initialize_protocol_testing_agent` - Main workflow entry point with project analysis
+- `analyze_project_context` - Deep analysis with AI failure detection
+- `execute_testing_workflow` - Structured testing execution with adaptive workflows
+- `analyze_current_test_coverage` - Real coverage analysis with gap identification
+- `validate_current_project` - Project validation and troubleshooting
+- `debug_directory_detection` - Advanced directory troubleshooting
+- `get_server_info` - Server capabilities and usage guidance
 
 ### Resources  
 - `testing/foundry-patterns` - Best practices and patterns
@@ -262,6 +256,36 @@ Add to your MCP configuration (`~/.cursor/mcp.json` or Claude Desktop settings):
 
 ## 🎨 Usage Examples
 
+### Context-Aware Analysis
+
+**What makes this different from generic AI tools:**
+
+```python
+# Generic AI: "Start by writing unit tests for your contract functions..."
+# This MCP: Analyzes your actual project first
+
+result = await initialize_protocol_testing_agent()
+# Returns context-aware recommendations:
+# "Excellent foundation! 95 tests with 90% coverage detected. 
+#  You're at Production level. Next: Add property-based testing 
+#  and economic attack scenarios."
+```
+
+### AI Failure Detection in Action
+
+```python
+# Automatically detects problematic AI-generated tests
+analysis = await analyze_project_context(
+    include_ai_failure_detection=True
+)
+
+# Detects issues like:
+# - Circular logic: assertEq(contract.balance(), contract.balance())
+# - Mock cheating: Mocks that always return expected values  
+# - Always-passing tests: assertTrue(true)
+# - Missing security scenarios
+```
+
 ### Basic Testing Workflow
 
 ```python
@@ -279,9 +303,9 @@ workflow = await execute_testing_workflow(
 )
 
 # 3. Analyze coverage
-coverage = await analyze_test_coverage(
-    project_path="./my-protocol",
-    target_coverage=95
+coverage = await analyze_current_test_coverage(
+    target_coverage=95,
+    include_branches=True
 )
 ```
 
@@ -289,11 +313,9 @@ coverage = await analyze_test_coverage(
 
 ```python
 # Get detailed coverage analysis with recommendations
-analysis = await analyze_test_coverage(
-    project_path="./defi-protocol",
+analysis = await analyze_current_test_coverage(
     target_coverage=90,
-    include_branches=True,
-    detailed_report=True
+    include_branches=True
 )
 
 # Result includes:
@@ -458,30 +480,38 @@ Once connected through your MCP client:
 ### Core Workflow Tools
 
 1. **`initialize_protocol_testing_agent()`**
-   - Initialize testing session in your project directory
-   - Analyzes project structure and recommends workflows
+   - Analyzes current project state and testing maturity 
+   - Recommends appropriate workflows based on existing work
+   - Entry point that understands your project context
 
-2. **`execute_testing_workflow()`**
-   - Execute 4-phase structured testing workflow
-   - Supports "create_new_suite" and "evaluate_existing" modes
+2. **`analyze_project_context()`**
+   - Deep analysis with AI failure detection (8 failure types)
+   - Calculates contract risk scores and security assessment
+   - Generates prioritized improvement plans
 
-3. **`analyze_current_test_coverage()`**
-   - Generate comprehensive coverage reports
-   - Identifies gaps and provides actionable recommendations
+3. **`execute_testing_workflow()`**
+   - Six adaptive workflow types that build on existing tests
+   - Supports "create_new_suite", "evaluate_existing", "comprehensive", "security"
+   - Context-aware phase planning with specific deliverables
 
-4. **`validate_current_project()`**
-   - Validates Foundry project structure
-   - Provides setup guidance and troubleshooting
+4. **`analyze_current_test_coverage()`**
+   - Parses real `forge coverage` output for accurate analysis
+   - Identifies specific gaps with actionable recommendations
+   - Compares against target coverage goals
 
-### AI Analysis Tools
+### Project Validation Tools
 
-5. **`get_server_info()`**
-   - Server status and usage instructions
-   - Troubleshooting guidance
+5. **`validate_current_project()`**
+   - Validates Foundry project structure and installation
+   - Comprehensive environment checks and setup guidance
 
 6. **`debug_directory_detection()`**
-   - Debug directory detection issues
-   - Provides specific troubleshooting advice for path resolution problems
+   - Advanced troubleshooting for MCP directory detection issues
+   - Provides specific fixes for path resolution problems
+
+7. **`get_server_info()`**
+   - Complete server capabilities and tool overview
+   - Usage guidance and quick start instructions
 
 ## 📚 Resources Available
 
