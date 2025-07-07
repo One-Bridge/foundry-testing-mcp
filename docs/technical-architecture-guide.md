@@ -48,6 +48,7 @@ The Foundry Testing MCP v2.0 provides context-aware, professional-grade smart co
             │  │ • analyze_current_test_coverage        │    │
             │  │ • validate_current_project             │    │
             │  │ • debug_directory_detection            │    │
+            │  │ • get_server_info                      │    │
             │  └─────────────────────────────────────────┘    │
             └─────────────────────────────────────────────────┘
                               │
@@ -284,6 +285,11 @@ security_patterns = {
 - **Purpose**: Advanced troubleshooting for MCP directory/path issues
 - **Diagnostics**: Environment variable analysis, path resolution debugging
 - **Output**: Specific configuration fixes and troubleshooting guidance
+
+**ℹ️ get_server_info**
+- **Purpose**: Comprehensive server information and capability overview
+- **Capabilities**: Tool catalog, workflow relationships, usage guidance
+- **Output**: Complete documentation of available tools and best practices
 
 ### 5. Enhanced Foundry Integration
 

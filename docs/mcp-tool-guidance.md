@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides comprehensive guidance for using the Foundry Testing MCP v2.0 tools effectively. The system includes six primary tools designed to provide context-aware testing assistance for smart contract development.
+This document provides comprehensive guidance for using the Foundry Testing MCP v2.0 tools effectively. The system includes seven primary tools designed to provide context-aware testing assistance for smart contract development.
 
 ## Tool Overview and Relationships
 
@@ -40,6 +40,11 @@ This document provides comprehensive guidance for using the Foundry Testing MCP 
 - **When to Use**: Tools report wrong directory or can't find project files
 - **Output**: Directory detection analysis, configuration guidance
 
+**get_server_info** (Server Information)
+- **Purpose**: Provides comprehensive information about server capabilities and usage guidance
+- **When to Use**: First time using the MCP server or need to understand available tools
+- **Output**: Complete tool catalog, workflow relationships, quick start instructions
+
 ## Recommended Workflows
 
 ### Workflow 1: New Project Testing
@@ -49,10 +54,10 @@ This document provides comprehensive guidance for using the Foundry Testing MCP 
 ```
 1. initialize_protocol_testing_agent
    → Analyzes project structure
-   → Recommends "create_new_suite" workflow
+   → Recommends "create_foundational_suite" workflow
    
 2. execute_testing_workflow
-   → workflow_type: "create_new_suite"
+   → workflow_type: "create_foundational_suite"
    → objectives: "Create comprehensive test suite"
    → scope: "comprehensive"
    
@@ -70,7 +75,7 @@ This document provides comprehensive guidance for using the Foundry Testing MCP 
 ```
 1. initialize_protocol_testing_agent
    → Analyzes existing tests and contracts
-   → Recommends "evaluate_existing" workflow
+   → Recommends "expand_test_coverage" or "enhance_security_testing" workflow
    
 2. analyze_project_context
    → include_ai_failure_detection: true
@@ -78,7 +83,7 @@ This document provides comprehensive guidance for using the Foundry Testing MCP 
    → Provides detailed analysis and prioritized improvements
    
 3. execute_testing_workflow
-   → workflow_type: "evaluate_existing"
+   → workflow_type: "expand_test_coverage" or "enhance_security_testing"
    → objectives: Based on analysis results
    → scope: "comprehensive"
    
@@ -201,7 +206,7 @@ This document provides comprehensive guidance for using the Foundry Testing MCP 
 2. Review AI failure report for specific quality issues
 
 3. execute_testing_workflow
-   → workflow_type: "evaluate_existing"
+   → workflow_type: "expand_test_coverage" 
    → objectives: "Fix test quality issues and improve real coverage"
    → Focus on fixing identified problems rather than adding more tests
 ```
