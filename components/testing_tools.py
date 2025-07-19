@@ -59,7 +59,8 @@ class TestingTools:
     
     def __init__(self, foundry_adapter: FoundryAdapter, 
                  project_analyzer: Optional[ProjectAnalyzer] = None,
-                 ai_failure_detector: Optional[AIFailureDetector] = None):
+                 ai_failure_detector: Optional[AIFailureDetector] = None,
+                 testing_resources=None):
         """
         Initialize intelligent testing tools with enhanced dependency injection.
         
@@ -67,12 +68,14 @@ class TestingTools:
             foundry_adapter: The Foundry adapter instance  
             project_analyzer: Optional ProjectAnalyzer with AST capabilities
             ai_failure_detector: Optional AIFailureDetector with semantic analysis
+            testing_resources: Optional TestingResources for template access
         """
         self.foundry_adapter = foundry_adapter
         
         # Use injected dependencies or create new ones for backward compatibility
         self.project_analyzer = project_analyzer or ProjectAnalyzer(foundry_adapter)
         self.ai_failure_detector = ai_failure_detector or AIFailureDetector()
+        self.testing_resources = testing_resources
         
         self.active_sessions: Dict[str, TestingSession] = {}
         
@@ -1075,6 +1078,67 @@ class TestingTools:
         
         logger.info("Testing tools registered successfully")
     
+    # Template access helper methods
+    async def _get_template_content(self, template_type: str) -> Dict[str, Any]:
+        """Get template content and placeholders from testing resources."""
+        if not self.testing_resources:
+            return {
+                "name": f"{template_type.title()} Template",
+                "content": f"# {template_type.title()} template not available - TestingResources not initialized",
+                "placeholders": [],
+                "usage_instructions": ["Template system not available"]
+            }
+        
+        try:
+            template_content, placeholders = await self.testing_resources._load_template(template_type)
+            usage_instructions = self.testing_resources._get_template_usage_instructions(template_type)
+            
+            return {
+                "name": f"{template_type.title()} Test Template",
+                "description": f"Production-ready template for {template_type} testing scenarios",
+                "template_type": template_type,
+                "content": template_content,
+                "placeholders": placeholders,
+                "usage_instructions": usage_instructions
+            }
+        except Exception as e:
+            logger.warning(f"Could not load {template_type} template: {e}")
+            return {
+                "name": f"{template_type.title()} Template",
+                "content": f"# Template loading error: {e}",
+                "placeholders": [],
+                "usage_instructions": ["Template could not be loaded"]
+            }
+    
+    async def _get_foundry_patterns(self) -> Dict[str, Any]:
+        """Get Foundry testing patterns from testing resources."""
+        if not self.testing_resources:
+            return {"content": {"error": "TestingResources not initialized"}}
+        
+        # Return simplified patterns for now since the actual resource access is complex
+        return {
+            "content": {
+                "test_organization": {
+                    "description": "Recommended test file organization grouped by functionality and test type.",
+                    "file_structure_pattern": """
+test/
+├── {{CONTRACT_NAME}}.t.sol                    # Core unit and integration tests
+├── {{CONTRACT_NAME}}.invariant.t.sol          # Invariant/property-based tests
+├── {{CONTRACT_NAME}}.security.t.sol           # Security-focused tests
+├── {{CONTRACT_NAME}}.fork.t.sol               # Mainnet fork tests
+├── handlers/
+│   └── {{CONTRACT_NAME}}Handler.sol           # Handler for invariant testing
+├── mocks/
+│   ├── Mock{{DEPENDENCY_NAME}}.sol
+│   └── MockERC20.sol
+└── utils/
+    ├── TestHelper.sol
+    └── TestConstants.sol
+                    """
+                }
+            }
+        }
+    
     # Helper methods
     async def _analyze_project_structure(self, project_path: str) -> Dict[str, Any]:
         """Analyze project structure and provide insights."""
@@ -1214,7 +1278,17 @@ class TestingTools:
         }
         
         # Generate contextual phases based on workflow type and current state
-        if workflow_type == "enhance_security_testing":
+        if workflow_type in ["create_new_suite", "from_scratch", "comprehensive"]:
+            base_plan["execution_phases"] = await self._generate_create_new_suite_phases(current_context, project_path)
+            base_plan["success_criteria"] = [
+                "Complete test suite infrastructure established",
+                "Unit tests covering all core functions", 
+                "Security tests for identified vulnerabilities",
+                "Coverage targets achieved (80%+ minimum)",
+                "Professional testing patterns implemented"
+            ]
+            
+        elif workflow_type == "enhance_security_testing":
             base_plan["execution_phases"] = await self._generate_security_focused_phases(current_context)
             base_plan["success_criteria"] = [
                 "All security vulnerability patterns tested",
@@ -1814,6 +1888,119 @@ class TestingTools:
         }
     
     # Contextual workflow phase generators
+    async def _generate_create_new_suite_phases(self, context: Dict[str, Any], project_path: str) -> List[Dict[str, Any]]:
+        """Generate create new suite phases with actual template content injection."""
+        # Get contract names from project analysis
+        try:
+            project_state = await self.project_analyzer.analyze_project(project_path)
+            contract_names = [c.contract_name for c in project_state.contracts]
+            primary_contract = contract_names[0] if contract_names else "Portfolio"
+        except Exception:
+            primary_contract = "Portfolio"
+            contract_names = [primary_contract]
+        
+        # Load actual template content
+        unit_template = await self._get_template_content("unit")
+        security_template = await self._get_template_content("security")
+        helper_template = await self._get_template_content("helper")
+        foundry_patterns = await self._get_foundry_patterns()
+        
+        return [
+            {
+                "phase": 1,
+                "title": "Test Infrastructure Setup",
+                "description": f"Establish comprehensive testing infrastructure for {primary_contract} contract",
+                "actions": [
+                    "Set up test directory structure following Foundry best practices",
+                    "Create helper utilities and common test setup",
+                    "Establish testing conventions and patterns",
+                    "Configure coverage monitoring"
+                ],
+                "deliverables": [
+                    "Test directory structure",
+                    "TestHelper.sol utility contract",
+                    "Base test setup patterns",
+                    "Coverage configuration"
+                ],
+                "template_content": {
+                    "file_structure": foundry_patterns["content"]["test_organization"]["file_structure_pattern"],
+                    "helper_template": {
+                        "filename": "test/utils/TestHelper.sol",
+                        "content": helper_template["content"],
+                        "placeholders": helper_template["placeholders"],
+                        "usage": helper_template["usage_instructions"]
+                    }
+                }
+            },
+            {
+                "phase": 2,
+                "title": "Core Unit Test Implementation",
+                "description": f"Implement comprehensive unit tests for {primary_contract} functions",
+                "actions": [
+                    "Create primary unit test file with complete function coverage",
+                    "Implement test cases for all public and external functions",
+                    "Add edge case testing and error condition validation",
+                    "Establish consistent testing patterns"
+                ],
+                "deliverables": [
+                    f"{primary_contract}.t.sol - Primary unit test file",
+                    "Complete function coverage tests",
+                    "Edge case and error condition tests",
+                    "Event emission verification"
+                ],
+                "template_content": {
+                    "unit_template": {
+                        "filename": f"test/{primary_contract}.t.sol",
+                        "content": unit_template["content"].replace("{{CONTRACT_NAME}}", primary_contract),
+                        "placeholders": [p.replace("{{CONTRACT_NAME}}", primary_contract) for p in unit_template["placeholders"]],
+                        "usage": unit_template["usage_instructions"]
+                    }
+                }
+            },
+            {
+                "phase": 3,
+                "title": "Security & Advanced Testing",
+                "description": f"Implement security testing and advanced test patterns for {primary_contract}",
+                "actions": [
+                    "Create comprehensive security test suite",
+                    "Implement access control and authorization testing",
+                    "Add reentrancy and economic attack simulations",
+                    "Establish fuzz testing for critical functions"
+                ],
+                "deliverables": [
+                    f"{primary_contract}.security.t.sol - Security test file",
+                    "Access control penetration tests",
+                    "Attack scenario simulations",
+                    "Fuzz testing implementation"
+                ],
+                "template_content": {
+                    "security_template": {
+                        "filename": f"test/{primary_contract}.security.t.sol",
+                        "content": security_template["content"].replace("{{CONTRACT_NAME}}", primary_contract),
+                        "placeholders": [p.replace("{{CONTRACT_NAME}}", primary_contract) for p in security_template["placeholders"]],
+                        "usage": security_template["usage_instructions"]
+                    }
+                }
+            },
+            {
+                "phase": 4,
+                "title": "Coverage Validation & Quality Assurance",
+                "description": "Validate coverage targets and ensure test quality standards",
+                "actions": [
+                    "Run comprehensive coverage analysis",
+                    "Validate 80%+ line and branch coverage",
+                    "Review test quality and eliminate AI failure patterns",
+                    "Document testing approach and results"
+                ],
+                "deliverables": [
+                    "Coverage validation report",
+                    "Test quality assessment",
+                    "Documentation and README updates",
+                    "CI/CD integration recommendations"
+                ]
+            }
+        ]
+    
     async def _generate_security_focused_phases(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Generate security-focused workflow phases based on current context."""
         return [

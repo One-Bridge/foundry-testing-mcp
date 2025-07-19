@@ -80,16 +80,17 @@ class TestingMCPServer:
         logger.debug("-> Initializing AI Failure Detector with AST support...")
         self.ai_failure_detector = AIFailureDetector()
         
+        logger.debug("-> Initializing TestingResources...")
+        self.testing_resources = TestingResources()
+        
         # Main service components with explicit dependency injection
         logger.debug("-> Initializing TestingTools with all dependencies...")
         self.testing_tools = TestingTools(
             foundry_adapter=self.foundry_adapter,
             project_analyzer=self.project_analyzer,
-            ai_failure_detector=self.ai_failure_detector
+            ai_failure_detector=self.ai_failure_detector,
+            testing_resources=self.testing_resources
         )
-        
-        logger.debug("-> Initializing TestingResources...")
-        self.testing_resources = TestingResources()
         
         logger.debug("-> Initializing TestingPrompts...")
         self.testing_prompts = TestingPrompts()
