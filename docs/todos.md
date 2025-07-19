@@ -1,0 +1,2 @@
+1/ Ask the user to provide any docs, content, descriptions, testing targets, failure modes, anticipated attacks, or other contextual information that would help the agent tailor a testing suite to the particular functionality and security surface area.  
+2/ 

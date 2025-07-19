@@ -256,7 +256,32 @@ ENABLE_GAS_OPTIMIZATION=true
 
 ### Integration with Cursor/Claude
 
-Add to your MCP configuration (`~/.cursor/mcp.json` or Claude Desktop settings):
+**🎯 Simple and Effective** - The MCP works with your current directory - no complex detection, just works where you are!
+
+#### Option 1: Dynamic Configuration (Recommended)
+Use this project-agnostic configuration that works with any Foundry project:
+
+```json
+{
+  "mcpServers": {
+    "foundry-testing": {
+      "command": "/path/to/foundry-testing-mcp/venv/bin/python",
+      "args": ["/path/to/foundry-testing-mcp/run_clean.py"],
+      "env": {
+        "MCP_TRANSPORT_MODE": "stdio"
+      }
+    }
+  }
+}
+```
+
+**How it works:**
+- 🔍 **Auto-detects** your current project directory from environment variables
+- 🔄 **Works with any project** - no need to change configuration when switching projects
+- 💡 **Smart fallbacks** - provides clear guidance if detection fails
+
+#### Option 2: Static Configuration (For specific projects)
+If you want to lock the MCP to a specific project:
 
 ```json
 {
@@ -274,10 +299,15 @@ Add to your MCP configuration (`~/.cursor/mcp.json` or Claude Desktop settings):
 }
 ```
 
-**Important**: 
+#### Configuration Notes:
 - Replace `/path/to/foundry-testing-mcp` with the actual path to your MCP server installation
-- Replace `/path/to/your-project` with the path to your Foundry project directory
-- The `cwd` and `MCP_CLIENT_CWD` settings ensure the server detects the correct project directory
+- For **Option 2**, replace `/path/to/your-project` with your specific project path
+- Use **Option 1** for maximum flexibility across multiple projects
+
+**🎛️ Override Project Path**: All MCP tools now accept an optional `project_path` parameter:
+```
+initialize_protocol_testing_agent(project_path="/path/to/specific/project")
+```
 
 ## 🎨 Usage Examples
 
@@ -622,23 +652,31 @@ pip install -e .
 
 This is a common issue where the MCP server detects the wrong project directory. The server might show:
 - `"project_path": "/Users/username"` (home directory)
+- `"project_path": "/Users/username/foundry-testing-mcp"` (server directory)
 - But your actual project is at `/Users/username/path/to/your-project`
 
 **Root Cause:**
 The MCP server is using its own working directory instead of your project directory.
 
+**⚠️ Enhanced Detection:**
+The server now automatically detects when it's running from its own directory and provides specific warnings:
+```
+⚠️  MCP server is using its own directory: /path/to/foundry-testing-mcp
+This usually means the MCP client didn't set the correct working directory.
+```
+
 **Solutions:**
 
-1. **Set environment variables in MCP client configuration:**
+1. **REQUIRED: Set working directory in MCP client configuration:**
 ```json
 {
   "mcpServers": {
     "foundry-testing": {
       "command": "/path/to/venv/bin/python",
       "args": ["/path/to/run_clean.py"],
-      "cwd": "/path/to/your-project",
+      "cwd": "/path/to/your-project",  // ← REQUIRED
       "env": {
-        "MCP_CLIENT_CWD": "/path/to/your-project",
+        "MCP_CLIENT_CWD": "/path/to/your-project",  // ← REQUIRED
         "MCP_PROJECT_PATH": "/path/to/your-project"
       }
     }
@@ -646,30 +684,26 @@ The MCP server is using its own working directory instead of your project direct
 }
 ```
 
-2. **Use the debugging tool:**
+2. **Use the debugging tool for detailed guidance:**
 ```
 debug_directory_detection()
 ```
 This will show you exactly what directory the server is detecting and provide specific troubleshooting advice.
 
-3. **Pass project path explicitly:**
+3. **Validate your setup:**
 ```
-initialize_protocol_testing_agent()
 validate_current_project()
 ```
-These tools will work with any detected directory and provide guidance if it's incorrect.
+This tool will verify if the server can find your Foundry project correctly.
 
-4. **Check MCP client logs:**
-The server now logs directory detection information to help diagnose issues:
-```
-Using MCP client working directory: /path/to/your-project
-```
+4. **Check server warnings:**
+The server now provides clear warnings when directory detection fails and specific steps to fix the issue.
 
 **Directory Detection Priority:**
 1. Explicitly provided project path
 2. `MCP_CLIENT_CWD` environment variable  
 3. `MCP_PROJECT_PATH` environment variable
-4. Server's current working directory (fallback with warning)
+4. Server's current working directory (with enhanced warnings)
 
 ## 🏗️ Development Setup
 
@@ -763,3 +797,33 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Transform your smart contract testing today!** 🚀
 
 *For support, please open an issue or contact the maintainers.* 
+
+## 🤖 **Simple and Effective**
+
+The MCP works with the **current directory** - simple and reliable:
+
+### **How It Works**
+- 📁 **Current Directory**: Works with whatever Foundry project you're currently in
+- ✅ **Clear Validation**: Tells you immediately if current directory is valid
+- 🎯 **No Magic**: No complex auto-detection - just works where you are
+
+### **For AI Agents: Getting Started**
+```
+# Validate current directory first
+validate_current_directory()
+
+# Then use tools in current project
+initialize_protocol_testing_agent()
+execute_testing_workflow(workflow_type="create_new_suite", objectives="comprehensive testing")
+```
+
+### **Usage Pattern**
+1. **Navigate to your Foundry project** (`cd /path/to/your/project`)
+2. **Validate the setup** (`validate_current_directory()`)
+3. **Start testing** (`initialize_protocol_testing_agent()`)
+
+### **Clear Error Handling**
+When things go wrong, you get:
+- 🔧 **Clear error messages** about what's missing
+- 📋 **Specific next steps** to fix the issue
+- ✅ **Simple validation** to confirm setup 

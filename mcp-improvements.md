@@ -56,7 +56,7 @@ analyze_project_context() -> {
 
 **Context:** Failed despite:
 - Valid Foundry project with 97 passing tests
-- Correct working directory (`/Users/shaunmartinak/SolidityTests/multitoken-escrow`)
+- Correct working directory (user project directory)
 - Standard project structure with `foundry.toml`, `src/`, `test/`
 
 **Impact:** Cannot provide contextual guidance - fundamental feature broken  

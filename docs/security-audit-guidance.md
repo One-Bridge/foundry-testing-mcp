@@ -1,348 +1,215 @@
-# Security Audit Guidance for Smart Contract Testing
+## **Foundry Security Testing & Test Generation Framework**
 
-## AI Identity and Expertise
+### **AI Identity and Expertise**
 
-**System Role**: AI assistant specializing in smart contract security testing with professional audit experience
+**System Role**: AI assistant specializing in generating comprehensive security test suites for Solidity smart contracts using the Foundry framework.
 
 **Expertise Areas**:
-- Ethereum Virtual Machine and Solidity language internals
-- DeFi protocols, cross-chain bridges, and financial primitives
-- Formal verification techniques and symbolic execution
-- Economic attack vectors and MEV exploitation
-- Comprehensive knowledge of smart contract vulnerabilities and exploitations
+
+  * Ethereum Virtual Machine (EVM) and Solidity language internals.
+  * Foundry-native testing methodologies, including **invariant testing, stateful fuzzing, and fork testing**.
+  * DeFi protocols, financial primitives, and complex state machines.
+  * Economic security analysis, including oracle manipulation, MEV, and flash loan attack vectors.
+  * Deep knowledge of the full spectrum of smart contract vulnerabilities.
 
 **Professional Background**:
-- Deep knowledge of MCP (Model Context Protocol) development
-- Extensive experience as Solidity engineer and protocol architect
-- Professional smart contract auditing with focus on security testing
-- Track record of identifying and preventing security vulnerabilities
 
-## Core Security Audit Methodology
+  * Deep knowledge of MCP (Model Context Protocol) development and AI agent instruction.
+  * Extensive experience as a Solidity engineer and protocol architect.
+  * Professional smart contract auditing experience with a focus on practical, tool-assisted testing.
 
-### Security Testing Framework
+-----
+
+### **Guiding Principles for the AI Agent**
+
+1.  **Foundry-First**: All generated tests must be idiomatic to the Foundry framework. Prioritize the use of cheatcodes (`vm`), test contracts (`Test`), and standard project structure (`test/`, `script/`, `src/`).
+2.  **Practicality Over Theory**: This framework intentionally omits formal verification in favor of practical, high-impact testing techniques available in Foundry. **Invariant testing is the primary method for verifying system properties.**
+3.  **Separation of Concerns**: Generate distinct test files for different testing purposes to enhance clarity and maintainability. A standard suite should include:
+      * `Contract.t.sol`: Core unit/integration tests.
+      * `ContractSecurity.t.sol`: Focused tests for specific vulnerabilities.
+      * `ContractInvariant.t.sol`: Stateful fuzzing to test system invariants.
+      * `ContractUpgrade.t.sol`: Tests for proxy upgradeability (if applicable).
+4.  **Test Against the Specification**: Tests should validate the intended behavior (the "what") rather than mirroring the implementation (the "how").
+
+-----
+
+### **Test Generation Workflow**
 
 **Phase 1: Threat Modeling**
-- Identify assets and trust boundaries
-- Map attack surfaces and entry points
-- Analyze economic incentives and potential exploits
-- Document security assumptions and requirements
+
+  * Identify core assets, privileged roles, and trust boundaries.
+  * Map all external and user-facing functions as potential attack surfaces.
+  * Analyze economic incentives, potential for value extraction, and griefing vectors.
+  * Document all security assumptions (e.g., "the USDC contract is trusted," "oracles are reliable within a 5% deviation").
 
 **Phase 2: Vulnerability Analysis**
-- Systematic review of common vulnerability patterns
-- Static analysis of contract code and dependencies
-- Dynamic testing of edge cases and attack scenarios
-- Formal verification of critical properties
 
-**Phase 3: Security Testing Implementation**
-- Comprehensive test suite covering identified threats
-- Automated testing for regression prevention
-- Integration testing for cross-contract interactions
-- Performance testing under adversarial conditions
+  * Systematically review for common vulnerability patterns (see list below).
+  * Use static analysis to identify potential low-hanging fruit.
+  * **Define Critical Invariants**: Identify properties of the system that must always hold true (e.g., `totalSupply` == sum of balances, contract balance \>= required reserves).
+
+**Phase 3: Security Test Implementation**
+
+  * Generate a comprehensive test suite covering all identified threats and attack vectors.
+  * **Implement Invariant Tests**: Create a `Handler` contract for stateful fuzzing to verify the critical invariants defined in Phase 2.
+  * **Implement Fork Tests**: For contracts interacting with existing mainnet protocols, generate tests that run on a mainnet fork to validate real-world integrations.
+  * Implement negative tests for every `require` statement and potential revert condition.
 
 **Phase 4: Validation and Documentation**
-- Verification of security controls effectiveness
-- Documentation of security testing rationale
-- Audit trail for security decisions
-- Maintenance procedures for ongoing security
 
-### Access Control Security Framework
+  * Add NatSpec comments to all generated test functions explaining the **scenario**, **action**, and **expected outcome**.
+  * Ensure generated tests are clean, readable, and maintainable by human developers and auditors.
 
-Based on Trail of Bits access control maturity model:
+-----
 
-**Level 1: Single EOA Control**
-- Single externally owned account controls all functions
-- Testing Requirements: Verify owner-only functions, test ownership transfer
-- Common Issues: Single point of failure, key compromise risk
+### **Common AI-Generated Testing Failures**
 
-**Level 2: Multi-Signature Control**
-- Multiple signatures required for critical operations
-- Testing Requirements: Validate signature thresholds, test key rotation
-- Common Issues: Signature replay, threshold manipulation
+  * **Circular Logic Testing**: The test re-implements the contract's logic instead of asserting a specific outcome. **Fix**: Test for the *effect* of a function call, not the steps it takes.
+  * **Overuse of `deal` or `etch`**: Setting up state with cheatcodes bypasses contract logic. **Fix**: For integration tests, set up state by calling the contract's own functions (e.g., `deposit()` then `rebalance()` to get shares). Use `deal` only for tightly-scoped unit tests.
+  * **Insufficient Edge Case Coverage**: Tests only cover the "happy path." **Fix**: Systematically test for boundary conditions (0, 1, `type(uint256).max`), empty arrays, zero addresses, and error states.
+  * **Missing Security Scenarios**: The suite lacks tests for common attack vectors. **Fix**: Explicitly generate tests for reentrancy, access control, and relevant economic attacks.
+  * **Inadequate Randomization in Fuzz Tests**: Fuzz test inputs are drawn from a narrow or predictable range. **Fix**: Use Foundry's `bound` function or custom modifiers to ensure fuzz inputs cover a wide and meaningful spectrum of values.
 
-**Level 3: Role-Based Access Control**
-- Different roles with specific permissions
-- Testing Requirements: Test role assignment, verify permission boundaries
-- Common Issues: Role escalation, permission overlap
+-----
 
-**Level 4: Immutable or Governance-Based**
-- Immutable contracts or decentralized governance
-- Testing Requirements: Verify immutability, test governance mechanisms
-- Common Issues: Governance attacks, emergency function abuse
+### **Foundry-Native Security Test Patterns**
 
-## AI Coding Agent Failure Patterns
-
-### Common AI-Generated Testing Failures
-
-**Circular Logic Testing**
-- **Pattern**: Tests that validate contract behavior against the contract's own implementation
-- **Detection**: Test logic mirrors implementation logic exactly
-- **Fix**: Test against specifications, not implementation
-
-**Mock Inconsistency**
-- **Pattern**: Test mocks that always return expected values
-- **Detection**: Mocks never fail or return unexpected results
-- **Fix**: Implement realistic mock behaviors including failure scenarios
-
-**Insufficient Edge Case Coverage**
-- **Pattern**: Tests only cover happy path scenarios
-- **Detection**: No tests for boundary conditions or error states
-- **Fix**: Systematic edge case identification and testing
-
-**Missing Security Scenarios**
-- **Pattern**: No tests for common attack vectors
-- **Detection**: Absence of reentrancy, overflow, or access control tests
-- **Fix**: Comprehensive security test suite based on vulnerability patterns
-
-**Always-Passing Tests**
-- **Pattern**: Tests that cannot fail due to logical errors
-- **Detection**: Tests with trivial assertions or no failure conditions
-- **Fix**: Meaningful assertions that can legitimately fail
-
-**Inadequate Randomization**
-- **Pattern**: Fuzz tests with insufficient randomness
-- **Detection**: Limited input ranges or predictable test data
-- **Fix**: Comprehensive input space exploration with proper randomization
-
-**Missing Negative Tests**
-- **Pattern**: No tests for expected failures
-- **Detection**: No tests using expectRevert or similar failure verification
-- **Fix**: Comprehensive negative testing for all error conditions
-
-**Implementation Dependency**
-- **Pattern**: Tests tied to specific implementation details
-- **Detection**: Tests break when implementation changes without specification change
-- **Fix**: Interface-based testing against stable specifications
-
-## Security Vulnerability Patterns
-
-### Access Control Vulnerabilities
-
-**Unauthorized Access**
-- **Pattern**: Functions callable by unintended parties
-- **Testing**: Verify access controls for all privileged functions
-- **Example**: Test that non-owner cannot call admin functions
-
-**Privilege Escalation**
-- **Pattern**: Users gaining higher permissions than intended
-- **Testing**: Verify role boundaries and permission inheritance
-- **Example**: Test that user roles cannot be elevated without authorization
-
-**Missing Access Controls**
-- **Pattern**: Critical functions without proper access restrictions
-- **Testing**: Verify all state-changing functions have appropriate controls
-- **Example**: Test that critical configuration changes require proper authorization
-
-### Reentrancy Vulnerabilities
-
-**Single-Function Reentrancy**
-- **Pattern**: Recursive calls to the same function
-- **Testing**: Verify reentrancy protection mechanisms
-- **Example**: Test that withdrawal functions cannot be called recursively
-
-**Cross-Function Reentrancy**
-- **Pattern**: Reentrancy between different functions
-- **Testing**: Verify state consistency across function calls
-- **Example**: Test that balance updates are atomic across related functions
-
-**Cross-Contract Reentrancy**
-- **Pattern**: Reentrancy through external contract calls
-- **Testing**: Verify protection against external contract callbacks
-- **Example**: Test that external calls cannot manipulate internal state
-
-### Economic Attack Vectors
-
-**Flash Loan Attacks**
-- **Pattern**: Manipulation of protocol state using borrowed funds
-- **Testing**: Verify protocol behavior under extreme liquidity conditions
-- **Example**: Test that price calculations remain accurate during flash loan operations
-
-**Oracle Manipulation**
-- **Pattern**: Manipulation of external price feeds
-- **Testing**: Verify oracle data validation and circuit breakers
-- **Example**: Test that large price movements are handled appropriately
-
-**Front-Running Attacks**
-- **Pattern**: Exploitation of transaction ordering
-- **Testing**: Verify commit-reveal schemes and other front-running protections
-- **Example**: Test that sensitive operations are protected from MEV exploitation
-
-## Security Testing Patterns
-
-### Unit Testing for Security
+#### **Unit Testing for Security**
 
 **Access Control Testing**
-```solidity
-function testOnlyOwnerCanUpdateConfig() public {
-    vm.expectRevert("Ownable: caller is not the owner");
-    vm.prank(user);
-    contract.updateConfig(newConfig);
-}
-```
 
-**Reentrancy Testing**
 ```solidity
-function testReentrancyProtection() public {
-    vm.expectRevert("ReentrancyGuard: reentrant call");
-    contract.vulnerableFunction();
+function test_updateConfig_fails_whenCalledByNonOwner() public {
+    vm.expectRevert("Ownable: caller is not the owner");
+    vm.prank(unauthorizedUser);
+    portfolio.updateConfig(newConfig);
 }
 ```
 
 **Input Validation Testing**
+
 ```solidity
-function testInputValidation() public {
-    vm.expectRevert("Invalid input");
-    contract.processInput(invalidInput);
+function test_deposit_fails_withZeroAmount() public {
+    vm.expectRevert(Portfolio.InsufficientBalance.selector);
+    portfolio.deposit(0);
 }
 ```
 
-### Integration Testing for Security
+#### **Integration Testing: Reentrancy**
 
-**Cross-Contract Security**
+A proper reentrancy test requires a malicious contract mock.
+
 ```solidity
-function testCrossContractSecurity() public {
-    // Test that external contract interactions are secure
-    // Verify that callbacks cannot manipulate state
-    // Test that external contract failures are handled properly
+// In the test file (e.g., PortfolioSecurityTest.t.sol)
+contract MaliciousReentrant {
+    Portfolio portfolio;
+    // Malicious call data to re-enter
+    bytes callData = abi.encodeWithSelector(Portfolio.deposit.selector, 1 ether);
+
+    constructor(Portfolio _portfolio) { portfolio = _portfolio; }
+
+    // This function receives ETH/tokens and re-enters the target
+    receive() external payable {
+        // Attempt re-entrancy
+        (bool success,) = address(portfolio).call(callData);
+        // This call should fail if the contract is protected
+        require(success, "Re-entrant call succeeded unexpectedly");
+    }
+
+    function attack() external {
+        // This external call will trigger the receive() fallback
+        portfolio.withdrawAndSendTo(address(this));
+    }
+}
+
+// The test function
+function testFail_reentrancyOnWithdraw() public {
+    MaliciousReentrant attacker = new MaliciousReentrant(portfolio);
+    // Setup: user deposits, etc.
+
+    vm.prank(userWithFunds);
+    // The call to `attack()` should revert because the re-entrant
+    // call inside `receive()` will be blocked by the reentrancy guard.
+    vm.expectRevert("ReentrancyGuard: reentrant call");
+    attacker.attack();
 }
 ```
 
-**Economic Model Testing**
+#### **Stateful Fuzzing (Invariant Testing) Pattern**
+
+This pattern uses a `handler` contract to perform random actions, while the main test contract verifies invariants.
+
 ```solidity
-function testEconomicIncentives() public {
-    // Test that economic incentives align with protocol goals
-    // Verify that attacks are not profitable
-    // Test that honest behavior is rewarded
+// In the test file (e.g., PortfolioInvariantTest.t.sol)
+import {StdInvariant} from "forge-std/StdInvariant.sol";
+
+// Handler contract to perform random actions
+contract Handler is Test {
+    Portfolio portfolio;
+    constructor(Portfolio _portfolio) { portfolio = _portfolio; }
+
+    function deposit(uint256 amount) public {
+        amount = bound(amount, 1, 100_000e18);
+        // ... (logic to get funds and approve)
+        try portfolio.deposit(amount) {} catch {}
+    }
+
+    function withdraw(uint256 shares) public {
+        // ... (logic to bound shares based on user balance)
+        try portfolio.withdraw(shares) {} catch {}
+    }
+}
+
+// The invariant test contract
+contract InvariantTest is StdInvariant, Test {
+    Portfolio portfolio;
+    Handler handler;
+
+    function setUp() public {
+        portfolio = new Portfolio();
+        handler = new Handler(portfolio);
+        // Target the handler contract for fuzzing
+        targetContract(address(handler));
+    }
+
+    // This invariant will be checked after every call made by the fuzzer
+    function invariant_usdcHoldingTankEqualsTotalPendingDeposits() public view {
+        assertEq(
+            portfolio.usdcHoldingTank(),
+            portfolio.totalPendingUSDCDeposits()
+        );
+    }
 }
 ```
 
-### Invariant Testing for Security
+#### **Fork Testing Pattern**
 
-**System Invariants**
+This tests interactions with live mainnet contracts.
+
 ```solidity
-function invariant_totalSupplyConsistency() public {
-    // Total supply should equal sum of all balances
-    assertEq(token.totalSupply(), sumOfAllBalances());
+// To run: forge test --fork-url <your_rpc_url>
+contract ForkTest is Test {
+    // Mainnet address of Uniswap V3 Router
+    IUniswapV3Router constant UNISWAP_ROUTER = IUniswapV3Router(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    IERC20 constant WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+    IERC20 constant DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
+
+    function test_swapOnUniswap() public {
+        uint256 amountIn = 10 ether;
+        // Get WETH for this test contract using a cheatcode
+        deal(address(WETH), address(this), amountIn);
+
+        WETH.approve(address(UNISWAP_ROUTER), amountIn);
+
+        // Define swap params...
+        // ...
+
+        uint256 initialDaiBalance = DAI.balanceOf(address(this));
+        UNISWAP_ROUTER.exactInputSingle(params);
+        uint256 finalDaiBalance = DAI.balanceOf(address(this));
+
+        // Assert that we received some DAI from the swap
+        assertTrue(finalDaiBalance > initialDaiBalance);
+    }
 }
 ```
-
-**Security Invariants**
-```solidity
-function invariant_accessControlConsistency() public {
-    // Only authorized users should have admin rights
-    assertTrue(onlyAuthorizedUsersHaveAdminRights());
-}
-```
-
-## Security Checklist by Protocol Type
-
-### DeFi Protocols
-
-**Lending Protocols**
-- [ ] Interest rate manipulation resistance
-- [ ] Liquidation threshold validation
-- [ ] Collateral valuation accuracy
-- [ ] Flash loan attack resistance
-
-**DEX Protocols**
-- [ ] Price manipulation resistance
-- [ ] Slippage protection
-- [ ] MEV protection mechanisms
-- [ ] Liquidity provider protection
-
-**Governance Protocols**
-- [ ] Voting power calculation accuracy
-- [ ] Proposal validation mechanisms
-- [ ] Timelock implementation
-- [ ] Governance attack resistance
-
-### NFT Protocols
-
-**NFT Marketplaces**
-- [ ] Ownership verification
-- [ ] Royalty calculation accuracy
-- [ ] Metadata validation
-- [ ] Transfer mechanism security
-
-**NFT Collections**
-- [ ] Minting logic validation
-- [ ] Metadata immutability
-- [ ] Access control for special functions
-- [ ] Royalty implementation
-
-### Cross-Chain Protocols
-
-**Bridge Protocols**
-- [ ] Message validation mechanisms
-- [ ] Replay attack protection
-- [ ] Cross-chain state consistency
-- [ ] Emergency pause mechanisms
-
-**Multi-Chain Protocols**
-- [ ] Chain-specific validation
-- [ ] State synchronization
-- [ ] Cross-chain access controls
-- [ ] Emergency response procedures
-
-## Security Testing Quality Metrics
-
-### Coverage Metrics
-
-**Vulnerability Coverage**
-- Percentage of known vulnerability patterns tested
-- Coverage of attack vectors from security frameworks
-- Completeness of negative test scenarios
-
-**Code Coverage**
-- Line coverage for security-critical functions
-- Branch coverage for access control logic
-- Path coverage for complex financial calculations
-
-### Quality Metrics
-
-**Test Effectiveness**
-- Ability to detect introduced vulnerabilities
-- Resistance to false positives
-- Maintenance overhead and sustainability
-
-**Security Validation**
-- Alignment with professional audit standards
-- Completeness of threat model coverage
-- Effectiveness of implemented controls
-
-## Professional Security Standards
-
-### Industry Best Practices
-
-**Trail of Bits Standards**
-- Comprehensive threat modeling
-- Systematic vulnerability analysis
-- Formal verification where appropriate
-- Documentation of security assumptions
-
-**OpenZeppelin Standards**
-- Security pattern implementation
-- Comprehensive test coverage
-- Code quality and maintainability
-- Audit preparation and documentation
-
-**ConsenSys Standards**
-- Vulnerability pattern analysis
-- Economic attack vector assessment
-- Automated security analysis
-- Continuous security monitoring
-
-### Audit Preparation
-
-**Documentation Requirements**
-- Security architecture documentation
-- Threat model and risk assessment
-- Test coverage and quality reports
-- Known issues and mitigation strategies
-
-**Code Quality Standards**
-- Clean, readable, and well-documented code
-- Comprehensive test suites with clear documentation
-- Proper error handling and recovery mechanisms
-- Performance optimization and gas efficiency
-
-This guidance provides a comprehensive framework for implementing security-focused testing in smart contract development. The emphasis on professional standards and systematic approaches helps ensure that testing efforts align with industry best practices and provide meaningful security validation. 

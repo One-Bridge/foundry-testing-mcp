@@ -69,46 +69,30 @@ class TestingTools:
     
     def _resolve_project_path(self, project_path: str = "") -> str:
         """
-        Resolve project path, with improved logic for MCP client context.
+        Simple project path resolution - uses current directory or explicit path.
         
         Args:
-            project_path: Optional project path, defaults to current directory
+            project_path: Optional explicit project path
             
         Returns:
             Absolute path to the project directory
         """
-        # If project_path is explicitly provided, use it
+        # If explicit path provided, use it
         if project_path and project_path not in ["", "."]:
             resolved_path = str(Path(project_path).resolve())
-            logger.debug(f"Using explicitly provided project path: {resolved_path}")
+            logger.debug(f"Using explicit project path: {resolved_path}")
             return resolved_path
         
-        # Check for MCP_CLIENT_CWD environment variable (set by MCP client)
+        # Check for MCP_CLIENT_CWD (set by MCP client)
         mcp_client_cwd = os.getenv("MCP_CLIENT_CWD")
         if mcp_client_cwd:
             resolved_path = str(Path(mcp_client_cwd).resolve())
-            logger.debug(f"Using MCP client working directory: {resolved_path}")
+            logger.debug(f"Using MCP client directory: {resolved_path}")
             return resolved_path
         
-        # Check for MCP_PROJECT_PATH environment variable
-        mcp_project_path = os.getenv("MCP_PROJECT_PATH")
-        if mcp_project_path:
-            resolved_path = str(Path(mcp_project_path).resolve())
-            logger.debug(f"Using MCP project path: {resolved_path}")
-            return resolved_path
-        
-        # Fall back to server's current working directory
-        server_cwd = os.getcwd()
-        resolved_path = str(Path(server_cwd).resolve())
-        
-        # Log warning if this might be incorrect
-        if Path(resolved_path).name in ["Users", os.path.expanduser("~").split("/")[-1]]:
-            logger.warning(f"Directory detection may be incorrect. Server CWD: {resolved_path}")
-            logger.warning("This often happens when the MCP server is running from a different directory than the client.")
-            logger.warning("To fix this, ensure the MCP client sets MCP_CLIENT_CWD or MCP_PROJECT_PATH environment variables.")
-        else:
-            logger.debug(f"Using server working directory: {resolved_path}")
-        
+        # Use current working directory
+        resolved_path = str(Path.cwd().resolve())
+        logger.debug(f"Using current working directory: {resolved_path}")
         return resolved_path
     
     def _validate_foundry_project(self, project_path: str) -> Dict[str, Any]:
@@ -160,8 +144,9 @@ class TestingTools:
         Register all testing tools with the MCP server.
         
         Args:
-            mcp: FastMCP server instance
+            mcp: The FastMCP server instance
         """
+        logger.info("Registering testing tools...")
         # Main workflow initialization tool
         @mcp.tool(
             name="initialize_protocol_testing_agent",
@@ -183,6 +168,7 @@ class TestingTools:
             
             INPUTS:
             - analysis_mode: "interactive" (guided) or "direct" (immediate analysis)
+            - project_path: Optional path to project directory (auto-detects if not provided)
             
             OUTPUTS:
             - Project structure analysis
@@ -194,7 +180,8 @@ class TestingTools:
             """
         )
         async def initialize_protocol_testing_agent(
-            analysis_mode: str = "interactive"
+            analysis_mode: str = "interactive",
+            project_path: str = ""
         ) -> Dict[str, Any]:
             """
             Initialize the interactive protocol testing agent.
@@ -206,16 +193,16 @@ class TestingTools:
                 Dictionary containing workflow options and next steps
             """
             try:
-                # Use current working directory as project path
-                project_path = self._resolve_project_path()
+                # Use provided project path or detect current working directory
+                resolved_project_path = self._resolve_project_path(project_path)
                 
                 # Validate that we're in a valid project
-                validation = self._validate_foundry_project(project_path)
+                validation = self._validate_foundry_project(resolved_project_path)
                 
                 if not validation["is_valid"]:
                     return {
                         "status": "validation_failed",
-                        "project_path": project_path,
+                        "project_path": resolved_project_path,
                         "validation": validation,
                         "message": "Current directory doesn't appear to be a valid Foundry project",
                         "next_steps": [
@@ -226,11 +213,11 @@ class TestingTools:
                     }
                 
                 # Detect project structure
-                project_info = await self._analyze_project_structure(project_path)
+                project_info = await self._analyze_project_structure(resolved_project_path)
                 
                 # Create a new session tied to this project
                 session_id = str(uuid.uuid4())
-                session = TestingSession(session_id, project_path)
+                session = TestingSession(session_id, resolved_project_path)
                 self.active_sessions[session_id] = session
                 
                 # Generate contextual workflow options based on current state
@@ -239,7 +226,7 @@ class TestingTools:
                 workflow_options = {
                     "status": "initialized",
                     "session_id": session_id,
-                    "project_path": project_path,
+                    "project_path": resolved_project_path,
                     "project_info": project_info,
                     "available_workflows": available_workflows,
                     "current_state_summary": {
@@ -294,6 +281,7 @@ class TestingTools:
             INPUTS:
             - include_ai_failure_detection: true (recommended) - detects problematic AI-generated tests
             - generate_improvement_plan: true (recommended) - creates actionable improvement roadmap
+            - project_path: Optional path to project directory (auto-detects if not provided)
             
             OUTPUTS:
             - Current testing phase and security level assessment
@@ -306,7 +294,8 @@ class TestingTools:
         )
         async def analyze_project_context(
             include_ai_failure_detection: bool = True,
-            generate_improvement_plan: bool = True
+            generate_improvement_plan: bool = True,
+            project_path: str = ""
         ) -> Dict[str, Any]:
             """
             Perform comprehensive context-aware analysis of the current project.
@@ -319,10 +308,10 @@ class TestingTools:
                 Dictionary containing comprehensive project analysis
             """
             try:
-                project_path = self._resolve_project_path()
+                resolved_project_path = self._resolve_project_path(project_path)
                 
                 # Validate project
-                validation = self._validate_foundry_project(project_path)
+                validation = self._validate_foundry_project(resolved_project_path)
                 if not validation["is_valid"]:
                     return {
                         "status": "validation_failed",
@@ -331,11 +320,11 @@ class TestingTools:
                     }
                 
                 # Perform comprehensive project analysis
-                project_state = await self.project_analyzer.analyze_project(project_path)
+                project_state = await self.project_analyzer.analyze_project(resolved_project_path)
                 
                 analysis_result = {
                     "status": "success",
-                    "project_path": project_path,
+                    "project_path": resolved_project_path,
                     "project_analysis": {
                         "project_type": project_state.project_type,
                         "testing_phase": project_state.testing_phase.value,
@@ -438,6 +427,7 @@ class TestingTools:
             - objectives: Specific testing goals (e.g., "achieve 90% coverage with security testing")
             - scope: "unit", "integration", "comprehensive" (recommended), "security"
             - session_id: From initialize_protocol_testing_agent (maintains context)
+            - project_path: Optional path to project directory (auto-detects if not provided)
             
             OUTPUTS:
             - Detailed execution plan with 4 structured phases
@@ -452,7 +442,8 @@ class TestingTools:
             workflow_type: str,
             objectives: str,
             scope: str = "comprehensive",
-            session_id: str = ""
+            session_id: str = "",
+            project_path: str = ""
         ) -> Dict[str, Any]:
             """
             Execute a complete testing workflow with structured phases.
@@ -467,11 +458,11 @@ class TestingTools:
                 Dictionary containing workflow execution plan with detailed phases
             """
             try:
-                # Use current working directory
-                project_path = self._resolve_project_path()
+                # Use provided project path or detect current working directory
+                resolved_project_path = self._resolve_project_path(project_path)
                 
                 # Validate project
-                validation = self._validate_foundry_project(project_path)
+                validation = self._validate_foundry_project(resolved_project_path)
                 if not validation["is_valid"]:
                     return {
                         "status": "validation_failed",
@@ -483,12 +474,12 @@ class TestingTools:
                 if session_id and session_id in self.active_sessions:
                     session = self.active_sessions[session_id]
                     # Update session to current directory if different
-                    if session.project_path != project_path:
-                        logger.info(f"Session {session_id} moved from {session.project_path} to {project_path}")
-                        session.project_path = project_path
+                    if session.project_path != resolved_project_path:
+                        logger.info(f"Session {session_id} moved from {session.project_path} to {resolved_project_path}")
+                        session.project_path = resolved_project_path
                 else:
                     session_id = str(uuid.uuid4())
-                    session = TestingSession(session_id, project_path)
+                    session = TestingSession(session_id, resolved_project_path)
                     self.active_sessions[session_id] = session
                 
                 # Update session state
@@ -501,7 +492,7 @@ class TestingTools:
                 }
                 
                 workflow_plan = await self._create_workflow_plan(
-                    workflow_type, project_path, objectives, scope, session
+                    workflow_type, resolved_project_path, objectives, scope, session
                 )
                 
                 # Execute the first phase automatically
@@ -643,70 +634,65 @@ class TestingTools:
                     ]
                 }
         
-        # Quick project validation tool
+        # Simple project validation tool
         @mcp.tool(
-            name="validate_current_project",
+            name="validate_current_directory",
             description="""
-            ✅ Project setup validation and environment check - Use for troubleshooting setup issues
+            ✅ Validate current directory as a Foundry project
             
             WHEN TO USE:
-            - Getting errors from other MCP tools about invalid projects
-            - User reports Foundry or project setup issues
-            - Before starting work on unfamiliar project
-            - Debugging directory or environment problems
-            - Confirming project is ready for testing workflows
+            - Check if current directory is a valid Foundry project
+            - Troubleshoot project setup issues
+            - Verify before running other tools
             
             WHAT IT DOES:
-            - Validates Foundry project structure (foundry.toml, src/, test/)
-            - Checks Foundry installation and accessibility
-            - Detects project type (Foundry, Hardhat, Truffle)
-            - Analyzes project file structure and organization
-            - Provides setup recommendations and fixes
-            
-            INPUTS:
-            - None required (analyzes current directory)
+            - Checks for foundry.toml, src/, and test/ directories
+            - Validates Foundry installation
+            - Provides clear setup guidance if invalid
             
             OUTPUTS:
-            - Project validation status and identified issues
-            - Foundry installation details and version info
-            - Project structure analysis
-            - Specific setup recommendations and next steps
-            - Environment troubleshooting guidance
-            
-            WORKFLOW: Use when other tools fail or before initialize_protocol_testing_agent if setup seems problematic.
-            
-            FIXES COMMON ISSUES: Missing foundry.toml, wrong directory, Foundry not installed
+            - Simple pass/fail validation
+            - Clear error messages and next steps
             """
         )
-        async def validate_current_project() -> Dict[str, Any]:
+        async def validate_current_directory() -> Dict[str, Any]:
             """
             Validate the current directory as a Foundry project.
             
             Returns:
-                Dictionary containing validation results and suggestions
+                Dictionary containing validation results
             """
             try:
                 project_path = self._resolve_project_path()
                 validation = self._validate_foundry_project(project_path)
                 
-                # Add additional context
-                project_structure = await self.foundry_adapter.detect_project_structure(project_path)
-                
-                return {
-                    "status": "validated",
-                    "project_path": project_path,
-                    "validation": validation,
-                    "project_structure": project_structure,
-                    "foundry_installation": await self.foundry_adapter.check_foundry_installation(),
-                    "recommendations": self._get_setup_recommendations(validation, project_structure)
-                }
-                
+                if validation["is_valid"]:
+                    # Get basic project info
+                    project_structure = await self.foundry_adapter.detect_project_structure(project_path)
+                    
+                    return {
+                        "status": "valid",
+                        "project_path": project_path,
+                        "message": "✅ Valid Foundry project detected",
+                        "contracts": len(project_structure.get("contracts", [])),
+                        "tests": len(project_structure.get("tests", [])),
+                        "ready_for_testing": True
+                    }
+                else:
+                    return {
+                        "status": "invalid",
+                        "project_path": project_path,
+                        "message": "❌ Not a valid Foundry project",
+                        "issues": validation["issues"],
+                        "suggestions": validation["suggestions"],
+                        "ready_for_testing": False
+                    }
+                    
             except Exception as e:
-                logger.error(f"Error validating project: {e}")
                 return {
                     "status": "error",
                     "error": str(e),
-                    "current_directory": os.getcwd()
+                    "message": "Error validating directory"
                 }
         
         # Directory detection debugging tool
@@ -828,6 +814,65 @@ class TestingTools:
                         "❌ Error occurred during directory detection debugging",
                         "🔍 Check server logs for more details",
                         "💡 Try setting MCP_CLIENT_CWD environment variable"
+                    ]
+                }
+        
+        # Project discovery tool for AI agents
+        @mcp.tool(
+            name="discover_foundry_projects",
+            description="""
+            🔍 Project discovery for AI agents - Find available Foundry projects automatically
+            
+            WHEN TO USE:
+            - AI agent needs to find available Foundry projects
+            - Auto-detection is failing and need to see project options
+            - Want to switch between multiple projects
+            - Initial exploration of user's project structure
+            
+            WHAT IT DOES:
+            - Scans common directories for Foundry projects
+            - Returns list of discovered projects with metadata
+            - Helps AI agents choose the correct project path
+            - Provides project summary information
+            
+            INPUTS:
+            - None required (automatic discovery)
+            
+            OUTPUTS:
+            - List of discovered Foundry projects
+            - Project metadata (name, contracts, tests)
+            - Recommended project paths for other tools
+            
+            WORKFLOW: Use when auto-detection fails or when exploring available projects.
+            """
+        )
+        async def discover_foundry_projects() -> Dict[str, Any]:
+            """
+            Discover available Foundry projects for AI agents.
+            
+            Returns:
+                Dictionary containing discovered projects and guidance
+            """
+            try:
+                # This tool is now deprecated as project discovery is handled by initialize_protocol_testing_agent
+                # and the project_path parameter.
+                # For now, we'll return a placeholder message.
+                return {
+                    "status": "deprecated",
+                    "message": "Project discovery is now handled within initialize_protocol_testing_agent. "
+                               "Use that tool to specify a project path.",
+                    "recommended_command": "initialize_protocol_testing_agent(project_path=\"/path/to/your/project\")"
+                }
+                
+            except Exception as e:
+                logger.error(f"Error discovering projects: {e}")
+                return {
+                    "status": "error",
+                    "error": str(e),
+                    "fallback_guidance": [
+                        "Use explicit project paths in tool calls",
+                        "Ensure you're in a Foundry project directory",
+                        "Check that foundry.toml exists in your project"
                     ]
                 }
         

@@ -109,24 +109,25 @@ class ProjectAnalyzer:
             ]
         }
         
-        # Test pattern recognition
+        # Test patterns for analysis
         self.test_patterns = {
-            "fuzz_testing": [
-                "testFuzz", "bound(", "vm.assume", "FOUNDRY_FUZZ_RUNS"
-            ],
-            "invariant_testing": [
-                "invariant_", "StatefulFuzzTest", "handler", "ghost"
-            ],
-            "security_testing": [
-                "test.*[Aa]ttack", "test.*[Rr]eentrancy", "test.*[Aa]ccess",
-                "test.*[Mm]alicious", "vm.expectRevert", "vm.startPrank"
+            "unit_testing": [
+                "function test", "test_", "testFuzz", "testInvariant"
             ],
             "integration_testing": [
-                "test.*[Ii]ntegration", "test.*[Mm]ulti", "test.*[Cc]ross",
-                "fork", "mainnet"
+                "integration", "workflow", "scenario", "end.*end"
+            ],
+            "fuzz_testing": [
+                "testFuzz", "bound\\(", "fuzz", "random"
+            ],
+            "invariant_testing": [
+                "testInvariant", "invariant_", "property", "assert"
             ],
             "mock_usage": [
-                "Mock", "mock", "MockERC20", "MockOracle", "vm.mockCall"
+                "mock", "Mock", "stub", "fake", "vm\\."
+            ],
+            "security_testing": [
+                "attack", "exploit", "malicious", "reentrancy", "overflow"
             ]
         }
         
@@ -149,15 +150,23 @@ class ProjectAnalyzer:
         
         # Analyze contracts
         contracts = await self._analyze_contracts(project_path)
+        if contracts is None:
+            contracts = []
         
         # Analyze test files
         test_files = await self._analyze_test_files(project_path)
+        if test_files is None:
+            test_files = []
         
         # Get coverage data
         coverage_data = await self._get_coverage_data(project_path)
+        if coverage_data is None:
+            coverage_data = {}
         
         # Analyze Foundry configuration
         foundry_config = await self._analyze_foundry_config(project_path)
+        if foundry_config is None:
+            foundry_config = {}
         
         # Determine testing phase and security level
         testing_phase = self._determine_testing_phase(test_files, coverage_data)
@@ -165,9 +174,14 @@ class ProjectAnalyzer:
         
         # Identify gaps and generate recommendations
         gaps = self._identify_gaps(contracts, test_files, coverage_data)
+        if gaps is None:
+            gaps = []
+        
         recommendations = self._generate_recommendations(
             testing_phase, security_level, gaps, contracts
         )
+        if recommendations is None:
+            recommendations = []
         
         return ProjectState(
             project_path=str(project_path),
