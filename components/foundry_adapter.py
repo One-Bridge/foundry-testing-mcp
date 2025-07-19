@@ -748,7 +748,11 @@ class FoundryAdapter:
     async def cleanup(self) -> None:
         """Cleanup resources used by the adapter."""
         # Cleanup any temporary files or processes
-        logger.info("Foundry adapter cleanup completed")
+        try:
+            logger.info("Foundry adapter cleanup completed")
+        except (ValueError, OSError):
+            # I/O streams may be closed during shutdown
+            pass
     
     async def get_forge_config(self, project_path: str = "") -> Dict[str, Any]:
         """

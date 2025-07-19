@@ -14,6 +14,8 @@ from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
+from .ast_analyzer import ASTAnalyzer, SemanticAnalysis, SecurityPattern, NodeType
+
 logger = logging.getLogger(__name__)
 
 class TestingPhase(Enum):
@@ -83,8 +85,9 @@ class ProjectAnalyzer:
     """
     
     def __init__(self, foundry_adapter):
-        """Initialize project analyzer with Foundry adapter."""
+        """Initialize project analyzer with Foundry adapter and AST analyzer."""
         self.foundry_adapter = foundry_adapter
+        self.ast_analyzer = ASTAnalyzer()
         
         # Security patterns from our audit guidance
         self.security_patterns = {
@@ -210,19 +213,35 @@ class ProjectAnalyzer:
                 except Exception as e:
                     logger.warning(f"Could not read {sol_file}: {e}")
         
-        # Analyze content for project type indicators
+        # Analyze content for project type indicators with improved logic
         type_indicators = {
-            "defi": ["swap", "liquidity", "pool", "vault", "lending", "borrow", "yield", "farm"],
-            "nft": ["erc721", "erc1155", "nft", "metadata", "tokenuri", "mint", "burn"],
+            "defi": ["swap", "liquidity", "pool", "vault", "lending", "borrow", "yield", "farm", "portfolio", "strategy", "allocat", "rebalance"],
+            "nft": ["erc721", "erc1155", "tokenuri", "metadata", "collectible", "art", "game"],
             "governance": ["governor", "proposal", "vote", "delegate", "timelock", "dao"],
             "bridge": ["bridge", "crosschain", "layer2", "relay", "validator", "merkle"],
             "utility": ["utility", "library", "helper", "tool"]
         }
         
+        # Strong indicators that override others
+        strong_nft_indicators = ["erc721", "erc1155", "tokenuri", "nft"]
+        strong_defi_indicators = ["vault", "portfolio", "strategy", "liquidity", "pool", "farm", "yield"]
+        
         scores = {}
         for project_type, indicators in type_indicators.items():
             score = sum(1 for indicator in indicators if indicator in contract_content)
             scores[project_type] = score
+        
+        # Apply enhanced logic to resolve conflicts
+        has_strong_nft = any(indicator in contract_content for indicator in strong_nft_indicators)
+        has_strong_defi = any(indicator in contract_content for indicator in strong_defi_indicators)
+        
+        # If we have both mint/burn AND strong DeFi indicators, it's DeFi not NFT
+        if has_strong_defi:
+            scores["defi"] += 3  # Boost DeFi score significantly
+        
+        # Only classify as NFT if we have strong NFT indicators
+        if not has_strong_nft and "nft" in scores:
+            scores["nft"] = 0  # Remove NFT classification without strong indicators
         
         # Return the type with highest score, or "general" if no clear type
         if max(scores.values()) > 0:
@@ -248,52 +267,76 @@ class ProjectAnalyzer:
         return contracts
     
     async def _analyze_contract_file(self, file_path: Path) -> Optional[ContractAnalysis]:
-        """Analyze a single contract file"""
+        """
+        Analyze a single contract file using AST-based semantic analysis.
+        
+        This replaces regex-based pattern matching with proper semantic understanding
+        of contract structure, security patterns, and risk factors.
+        """
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
+            # Use AST analyzer for semantic analysis
+            semantic_analysis = await self.ast_analyzer.analyze_solidity_file(str(file_path))
+            
+            # Extract contract information from AST
+            contract_nodes = [node for node in semantic_analysis.ast_nodes 
+                            if node.node_type == NodeType.CONTRACT]
+            
+            if not contract_nodes:
+                return None
+            
+            # Use the first contract found (main contract)
+            contract_node = contract_nodes[0]
+            contract_name = contract_node.name
+            
+            # Debug: Log contract name parsing for troubleshooting
+            if contract_name in ["that", "this", "it"] or len(contract_name) < 3:
+                logger.warning(f"Unusual contract name detected: '{contract_name}' in {file_path}")
+                # Try to extract from filename as fallback
+                filename_contract = file_path.stem
+                if filename_contract and len(filename_contract) > 2:
+                    logger.info(f"Using filename-based contract name: {filename_contract}")
+                    contract_name = filename_contract
+            
+            # Extract functions from AST
+            function_nodes = [node for node in semantic_analysis.ast_nodes 
+                            if node.node_type == NodeType.FUNCTION]
+            functions = [node.name for node in function_nodes]
+            
+            # Extract state variables from AST
+            state_var_nodes = [node for node in semantic_analysis.ast_nodes 
+                             if node.node_type == NodeType.STATE_VAR]
+            state_variables = [node.name for node in state_var_nodes]
+            
+            # Convert AST security patterns to legacy format for compatibility
+            security_patterns = self._convert_ast_security_patterns(
+                semantic_analysis.security_patterns
+            )
+            
+            # Use AST-based risk calculation
+            risk_score = self._calculate_ast_risk_score(
+                semantic_analysis, function_nodes, contract_node
+            )
+            
+            # Extract dependencies from AST
+            dependencies = list(semantic_analysis.external_dependencies)
+            
+            # Determine contract type using semantic analysis
+            contract_type = self._determine_contract_type_from_ast(semantic_analysis)
+            
+            return ContractAnalysis(
+                path=str(file_path),
+                contract_name=contract_name,
+                contract_type=contract_type,
+                functions=functions,
+                state_variables=state_variables,
+                security_patterns=security_patterns,
+                risk_score=risk_score,
+                dependencies=dependencies
+            )
+            
         except Exception as e:
-            logger.warning(f"Could not read {file_path}: {e}")
-            return None
-        
-        # Extract contract name
-        contract_match = re.search(r'contract\s+(\w+)', content)
-        if not contract_match:
-            return None
-        
-        contract_name = contract_match.group(1)
-        
-        # Analyze functions
-        functions = re.findall(r'function\s+(\w+)', content)
-        
-        # Analyze state variables
-        state_vars = re.findall(r'(\w+)\s+(?:public|private|internal)\s+\w+;', content)
-        
-        # Detect security patterns
-        security_patterns = []
-        for pattern_type, patterns in self.security_patterns.items():
-            if any(re.search(pattern, content, re.IGNORECASE) for pattern in patterns):
-                security_patterns.append(pattern_type)
-        
-        # Calculate risk score based on complexity and patterns
-        risk_score = self._calculate_risk_score(content, functions, security_patterns)
-        
-        # Detect dependencies
-        dependencies = re.findall(r'import\s+["\']([^"\']+)["\']', content)
-        
-        # Determine contract type
-        contract_type = self._determine_contract_type(content)
-        
-        return ContractAnalysis(
-            path=str(file_path),
-            contract_name=contract_name,
-            contract_type=contract_type,
-            functions=functions,
-            state_variables=state_vars,
-            security_patterns=security_patterns,
-            risk_score=risk_score,
-            dependencies=dependencies
-        )
+            logger.warning(f"AST analysis failed for {file_path}, falling back to regex: {e}")
+            return await self._fallback_regex_analysis(file_path)
     
     async def _analyze_test_files(self, project_path: Path) -> List[TestFileAnalysis]:
         """Analyze all test files in the project"""
@@ -314,7 +357,151 @@ class ProjectAnalyzer:
         return test_files
     
     async def _analyze_test_file(self, file_path: Path) -> Optional[TestFileAnalysis]:
-        """Analyze a single test file"""
+        """
+        Analyze a single test file using AST-based semantic analysis.
+        
+        This provides deeper understanding of test structure and patterns
+        compared to regex-based analysis.
+        """
+        try:
+            # Use AST analyzer for test file analysis
+            semantic_analysis = await self.ast_analyzer.analyze_test_file(str(file_path))
+            
+            # Extract test functions from AST
+            test_function_nodes = [node for node in semantic_analysis.ast_nodes 
+                                 if node.node_type == NodeType.FUNCTION and 
+                                 (node.name.startswith('test') or 
+                                  node.attributes.get('is_test', False))]
+            
+            test_count = len(test_function_nodes)
+            
+            # Analyze test patterns semantically
+            detected_patterns = self._analyze_test_patterns_from_ast(test_function_nodes)
+            
+            # Find security tests using semantic analysis
+            security_tests = [
+                node.name for node in test_function_nodes
+                if any(keyword in node.name.lower() 
+                      for keyword in ['attack', 'malicious', 'exploit', 'hack', 'security', 
+                                    'reentrancy', 'overflow', 'underflow'])
+            ]
+            
+            # Find coverage targets - contracts being tested
+            coverage_targets = self._extract_coverage_targets_from_ast(semantic_analysis)
+            
+            # Calculate enhanced complexity score
+            complexity_score = self._calculate_ast_test_complexity(
+                semantic_analysis, test_function_nodes, detected_patterns
+            )
+            
+            return TestFileAnalysis(
+                path=str(file_path),
+                test_count=test_count,
+                test_patterns=detected_patterns,
+                security_tests=security_tests,
+                coverage_targets=coverage_targets,
+                uses_mocks="mock_usage" in detected_patterns,
+                uses_fuzzing="fuzz_testing" in detected_patterns,
+                uses_invariants="invariant_testing" in detected_patterns,
+                complexity_score=complexity_score
+            )
+            
+        except Exception as e:
+            logger.warning(f"AST test analysis failed for {file_path}, falling back to regex: {e}")
+            return await self._fallback_test_analysis(file_path)
+    
+    def _analyze_test_patterns_from_ast(self, test_function_nodes: List) -> List[str]:
+        """Analyze test patterns using AST instead of regex."""
+        detected_patterns = []
+        
+        # Check for different test types based on function names and attributes
+        has_unit_tests = any(node.attributes.get('test_type') == 'unit' 
+                           for node in test_function_nodes)
+        has_fuzz_tests = any(node.attributes.get('test_type') == 'fuzz' or 
+                           'fuzz' in node.name.lower()
+                           for node in test_function_nodes)
+        has_invariant_tests = any(node.attributes.get('test_type') == 'invariant' or
+                                'invariant' in node.name.lower()
+                                for node in test_function_nodes)
+        
+        # Detect integration tests by function naming patterns
+        has_integration_tests = any('integration' in node.name.lower() or
+                                  'workflow' in node.name.lower() or
+                                  'scenario' in node.name.lower()
+                                  for node in test_function_nodes)
+        
+        # Detect security tests
+        has_security_tests = any(any(keyword in node.name.lower() 
+                                   for keyword in ['attack', 'exploit', 'security', 'hack'])
+                               for node in test_function_nodes)
+        
+        # Note: Mock usage detection would require deeper AST analysis of function bodies
+        # For now, we'll use a simplified approach
+        has_mock_usage = any('mock' in node.name.lower() for node in test_function_nodes)
+        
+        # Add detected patterns
+        if has_unit_tests:
+            detected_patterns.append("unit_testing")
+        if has_fuzz_tests:
+            detected_patterns.append("fuzz_testing")
+        if has_invariant_tests:
+            detected_patterns.append("invariant_testing")
+        if has_integration_tests:
+            detected_patterns.append("integration_testing")
+        if has_security_tests:
+            detected_patterns.append("security_testing")
+        if has_mock_usage:
+            detected_patterns.append("mock_usage")
+        
+        return detected_patterns
+    
+    def _extract_coverage_targets_from_ast(self, semantic_analysis: SemanticAnalysis) -> List[str]:
+        """Extract contracts being tested from AST analysis."""
+        # Look for contract instantiations or references in the test file
+        # This is a simplified approach - full implementation would analyze function bodies
+        contract_nodes = [node.name for node in semantic_analysis.ast_nodes 
+                         if node.node_type == NodeType.CONTRACT]
+        
+        # Filter out test contracts themselves
+        coverage_targets = [name for name in contract_nodes 
+                          if not name.lower().endswith('test') and 
+                             not name.lower().startswith('test')]
+        
+        return coverage_targets
+    
+    def _calculate_ast_test_complexity(self, semantic_analysis: SemanticAnalysis,
+                                      test_function_nodes: List, 
+                                      detected_patterns: List[str]) -> float:
+        """Calculate test complexity using AST analysis."""
+        score = 0.0
+        
+        # Base test count score
+        test_count = len(test_function_nodes)
+        score += min(test_count * 0.05, 0.4)
+        
+        # Pattern bonuses with enhanced scoring
+        pattern_bonuses = {
+            "fuzz_testing": 0.3,
+            "invariant_testing": 0.3,
+            "security_testing": 0.2,
+            "integration_testing": 0.2,
+            "mock_usage": 0.1,
+            "unit_testing": 0.1
+        }
+        
+        for pattern in detected_patterns:
+            score += pattern_bonuses.get(pattern, 0.0)
+        
+        # Bonus for test function diversity
+        test_types = set(node.attributes.get('test_type', 'unit') 
+                        for node in test_function_nodes)
+        if len(test_types) > 2:
+            score += 0.2  # Bonus for test diversity
+        
+        return min(score, 1.0)
+    
+    async def _fallback_test_analysis(self, file_path: Path) -> Optional[TestFileAnalysis]:
+        """Fallback to regex-based test analysis when AST fails."""
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -625,6 +812,161 @@ class ProjectAnalyzer:
             score += 0.2
         
         return min(score, 1.0)
+    
+    def _convert_ast_security_patterns(self, ast_patterns: List[SecurityPattern]) -> List[str]:
+        """Convert AST security patterns to legacy string format for compatibility."""
+        pattern_mapping = {
+            SecurityPattern.ACCESS_CONTROL: "access_control",
+            SecurityPattern.REENTRANCY_GUARD: "reentrancy",
+            SecurityPattern.ORACLE_DEPENDENCY: "oracle_usage",
+            SecurityPattern.FLASH_LOAN_RECEIVER: "flash_loans",
+            SecurityPattern.TIMELOCK_CONTROL: "governance",
+            SecurityPattern.UPGRADEABLE_PATTERN: "upgradeable",
+            SecurityPattern.MULTI_SIG_PATTERN: "multi_sig"
+        }
+        
+        return [pattern_mapping.get(pattern, pattern.value) for pattern in ast_patterns]
+    
+    def _calculate_ast_risk_score(self, semantic_analysis: SemanticAnalysis, 
+                                 function_nodes: List, contract_node) -> float:
+        """
+        Calculate risk score using AST-based semantic analysis.
+        
+        This provides more accurate risk assessment than regex-based scoring
+        by understanding actual contract structure and behavior.
+        """
+        risk_score = 0.0
+        
+        # Use complexity metrics from AST
+        complexity = semantic_analysis.complexity_metrics
+        
+        # Base complexity from function count and types
+        risk_score += min(complexity.get("external_functions", 0) * 0.03, 0.3)
+        risk_score += min(complexity.get("payable_functions", 0) * 0.05, 0.4)
+        
+        # Security pattern analysis - well-protected contracts get risk reduction
+        security_patterns = semantic_analysis.security_patterns
+        
+        if SecurityPattern.ACCESS_CONTROL in security_patterns:
+            risk_score -= 0.1  # Access control reduces risk
+        else:
+            risk_score += 0.2  # No access control increases risk
+        
+        if SecurityPattern.REENTRANCY_GUARD in security_patterns:
+            risk_score -= 0.1  # Reentrancy protection reduces risk
+        else:
+            # Check if contract has payable/external functions without protection
+            if complexity.get("payable_functions", 0) > 0:
+                risk_score += 0.3
+        
+        # Oracle dependency increases risk
+        if SecurityPattern.ORACLE_DEPENDENCY in security_patterns:
+            risk_score += 0.2
+        
+        # Flash loan receiver increases risk
+        if SecurityPattern.FLASH_LOAN_RECEIVER in security_patterns:
+            risk_score += 0.3
+        
+        # Use individual function risk factors
+        for func_name, func_risk in semantic_analysis.risk_factors.items():
+            risk_score += func_risk * 0.1  # Weight individual function risks
+        
+        return min(risk_score, 1.0)
+    
+    def _determine_contract_type_from_ast(self, semantic_analysis: SemanticAnalysis) -> str:
+        """
+        Determine contract type using semantic analysis instead of text patterns.
+        
+        This provides more accurate classification by understanding actual
+        contract structure and interfaces rather than just text patterns.
+        """
+        function_names = [node.name for node in semantic_analysis.ast_nodes 
+                         if node.node_type == NodeType.FUNCTION]
+        
+        dependencies = semantic_analysis.external_dependencies
+        
+        # DeFi patterns - look for actual DeFi function signatures
+        defi_functions = {"swap", "addLiquidity", "removeLiquidity", "deposit", "withdraw", 
+                         "borrow", "repay", "liquidate", "harvest", "compound", "stake", "unstake",
+                         "allocate", "rebalance", "portfolio", "strategy"}
+        if any(func in function_names for func in defi_functions):
+            return "defi"
+        
+        # Strong NFT patterns - only classify as NFT with clear NFT interfaces
+        strong_nft_functions = {"tokenURI", "setApprovalForAll", "safeTransferFrom", "ownerOf"}
+        nft_dependencies = any("erc721" in dep.lower() or "erc1155" in dep.lower() 
+                              for dep in dependencies)
+        
+        # Check for actual NFT patterns, not just mint/burn which are common in ERC20
+        has_strong_nft = any(func in function_names for func in strong_nft_functions) or nft_dependencies
+        
+        if has_strong_nft:
+            return "nft"
+        
+        # Governance patterns
+        governance_functions = {"propose", "vote", "execute", "queue", "cancel"}
+        if any(func in function_names for func in governance_functions):
+            return "governance"
+        
+        # Bridge patterns
+        bridge_functions = {"bridge", "relay", "verify", "lock", "unlock"}
+        if any(func in function_names for func in bridge_functions):
+            return "bridge"
+        
+        # Token patterns - basic ERC20
+        token_functions = {"transfer", "approve", "balanceOf", "totalSupply"}
+        if all(func in function_names for func in token_functions):
+            return "token"
+        
+        return "utility"
+    
+    async def _fallback_regex_analysis(self, file_path: Path) -> Optional[ContractAnalysis]:
+        """Fallback to original regex-based analysis when AST fails."""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except Exception as e:
+            logger.warning(f"Could not read {file_path}: {e}")
+            return None
+        
+        # Extract contract name
+        contract_match = re.search(r'contract\s+(\w+)', content)
+        if not contract_match:
+            return None
+        
+        contract_name = contract_match.group(1)
+        
+        # Analyze functions
+        functions = re.findall(r'function\s+(\w+)', content)
+        
+        # Analyze state variables
+        state_vars = re.findall(r'(\w+)\s+(?:public|private|internal)\s+\w+;', content)
+        
+        # Detect security patterns
+        security_patterns = []
+        for pattern_type, patterns in self.security_patterns.items():
+            if any(re.search(pattern, content, re.IGNORECASE) for pattern in patterns):
+                security_patterns.append(pattern_type)
+        
+        # Calculate risk score based on complexity and patterns
+        risk_score = self._calculate_risk_score(content, functions, security_patterns)
+        
+        # Detect dependencies
+        dependencies = re.findall(r'import\s+["\']([^"\']+)["\']', content)
+        
+        # Determine contract type
+        contract_type = self._determine_contract_type(content)
+        
+        return ContractAnalysis(
+            path=str(file_path),
+            contract_name=contract_name,
+            contract_type=contract_type,
+            functions=functions,
+            state_variables=state_vars,
+            security_patterns=security_patterns,
+            risk_score=risk_score,
+            dependencies=dependencies
+        )
     
     def _determine_contract_type(self, content: str) -> str:
         """Determine contract type based on content analysis"""

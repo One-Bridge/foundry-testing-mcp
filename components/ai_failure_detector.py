@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from enum import Enum
 import ast
 
+from .ast_analyzer import ASTAnalyzer, SemanticAnalysis, NodeType
+
 logger = logging.getLogger(__name__)
 
 class FailureType(Enum):
@@ -49,9 +51,10 @@ class AIFailureDetector:
     """
     
     def __init__(self):
-        """Initialize AI failure detector."""
+        """Initialize AI failure detector with AST analyzer."""
         self.failure_patterns = self._initialize_failure_patterns()
-        logger.info("AI failure detector initialized")
+        self.ast_analyzer = ASTAnalyzer()
+        logger.info("AI failure detector initialized with AST support")
     
     def _initialize_failure_patterns(self) -> Dict[FailureType, Dict[str, Any]]:
         """Initialize patterns for detecting AI failures."""
@@ -128,30 +131,65 @@ class AIFailureDetector:
             }
         }
     
-    async def analyze_test_file(self, file_path: str, content: str) -> List[FailureDetection]:
+    async def analyze_test_file(self, file_path: str, content: str = None) -> List[FailureDetection]:
         """
-        Analyze a test file for AI failures.
+        Analyze a test file for AI failures using AST-based semantic analysis.
+        
+        This provides more accurate detection by understanding actual code structure
+        and behavior rather than relying solely on regex pattern matching.
         
         Args:
             file_path: Path to the test file
-            content: Content of the test file
+            content: Optional content of the test file (will read if not provided)
             
         Returns:
-            List of detected failures
+            List of detected failures with enhanced accuracy
         """
         failures = []
         
-        # Check each failure pattern
-        for failure_type, config in self.failure_patterns.items():
-            detected_failures = self._detect_pattern_failures(
-                failure_type, config, file_path, content
-            )
-            failures.extend(detected_failures)
-        
-        # Advanced analysis
-        failures.extend(await self._analyze_test_structure(file_path, content))
-        failures.extend(await self._analyze_mock_patterns(file_path, content))
-        failures.extend(await self._analyze_assertion_patterns(file_path, content))
+        try:
+            # Get AST-based semantic analysis
+            semantic_analysis = await self.ast_analyzer.analyze_test_file(file_path)
+            
+            # AST-based failure detection (primary method)
+            failures.extend(await self._detect_ast_based_failures(semantic_analysis, file_path))
+            
+            # Enhanced pattern matching with AST context
+            if content is None:
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                except Exception as e:
+                    logger.warning(f"Could not read {file_path}: {e}")
+                    content = ""
+            
+            if content:
+                failures.extend(await self._detect_enhanced_pattern_failures(
+                    semantic_analysis, file_path, content
+                ))
+            
+            # Semantic test structure analysis
+            failures.extend(await self._analyze_ast_test_structure(semantic_analysis, file_path))
+            
+            # Semantic mock analysis
+            failures.extend(await self._analyze_ast_mock_patterns(semantic_analysis, file_path))
+            
+            # Semantic assertion analysis
+            failures.extend(await self._analyze_ast_assertion_patterns(semantic_analysis, file_path))
+            
+        except Exception as e:
+            logger.warning(f"AST-based analysis failed for {file_path}, falling back to regex: {e}")
+            
+            # Fallback to original regex-based analysis
+            if content is None:
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                except:
+                    content = ""
+            
+            if content:
+                failures.extend(await self._fallback_regex_analysis(file_path, content))
         
         return failures
     
@@ -420,4 +458,303 @@ class AIFailureDetector:
                 "Add error condition testing: invalid inputs, unauthorized access, insufficient funds"
             )
         
-        return improvements[:5]  # Return top 5 suggestions 
+        return improvements[:5]  # Return top 5 suggestions
+    
+    async def _detect_ast_based_failures(self, semantic_analysis: SemanticAnalysis, 
+                                        file_path: str) -> List[FailureDetection]:
+        """
+        Detect AI failures using AST-based semantic analysis.
+        
+        This provides more accurate detection by understanding actual code structure
+        and logic flow rather than relying on surface-level pattern matching.
+        """
+        failures = []
+        
+        # Get test function nodes
+        test_functions = [node for node in semantic_analysis.ast_nodes 
+                         if node.node_type == NodeType.FUNCTION and 
+                         (node.name.startswith('test') or node.attributes.get('is_test', False))]
+        
+        # Analyze each test function semantically
+        for test_func in test_functions:
+            failures.extend(await self._analyze_test_function_semantics(
+                test_func, semantic_analysis, file_path
+            ))
+        
+        # Analyze overall test file structure
+        failures.extend(await self._analyze_test_file_semantics(
+            semantic_analysis, file_path
+        ))
+        
+        return failures
+    
+    async def _analyze_test_function_semantics(self, test_func, semantic_analysis: SemanticAnalysis,
+                                             file_path: str) -> List[FailureDetection]:
+        """Analyze individual test function for semantic AI failures."""
+        failures = []
+        
+        # Check for insufficient test diversity
+        if test_func.attributes.get('test_type') == 'unit':
+            # Look for tests that only test happy path
+            if not any(keyword in test_func.name.lower() 
+                      for keyword in ['fail', 'revert', 'error', 'invalid', 'unauthorized']):
+                failures.append(FailureDetection(
+                    failure_type=FailureType.MISSING_NEGATIVE_TESTS,
+                    severity="medium",
+                    description=f"Test function {test_func.name} appears to only test happy path",
+                    location=f"{file_path}:{test_func.source_location[0]}",
+                    evidence=f"Function: {test_func.name}",
+                    recommendation="Add negative test cases for error conditions",
+                    auto_fixable=False
+                ))
+        
+        # Check for fuzz tests with overly constrained inputs
+        if test_func.attributes.get('test_type') == 'fuzz':
+            # This would require deeper AST analysis of function body
+            # For now, flag fuzz tests for manual review
+            if 'constrained' in test_func.name.lower():
+                failures.append(FailureDetection(
+                    failure_type=FailureType.INADEQUATE_RANDOMIZATION,
+                    severity="medium",
+                    description=f"Fuzz test {test_func.name} may have overly constrained inputs",
+                    location=f"{file_path}:{test_func.source_location[0]}",
+                    evidence=f"Fuzz function: {test_func.name}",
+                    recommendation="Review fuzz test constraints for adequate randomization",
+                    auto_fixable=False
+                ))
+        
+        return failures
+    
+    async def _analyze_test_file_semantics(self, semantic_analysis: SemanticAnalysis,
+                                         file_path: str) -> List[FailureDetection]:
+        """Analyze overall test file structure for semantic issues."""
+        failures = []
+        
+        test_functions = [node for node in semantic_analysis.ast_nodes 
+                         if node.node_type == NodeType.FUNCTION and 
+                         (node.name.startswith('test') or node.attributes.get('is_test', False))]
+        
+        # Check for insufficient test coverage of security scenarios
+        security_test_count = len([func for func in test_functions 
+                                 if any(keyword in func.name.lower() 
+                                       for keyword in ['attack', 'exploit', 'security', 'hack'])])
+        
+        total_tests = len(test_functions)
+        if total_tests > 5 and security_test_count == 0:
+            failures.append(FailureDetection(
+                failure_type=FailureType.MISSING_SECURITY_SCENARIOS,
+                severity="high",
+                description=f"Test file has {total_tests} tests but no security testing",
+                location=file_path,
+                evidence=f"No security tests found among {total_tests} test functions",
+                recommendation="Add security attack scenarios and defensive testing",
+                auto_fixable=False
+            ))
+        
+        # Check for test type diversity
+        test_types = set(func.attributes.get('test_type', 'unit') for func in test_functions)
+        if len(test_types) == 1 and 'unit' in test_types and total_tests > 10:
+            failures.append(FailureDetection(
+                failure_type=FailureType.INSUFFICIENT_EDGE_CASES,
+                severity="medium",
+                description="Test suite only contains unit tests - missing fuzz and integration tests",
+                location=file_path,
+                evidence=f"All {total_tests} tests are unit tests",
+                recommendation="Add fuzz testing and integration scenarios",
+                auto_fixable=False
+            ))
+        
+        return failures
+    
+    async def _detect_enhanced_pattern_failures(self, semantic_analysis: SemanticAnalysis,
+                                               file_path: str, content: str) -> List[FailureDetection]:
+        """Enhanced pattern detection using AST context to reduce false positives."""
+        failures = []
+        
+        # Get test function locations for context
+        test_function_locations = {}
+        for node in semantic_analysis.ast_nodes:
+            if node.node_type == NodeType.FUNCTION and node.name.startswith('test'):
+                test_function_locations[node.name] = node.source_location
+        
+        # Run original pattern detection but with AST context validation
+        for failure_type, config in self.failure_patterns.items():
+            failures.extend(self._detect_contextual_pattern_failures(
+                failure_type, config, file_path, content, test_function_locations
+            ))
+        
+        return failures
+    
+    def _detect_contextual_pattern_failures(self, failure_type: FailureType, config: Dict[str, Any],
+                                           file_path: str, content: str, 
+                                           test_locations: Dict[str, Tuple[int, int]]) -> List[FailureDetection]:
+        """Pattern detection enhanced with AST context to reduce false positives."""
+        failures = []
+        
+        for pattern in config["patterns"]:
+            matches = re.finditer(pattern, content, re.MULTILINE | re.DOTALL)
+            
+            for match in matches:
+                line_num = content[:match.start()].count('\n') + 1
+                
+                # Validate match with AST context
+                if self._validate_pattern_with_ast_context(
+                    failure_type, match, line_num, test_locations
+                ):
+                    failure = FailureDetection(
+                        failure_type=failure_type,
+                        severity=config["severity"],
+                        description=config["description"],
+                        location=f"{file_path}:{line_num}",
+                        evidence=match.group(0)[:200],
+                        recommendation=self._get_recommendation(failure_type),
+                        auto_fixable=self._is_auto_fixable(failure_type)
+                    )
+                    failures.append(failure)
+        
+        return failures
+    
+    def _validate_pattern_with_ast_context(self, failure_type: FailureType, match,
+                                          line_num: int, test_locations: Dict[str, Tuple[int, int]]) -> bool:
+        """Validate pattern match using AST context to reduce false positives."""
+        
+        # Find which test function this match belongs to
+        containing_function = None
+        for func_name, (start_line, end_line) in test_locations.items():
+            if start_line <= line_num <= end_line:
+                containing_function = func_name
+                break
+        
+        if not containing_function:
+            return True  # Default to true if we can't determine context
+        
+        # Apply context-specific validation
+        if failure_type == FailureType.CIRCULAR_LOGIC:
+            # More sophisticated validation for circular logic
+            match_text = match.group(0)
+            # Skip matches in setup functions or legitimate comparisons
+            if 'setUp' in containing_function or 'helper' in containing_function.lower():
+                return False
+        
+        elif failure_type == FailureType.ALWAYS_PASSING_TESTS:
+            # Skip assertions in setup or helper functions
+            if any(keyword in containing_function.lower() 
+                  for keyword in ['setup', 'helper', 'init', 'before']):
+                return False
+        
+        return True
+    
+    async def _analyze_ast_test_structure(self, semantic_analysis: SemanticAnalysis,
+                                        file_path: str) -> List[FailureDetection]:
+        """Enhanced test structure analysis using AST."""
+        failures = []
+        
+        test_functions = [node for node in semantic_analysis.ast_nodes 
+                         if node.node_type == NodeType.FUNCTION and 
+                         node.name.startswith('test')]
+        
+        # More sophisticated insufficient test detection
+        if len(test_functions) < 3:
+            failures.append(FailureDetection(
+                failure_type=FailureType.INSUFFICIENT_EDGE_CASES,
+                severity="high",
+                description=f"Very few test functions ({len(test_functions)}) detected via AST analysis",
+                location=file_path,
+                evidence=f"AST found only {len(test_functions)} test functions",
+                recommendation="Add comprehensive test scenarios including edge cases",
+                auto_fixable=False
+            ))
+        
+        # Check for missing error testing with better accuracy
+        error_test_functions = [func for func in test_functions 
+                              if any(keyword in func.name.lower() 
+                                    for keyword in ['fail', 'revert', 'error', 'invalid'])]
+        
+        if len(test_functions) > 5 and len(error_test_functions) == 0:
+            failures.append(FailureDetection(
+                failure_type=FailureType.MISSING_NEGATIVE_TESTS,
+                severity="high",
+                description="No error condition testing found via AST analysis",
+                location=file_path,
+                evidence=f"0 error tests among {len(test_functions)} total test functions",
+                recommendation="Add tests for error conditions and invalid inputs",
+                auto_fixable=False
+            ))
+        
+        return failures
+    
+    async def _analyze_ast_mock_patterns(self, semantic_analysis: SemanticAnalysis,
+                                       file_path: str) -> List[FailureDetection]:
+        """Enhanced mock analysis using AST."""
+        failures = []
+        
+        # Find mock contract definitions
+        mock_contracts = [node for node in semantic_analysis.ast_nodes 
+                         if node.node_type == NodeType.CONTRACT and 
+                         'mock' in node.name.lower()]
+        
+        for mock_contract in mock_contracts:
+            # Check if mock has sufficient complexity
+            mock_functions = [node for node in semantic_analysis.ast_nodes 
+                            if node.node_type == NodeType.FUNCTION and 
+                            node.parent == mock_contract]
+            
+            if len(mock_functions) < 2:
+                failures.append(FailureDetection(
+                    failure_type=FailureType.MOCK_CHEATING,
+                    severity="medium",
+                    description=f"Mock contract {mock_contract.name} has insufficient functions",
+                    location=f"{file_path}:{mock_contract.source_location[0]}",
+                    evidence=f"Mock {mock_contract.name} has only {len(mock_functions)} functions",
+                    recommendation="Add more realistic mock behavior and state tracking",
+                    auto_fixable=False
+                ))
+        
+        return failures
+    
+    async def _analyze_ast_assertion_patterns(self, semantic_analysis: SemanticAnalysis,
+                                            file_path: str) -> List[FailureDetection]:
+        """Enhanced assertion analysis using AST."""
+        failures = []
+        
+        # Note: Full assertion analysis would require parsing function bodies
+        # This is a placeholder for more sophisticated analysis
+        
+        test_functions = [node for node in semantic_analysis.ast_nodes 
+                         if node.node_type == NodeType.FUNCTION and 
+                         node.name.startswith('test')]
+        
+        # Check for tests with very simple names (often indicate trivial tests)
+        trivial_tests = [func for func in test_functions 
+                        if len(func.name) < 10 and func.name.count('_') < 2]
+        
+        if len(trivial_tests) > len(test_functions) * 0.5:
+            failures.append(FailureDetection(
+                failure_type=FailureType.ALWAYS_PASSING_TESTS,
+                severity="medium",
+                description="Many test functions have trivial names suggesting insufficient testing",
+                location=file_path,
+                evidence=f"{len(trivial_tests)} trivial test names among {len(test_functions)} tests",
+                recommendation="Use descriptive test names that indicate what is being validated",
+                auto_fixable=False
+            ))
+        
+        return failures
+    
+    async def _fallback_regex_analysis(self, file_path: str, content: str) -> List[FailureDetection]:
+        """Fallback to original regex-based analysis when AST fails."""
+        failures = []
+        
+        # Check each failure pattern
+        for failure_type, config in self.failure_patterns.items():
+            detected_failures = self._detect_pattern_failures(
+                failure_type, config, file_path, content
+            )
+            failures.extend(detected_failures)
+        
+        # Original advanced analysis methods
+        failures.extend(await self._analyze_test_structure(file_path, content))
+        failures.extend(await self._analyze_mock_patterns(file_path, content))
+        failures.extend(await self._analyze_assertion_patterns(file_path, content))
+        
+        return failures

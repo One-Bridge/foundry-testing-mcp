@@ -1,853 +1,1169 @@
 """
-Smart Contract Testing MCP Server - Testing Resources
+Smart Contract Testing MCP Server - Testing Resources (Refactored)
 
-This module provides MCP resources for accessing documentation, templates, and reports.
+This module provides the knowledge base for the MCP, including structured patterns
+and best-practice templates for test generation. All dynamic analysis logic has been
+moved to the tools module.
 """
 
 import logging
-import os
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Tuple
 
 logger = logging.getLogger(__name__)
 
 class TestingResources:
     """
-    Testing resources for the MCP server.
-    
-    This class provides access to test templates, documentation, and generated reports
-    through the MCP resource system.
+    Manages access to test templates, documentation, and structured testing patterns.
+    This is now a pure knowledge base without dynamic analysis capabilities.
     """
     
     def __init__(self):
         """Initialize testing resources."""
-        self.server_root = self._get_server_root()
+        self.server_root = Path(__file__).parent.parent.resolve()
         self.templates_dir = self.server_root / "templates"
         self.docs_dir = self.server_root / "docs"
         logger.info(f"Testing resources initialized - Server root: {self.server_root}")
     
-    def _get_server_root(self) -> Path:
-        """Get the root directory of the MCP server installation."""
-        # Get the directory containing this file
-        current_file = Path(__file__)
-        # Go up to the project root (from components/ to root)
-        server_root = current_file.parent.parent
-        return server_root.resolve()
-    
-    def _get_current_project_path(self) -> Path:
-        """Get the current project directory (where user is working)."""
-        return Path.cwd()
-    
     def register_resources(self, mcp) -> None:
-        """
-        Register all testing resources with the MCP server.
+        """Register all testing resources with the MCP server."""
         
-        Args:
-            mcp: FastMCP server instance
-        """
-        # Foundry testing patterns resource
+        # Foundry testing patterns resource with actionable patterns
         @mcp.resource("testing://foundry-patterns")
         async def get_foundry_testing_patterns() -> Dict[str, Any]:
-            """
-            Access comprehensive Foundry testing patterns and best practices.
-            
-            Returns:
-                Dictionary containing testing patterns, examples, and best practices
-            """
+            """Access comprehensive, structured Foundry testing patterns."""
             return {
                 "name": "Foundry Testing Patterns",
-                "description": "Comprehensive patterns and best practices for Foundry testing",
-                "version": "1.0.0",
+                "description": "Actionable patterns and best practices for Foundry testing with concrete code snippets.",
+                "version": "2.0.0",
                 "content": {
                     "test_organization": {
-                        "file_structure": {
-                            "description": "Recommended test file organization",
-                            "pattern": """
+                        "description": "Recommended test file organization grouped by functionality and test type.",
+                        "file_structure_pattern": """
 test/
-├── unit/           # Unit tests for individual functions
-│   ├── Contract1.t.sol
-│   └── Contract2.t.sol
-├── integration/    # Integration tests for contract interactions
-│   ├── Workflow1.t.sol
-│   └── Workflow2.t.sol
-├── invariant/      # Invariant/property-based tests
-│   ├── Invariant1.t.sol
-│   └── Invariant2.t.sol
-├── fuzz/          # Fuzz testing
-│   ├── Fuzz1.t.sol
-│   └── Fuzz2.t.sol
-├── mocks/         # Mock contracts for testing
-│   ├── MockERC20.sol
-│   └── MockOracle.sol
-└── utils/         # Test utilities and helpers
-    ├── TestUtils.sol
+├── {{CONTRACT_NAME}}.t.sol                    # Core unit and integration tests
+├── {{CONTRACT_NAME}}.invariant.t.sol          # Invariant/property-based tests
+├── {{CONTRACT_NAME}}.security.t.sol           # Security-focused tests
+├── {{CONTRACT_NAME}}.fork.t.sol               # Mainnet fork tests
+├── handlers/
+│   └── {{CONTRACT_NAME}}Handler.sol           # Handler for invariant testing
+├── mocks/
+│   ├── Mock{{DEPENDENCY_NAME}}.sol
+│   └── MockERC20.sol
+└── utils/
+    ├── TestHelper.sol
     └── TestConstants.sol
-                            """
-                        },
+                        """,
                         "naming_conventions": {
-                            "test_files": "Use .t.sol suffix for test files",
-                            "test_functions": "Use test prefix for test functions",
-                            "test_contracts": "Use Test suffix for test contracts"
+                            "test_files": "{{CONTRACT_NAME}}.{{TYPE}}.t.sol where TYPE is optional (security, invariant, fork)",
+                            "test_functions": "test_{{FUNCTION_NAME}}_{{WHEN_CONDITION}}_{{SHOULD_RESULT}} - Example: test_transfer_whenAmountExceedsBalance_shouldRevert",
+                            "test_contracts": "{{CONTRACT_NAME}}Test - Example: TokenTest, VaultTest",
+                            "handler_contracts": "{{CONTRACT_NAME}}Handler - For invariant testing"
                         }
                     },
                     "testing_patterns": {
-                        "setup_patterns": {
-                            "description": "Common setup patterns for tests",
-                            "examples": [
-                                "State variable initialization",
-                                "Mock contract deployment",
-                                "User account setup",
-                                "Initial funding and approvals"
-                            ]
-                        },
-                        "assertion_patterns": {
-                            "description": "Effective assertion strategies",
-                            "examples": [
-                                "State verification",
-                                "Event emission checks",
-                                "Balance and allowance verification",
-                                "Error condition testing"
-                            ]
-                        },
-                        "mocking_patterns": {
-                            "description": "Mock contract and external dependency patterns",
-                            "examples": [
-                                "ERC20 token mocking",
-                                "Oracle price feed mocking",
-                                "External contract interaction mocking"
-                            ]
-                        }
+                        "setup_patterns": [
+                            {
+                                "name": "Standard Setup Pattern",
+                                "description": "Using setUp() to initialize contracts and test accounts consistently",
+                                "code_snippet": """
+function setUp() public {
+    {{OWNER_ACCOUNT}} = makeAddr("owner");
+    {{USER_ACCOUNT}} = makeAddr("user");
+    {{ATTACKER_ACCOUNT}} = makeAddr("attacker");
+    
+    vm.prank({{OWNER_ACCOUNT}});
+    {{CONTRACT_INSTANCE}} = new {{CONTRACT_NAME}}();
+    
+    // Setup initial state
+    vm.deal({{USER_ACCOUNT}}, 100 ether);
+    vm.deal({{ATTACKER_ACCOUNT}}, 10 ether);
+}
+                                """
+                            },
+                            {
+                                "name": "Mock Setup Pattern",
+                                "description": "Setting up mock contracts for external dependencies",
+                                "code_snippet": """
+function setUp() public {
+    mockToken = new MockERC20("Mock Token", "MTK", 18);
+    mockOracle = new MockPriceOracle();
+    
+    vm.prank({{OWNER_ACCOUNT}});
+    {{CONTRACT_INSTANCE}} = new {{CONTRACT_NAME}}(
+        address(mockToken),
+        address(mockOracle)
+    );
+}
+                                """
+                            }
+                        ],
+                        "assertion_patterns": [
+                            {
+                                "name": "State Verification",
+                                "description": "Asserting contract state changes with descriptive messages",
+                                "code_snippet": """
+assertEq({{CONTRACT_INSTANCE}}.owner(), {{EXPECTED_OWNER}}, "Owner should be set correctly");
+assertEq({{CONTRACT_INSTANCE}}.balanceOf({{USER_ACCOUNT}}), {{EXPECTED_BALANCE}}, "User balance mismatch");
+                                """
+                            },
+                            {
+                                "name": "Event Emission Testing",
+                                "description": "Verifying events are emitted with correct parameters",
+                                "code_snippet": """
+vm.expectEmit(true, true, true, true);
+emit {{EVENT_NAME}}({{PARAM1}}, {{PARAM2}}, {{PARAM3}});
+
+vm.prank({{CALLER_ACCOUNT}});
+{{CONTRACT_INSTANCE}}.{{FUNCTION_NAME}}({{FUNCTION_PARAMS}});
+                                """
+                            },
+                            {
+                                "name": "Error Condition Testing",
+                                "description": "Testing revert conditions with specific error messages",
+                                "code_snippet": """
+vm.expectRevert({{CONTRACT_NAME}}.{{ERROR_NAME}}.selector);
+vm.prank({{UNAUTHORIZED_ACCOUNT}});
+{{CONTRACT_INSTANCE}}.{{PROTECTED_FUNCTION}}();
+
+// For string error messages
+vm.expectRevert("{{ERROR_MESSAGE}}");
+{{CONTRACT_INSTANCE}}.{{FUNCTION_THAT_REVERTS}}();
+                                """
+                            }
+                        ],
+                        "advanced_patterns": [
+                            {
+                                "name": "Time Manipulation",
+                                "description": "Testing time-dependent functionality",
+                                "code_snippet": """
+// Fast forward time
+vm.warp(block.timestamp + {{TIME_DELTA}});
+
+// Test time-based conditions
+assertTrue({{CONTRACT_INSTANCE}}.isExpired(), "Contract should be expired");
+                                """
+                            },
+                            {
+                                "name": "Fork Testing Pattern",
+                                "description": "Testing against mainnet state",
+                                "code_snippet": """
+function setUp() public {
+    vm.createFork(vm.envString("MAINNET_RPC_URL"));
+    {{REAL_CONTRACT}} = {{INTERFACE}}({{MAINNET_ADDRESS}});
+}
+
+function test_{{FUNCTION_NAME}}_onMainnetFork() public {
+    // Test with real mainnet state
+    uint256 realBalance = {{REAL_CONTRACT}}.balanceOf({{WHALE_ADDRESS}});
+    assertGt(realBalance, 0, "Whale should have balance");
+}
+                                """
+                            }
+                        ]
                     },
                     "best_practices": {
-                        "test_isolation": "Each test should be independent and repeatable",
-                        "clear_naming": "Use descriptive test names that explain the scenario",
-                        "comprehensive_coverage": "Cover success paths, error conditions, and edge cases",
-                        "gas_optimization": "Test gas usage and optimization scenarios",
-                        "security_focus": "Include security-specific test scenarios"
+                        "test_isolation": "Each test should be completely independent - use setUp() for common initialization",
+                        "descriptive_naming": "Test names should read like documentation: test_function_whenCondition_shouldResult",
+                        "comprehensive_coverage": "Test success paths, error conditions, edge cases, and security scenarios",
+                        "gas_awareness": "Include gas consumption tests for critical functions",
+                        "security_first": "Every privileged function needs access control tests, every external call needs reentrancy tests"
                     }
                 }
             }
         
-        # Test templates resource
+        # Security patterns resource with machine-readable test cases
+        @mcp.resource("testing://security-patterns")
+        async def get_security_testing_patterns() -> Dict[str, Any]:
+            """Get structured security patterns with comprehensive test case examples."""
+            return {
+                "name": "Foundry Security Test Patterns",
+                "description": "A comprehensive library of security vulnerabilities and how to test for them effectively.",
+                "version": "2.0.0",
+                "categories": {
+                    "access_control": {
+                        "description": "Testing authorization and permission mechanisms",
+                        "patterns": [
+                            {
+                                "vulnerability": "Unauthorized Function Access",
+                                "description": "Ensures functions with access modifiers cannot be called by unauthorized accounts",
+                                "severity": "High",
+                                "test_case_snippet": """
+function test_{{FUNCTION_NAME}}_whenCalledByUnauthorized_shouldRevert() public {
+    address unauthorized = makeAddr("unauthorized");
+    
+    vm.prank(unauthorized);
+    vm.expectRevert({{CONTRACT_NAME}}.Unauthorized.selector);
+    {{CONTRACT_INSTANCE}}.{{PROTECTED_FUNCTION}}();
+}
+
+function test_{{FUNCTION_NAME}}_whenCalledByOwner_shouldSucceed() public {
+    vm.prank({{OWNER_ACCOUNT}});
+    {{CONTRACT_INSTANCE}}.{{PROTECTED_FUNCTION}}();
+    // Add success assertions
+}
+                                """
+                            },
+                            {
+                                "vulnerability": "Role-Based Access Control",
+                                "description": "Testing role-based permissions with proper role management",
+                                "severity": "High",
+                                "test_case_snippet": """
+function test_roleManagement_whenGrantingRole_shouldWork() public {
+    bytes32 role = {{CONTRACT_INSTANCE}}.{{ROLE_NAME}}();
+    
+    vm.prank({{ADMIN_ACCOUNT}});
+    {{CONTRACT_INSTANCE}}.grantRole(role, {{USER_ACCOUNT}});
+    
+    assertTrue({{CONTRACT_INSTANCE}}.hasRole(role, {{USER_ACCOUNT}}));
+}
+
+function test_protectedFunction_whenUserLacksRole_shouldRevert() public {
+    vm.prank({{USER_ACCOUNT}});
+    vm.expectRevert({{ACCESS_CONTROL_ERROR}});
+    {{CONTRACT_INSTANCE}}.{{ROLE_PROTECTED_FUNCTION}}();
+}
+                                """
+                            }
+                        ]
+                    },
+                    "reentrancy": {
+                        "description": "Testing protection against reentrancy attacks",
+                        "patterns": [
+                            {
+                                "vulnerability": "Single-Function Reentrancy",
+                                "description": "Tests protection against reentrancy attacks on withdrawal functions",
+                                "severity": "Critical",
+                                "test_case_snippet": """
+contract MaliciousReentrant {
+    {{CONTRACT_NAME}} public target;
+    bool public attacked = false;
+    
+    constructor(address _target) {
+        target = {{CONTRACT_NAME}}(_target);
+    }
+    
+    function attack() external payable {
+        target.withdraw();
+    }
+    
+    receive() external payable {
+        if (!attacked) {
+            attacked = true;
+            target.withdraw(); // Attempt reentrancy
+        }
+    }
+}
+
+function test_withdraw_whenReentrant_shouldRevert() public {
+    MaliciousReentrant attacker = new MaliciousReentrant(address({{CONTRACT_INSTANCE}}));
+    
+    // Setup: fund attacker's deposit
+    vm.deal(address(attacker), 1 ether);
+    vm.prank(address(attacker));
+    {{CONTRACT_INSTANCE}}.deposit{value: 1 ether}();
+    
+    // Attack should fail
+    vm.expectRevert("ReentrancyGuard: reentrant call");
+    attacker.attack();
+}
+                                """
+                            }
+                        ]
+                    },
+                    "economic_exploits": {
+                        "description": "Testing economic attack vectors and incentive misalignment",
+                        "patterns": [
+                            {
+                                "vulnerability": "Flash Loan Attack",
+                                "description": "Testing protection against flash loan manipulation",
+                                "severity": "Critical",
+                                "test_case_snippet": """
+contract FlashLoanAttacker {
+    {{CONTRACT_NAME}} public target;
+    IERC20 public token;
+    
+    constructor(address _target, address _token) {
+        target = {{CONTRACT_NAME}}(_target);
+        token = IERC20(_token);
+    }
+    
+    function attack(uint256 amount) external {
+        // Simulate flash loan
+        vm.assume(token.transfer(address(this), amount));
+        
+        // Perform manipulation
+        target.{{VULNERABLE_FUNCTION}}();
+        
+        // Repay flash loan
+        token.transfer(msg.sender, amount);
+    }
+}
+
+function test_{{FUNCTION_NAME}}_whenFlashLoanAttack_shouldBeMitigated() public {
+    FlashLoanAttacker attacker = new FlashLoanAttacker(
+        address({{CONTRACT_INSTANCE}}),
+        address({{TOKEN_ADDRESS}})
+    );
+    
+    uint256 flashLoanAmount = 1000000e18;
+    
+    // Attack should either revert or be ineffective
+    vm.expectRevert(); // or check that attack has no effect
+    attacker.attack(flashLoanAmount);
+}
+                                """
+                            }
+                        ]
+                    },
+                    "oracle_manipulation": {
+                        "description": "Testing oracle price manipulation resistance",
+                        "patterns": [
+                            {
+                                "vulnerability": "Price Oracle Manipulation",
+                                "description": "Testing resistance to oracle price manipulation attacks",
+                                "severity": "High",
+                                "test_case_snippet": """
+function test_priceDependent_whenOracleManipulated_shouldResist() public {
+    // Record initial state
+    uint256 initialValue = {{CONTRACT_INSTANCE}}.getTotalValue();
+    
+    // Manipulate oracle price dramatically
+    mockOracle.setPrice({{MANIPULATED_PRICE}});
+    
+    // Function should either revert or use safeguards
+    vm.expectRevert("Price manipulation detected");
+    {{CONTRACT_INSTANCE}}.{{PRICE_DEPENDENT_FUNCTION}}();
+    
+    // Or verify safeguards limit impact
+    uint256 newValue = {{CONTRACT_INSTANCE}}.getTotalValue();
+    uint256 maxAllowedChange = initialValue * {{MAX_CHANGE_PCT}} / 100;
+    assertLt(
+        newValue > initialValue ? newValue - initialValue : initialValue - newValue,
+        maxAllowedChange,
+        "Price change should be limited by safeguards"
+    );
+}
+                                """
+                            }
+                        ]
+                    }
+                }
+            }
+        
+        # Enhanced test templates with placeholders
         @mcp.resource("testing://templates/{template_type}")
         async def get_test_template(template_type: str) -> Dict[str, Any]:
-            """
-            Get test templates for different testing scenarios.
-            
-            Args:
-                template_type: Type of template (unit, integration, invariant, fuzz, security)
-                
-            Returns:
-                Dictionary containing the template content and usage instructions
-            """
-            template_content = await self._load_template(template_type)
+            """Get test templates with dynamic placeholders for code generation."""
+            template_content, placeholders = await self._load_template(template_type)
             
             return {
                 "name": f"{template_type.title()} Test Template",
-                "description": f"Template for {template_type} testing scenarios",
+                "description": f"Best-practice template for {template_type} testing scenarios",
                 "template_type": template_type,
                 "content": template_content,
-                "usage": {
-                    "description": f"How to use the {template_type} test template",
-                    "instructions": await self._get_template_usage_instructions(template_type)
-                }
+                "placeholders": placeholders,
+                "usage_instructions": self._get_template_usage_instructions(template_type)
             }
         
-        # Current project analysis resource
-        @mcp.resource("testing://project-analysis")
-        async def get_current_project_analysis() -> Dict[str, Any]:
-            """
-            Get analysis of the current project directory.
-            
-            Returns:
-                Dictionary containing project structure analysis
-            """
-            project_path = self._get_current_project_path()
-            
-            try:
-                # Import here to avoid circular dependency
-                from .foundry_adapter import FoundryAdapter
-                
-                adapter = FoundryAdapter()
-                analysis = await adapter.detect_project_structure(str(project_path))
-                
-                return {
-                    "name": "Current Project Analysis",
-                    "description": "Analysis of the current project directory",
-                    "project_path": str(project_path),
-                    "analysis": analysis,
-                    "recommendations": self._generate_project_recommendations(analysis)
-                }
-                
-            except Exception as e:
-                logger.error(f"Error analyzing current project: {e}")
-                return {
-                    "name": "Current Project Analysis",
-                    "description": "Error analyzing current project",
-                    "error": str(e),
-                    "project_path": str(project_path)
-                }
-        
-        # Test coverage resource
-        @mcp.resource("testing://coverage-report")
-        async def get_current_coverage_report() -> Dict[str, Any]:
-            """
-            Get current test coverage report for the project.
-            
-            Returns:
-                Dictionary containing coverage report and analysis
-            """
-            project_path = self._get_current_project_path()
-            
-            try:
-                # Import here to avoid circular dependency
-                from .foundry_adapter import FoundryAdapter
-                
-                adapter = FoundryAdapter()
-                coverage_result = await adapter.generate_coverage_report(str(project_path))
-                
-                return {
-                    "name": "Current Coverage Report",
-                    "description": "Test coverage analysis for the current project",
-                    "project_path": str(project_path),
-                    "coverage_data": coverage_result,
-                    "analysis": self._analyze_coverage_data(coverage_result)
-                }
-                
-            except Exception as e:
-                logger.error(f"Error generating coverage report: {e}")
-                return {
-                    "name": "Current Coverage Report",
-                    "description": "Error generating coverage report",
-                    "error": str(e),
-                    "project_path": str(project_path)
-                }
-        
-        # Testing documentation resource
-        @mcp.resource("testing://documentation")
-        async def get_testing_documentation() -> Dict[str, Any]:
-            """
-            Get comprehensive testing documentation.
-            
-            Returns:
-                Dictionary containing testing guides and documentation
-            """
+        # Available templates resource
+        @mcp.resource("testing://templates")
+        async def get_available_templates() -> Dict[str, Any]:
+            """Get list of available test templates with descriptions."""
             return {
-                "name": "Smart Contract Testing Documentation",
-                "description": "Comprehensive testing guides and best practices",
-                "sections": {
-                    "getting_started": {
-                        "title": "Getting Started with Smart Contract Testing",
-                        "content": await self._get_getting_started_guide()
+                "name": "Available Test Templates",
+                "description": "Comprehensive test templates for different testing scenarios",
+                "templates": {
+                    "unit": {
+                        "name": "Unit Test Template",
+                        "description": "Template for testing individual contract functions with comprehensive coverage",
+                        "use_cases": [
+                            "Function-level testing with edge cases",
+                            "State variable validation",
+                            "Access control verification",
+                            "Error condition testing with specific error types"
+                        ],
+                        "placeholders": ["{{CONTRACT_NAME}}", "{{OWNER_ACCOUNT}}", "{{USER_ACCOUNT}}"]
                     },
-                    "foundry_guide": {
-                        "title": "Foundry Testing Guide",
-                        "content": await self._get_foundry_guide()
+                    "integration": {
+                        "name": "Integration Test Template", 
+                        "description": "Template for testing complex workflows and contract interactions",
+                        "use_cases": [
+                            "Multi-contract workflow testing",
+                            "User journey simulation",
+                            "Cross-contract interaction validation",
+                            "End-to-end scenario testing"
+                        ],
+                        "placeholders": ["{{CONTRACT_A_NAME}}", "{{CONTRACT_B_NAME}}", "{{WORKFLOW_NAME}}"]
                     },
-                    "security_testing": {
-                        "title": "Security Testing Best Practices",
-                        "content": await self._get_security_testing_guide()
+                    "invariant": {
+                        "name": "Invariant Test Template (Handler Pattern)",
+                        "description": "Best-practice template for property-based/stateful fuzz testing using Handler pattern",
+                        "use_cases": [
+                            "System invariant verification",
+                            "Property preservation under random state changes",
+                            "Protocol correctness validation",
+                            "Complex stateful fuzzing scenarios"
+                        ],
+                        "placeholders": ["{{CONTRACT_NAME}}", "{{INVARIANT_DESCRIPTION}}", "{{HANDLER_FUNCTIONS}}"]
                     },
-                    "coverage_strategies": {
-                        "title": "Test Coverage Strategies",
-                        "content": await self._get_coverage_strategies_guide()
+                    "security": {
+                        "name": "Security Test Template",
+                        "description": "Template for comprehensive security testing with attack scenarios",
+                        "use_cases": [
+                            "Access control penetration testing",
+                            "Reentrancy attack simulation",
+                            "Economic exploit testing",
+                            "Oracle manipulation resistance"
+                        ],
+                        "placeholders": ["{{CONTRACT_NAME}}", "{{ATTACK_SCENARIOS}}", "{{SECURITY_ASSERTIONS}}"]
                     },
-                    "troubleshooting": {
-                        "title": "Common Issues and Solutions",
-                        "content": await self._get_troubleshooting_guide()
+                    "fork": {
+                        "name": "Fork Test Template",
+                        "description": "Template for testing against real mainnet state",
+                        "use_cases": [
+                            "Integration with existing protocols",
+                            "Real-world state validation",
+                            "Mainnet behavior verification",
+                            "Migration testing"
+                        ],
+                        "placeholders": ["{{FORK_BLOCK}}", "{{MAINNET_ADDRESSES}}", "{{REAL_CONTRACT_INTERFACES}}"]
+                    },
+                    "helper": {
+                        "name": "Test Helper Utilities Template",
+                        "description": "Template for centralized helper functions to reduce code duplication",
+                        "use_cases": [
+                            "Account setup and funding utilities",
+                            "Common state manipulation helpers",
+                            "Reusable assertion patterns",
+                            "Test data generation functions",
+                            "Gas measurement and performance testing",
+                            "Logging and debugging utilities"
+                        ],
+                        "placeholders": ["{{CONTRACT_NAME}}", "{{CONTRACT_INSTANCE}}", "{{TEST_DATA_TYPE}}", "{{STATE_ASSERTIONS}}"]
                     }
                 }
             }
         
-        # Available templates list resource
-        @mcp.resource("testing://templates")
-        async def get_available_templates() -> Dict[str, Any]:
-            """
-            Get list of available test templates.
-            
-            Returns:
-                Dictionary containing available templates and their descriptions
-            """
+        # Testing methodology documentation
+        @mcp.resource("testing://documentation")
+        async def get_testing_documentation() -> Dict[str, Any]:
+            """Get comprehensive testing documentation and methodologies."""
             return {
-                "name": "Available Test Templates",
-                "description": "List of all available test templates",
-                "templates": {
-                    "unit": {
-                        "name": "Unit Test Template",
-                        "description": "Template for testing individual contract functions",
-                        "use_cases": [
-                            "Function-level testing",
-                            "State variable testing",
-                            "Access control testing",
-                            "Error condition testing"
-                        ]
+                "name": "Smart Contract Testing Documentation",
+                "description": "Comprehensive testing guides and professional methodologies",
+                "version": "2.0.0",
+                "sections": {
+                    "foundry_methodology": {
+                        "title": "Foundry Testing Methodology",
+                        "content": {
+                            "test_types": {
+                                "unit": "Test individual functions in isolation with comprehensive edge cases",
+                                "integration": "Test complex workflows and multi-contract interactions", 
+                                "invariant": "Test system properties that should always hold using stateful fuzzing",
+                                "fork": "Test against real mainnet state for realistic validation",
+                                "security": "Test specific attack vectors and defensive mechanisms"
+                            },
+                            "test_structure": {
+                                "setup": "Use setUp() for consistent test initialization",
+                                "naming": "Use descriptive names: test_function_whenCondition_shouldResult",
+                                "isolation": "Each test should be completely independent",
+                                "assertions": "Use descriptive assertion messages for debugging"
+                            }
+                        }
                     },
-                    "integration": {
-                        "name": "Integration Test Template",
-                        "description": "Template for testing contract interactions",
-                        "use_cases": [
-                            "Multi-contract workflows",
-                            "User journey testing",
-                            "Cross-contract interactions",
-                            "End-to-end scenarios"
-                        ]
+                    "security_methodology": {
+                        "title": "Security Testing Best Practices",
+                        "content": {
+                            "attack_vectors": [
+                                "Access Control: Test unauthorized access to privileged functions",
+                                "Reentrancy: Simulate reentrancy attacks on external calls",
+                                "Economic: Test flash loan attacks and price manipulation",
+                                "Oracle: Test oracle manipulation and data freshness",
+                                "Governance: Test voting manipulation and proposal attacks"
+                            ],
+                            "defensive_testing": [
+                                "Verify all access controls function correctly",
+                                "Test circuit breakers and emergency stops",
+                                "Validate input sanitization and bounds checking",
+                                "Test rate limiting and cooldown mechanisms"
+                            ]
+                        }
                     },
-                    "invariant": {
-                        "name": "Invariant Test Template",
-                        "description": "Template for property-based testing",
-                        "use_cases": [
-                            "System invariants",
-                            "Property verification",
-                            "State consistency testing",
-                            "Business rule validation"
-                        ]
-                    },
-                    "fuzz": {
-                        "name": "Fuzz Test Template",
-                        "description": "Template for fuzz testing with random inputs",
-                        "use_cases": [
-                            "Input validation testing",
-                            "Edge case discovery",
-                            "Robustness testing",
-                            "Boundary condition testing"
-                        ]
-                    },
-                    "security": {
-                        "name": "Security Test Template",
-                        "description": "Template for security-focused testing",
-                        "use_cases": [
-                            "Access control testing",
-                            "Reentrancy testing",
-                            "Economic attack testing",
-                            "Vulnerability testing"
-                        ]
+                    "coverage_strategy": {
+                        "title": "Test Coverage Strategy",
+                        "content": {
+                            "targets": {
+                                "minimum": "80% line coverage with basic error testing",
+                                "production": "90% line coverage with 85% branch coverage",
+                                "audit_ready": "95% line coverage with comprehensive security testing"
+                            },
+                            "priorities": [
+                                "Critical functions first (admin, money movement)",
+                                "Error conditions and edge cases",
+                                "Security-sensitive code paths",
+                                "Integration points and external calls"
+                            ]
+                        }
                     }
                 }
             }
         
         logger.info("Testing resources registered successfully")
     
-    # Template loading methods
-    async def _load_template(self, template_type: str) -> str:
-        """Load template content from the templates directory."""
-        template_map = {
-            "unit": "test_contract_template.sol",
-            "integration": "integration_test_template.sol",
-            "invariant": "invariant_test_template.sol",
-            "fuzz": "fuzz_test_template.sol",
-            "security": "security_test_template.sol"
+    # Template loading and generation methods
+    async def _load_template(self, template_type: str) -> Tuple[str, List[str]]:
+        """Load template content with dynamic placeholders."""
+        templates = {
+            "unit": (self._get_unit_test_template(), [
+                "{{CONTRACT_NAME}}", "{{OWNER_ACCOUNT}}", "{{USER_ACCOUNT}}", 
+                "{{FUNCTION_NAME}}", "{{EXPECTED_VALUE}}", "{{ERROR_TYPE}}"
+            ]),
+            "integration": (self._get_integration_test_template(), [
+                "{{CONTRACT_A_NAME}}", "{{CONTRACT_B_NAME}}", "{{WORKFLOW_NAME}}",
+                "{{INTERACTION_FUNCTION}}", "{{EXPECTED_STATE}}"
+            ]),
+            "invariant": (self._get_invariant_test_template(), [
+                "{{CONTRACT_NAME}}", "{{HANDLER_NAME}}", "{{INVARIANT_DESCRIPTION}}",
+                "{{INVARIANT_CONDITION}}", "{{HANDLER_FUNCTIONS}}"
+            ]),
+            "security": (self._get_security_test_template(), [
+                "{{CONTRACT_NAME}}", "{{ATTACK_CONTRACT}}", "{{VULNERABILITY_TYPE}}",
+                "{{PROTECTION_MECHANISM}}", "{{EXPECTED_DEFENSE}}"
+            ]),
+            "fork": (self._get_fork_test_template(), [
+                "{{FORK_URL}}", "{{FORK_BLOCK}}", "{{MAINNET_CONTRACT}}", 
+                "{{REAL_ADDRESS}}", "{{WHALE_ADDRESS}}"
+            ]),
+            "helper": (self._get_helper_test_template(), [
+                "{{CONTRACT_NAME}}", "{{CONTRACT_INSTANCE}}", "{{TEST_DATA_TYPE}}",
+                "{{SCENARIO_1_SETUP}}", "{{SCENARIO_2_SETUP}}", "{{SCENARIO_3_SETUP}}",
+                "{{STATE_ASSERTIONS}}", "{{DEPOSIT_WORKFLOW_STEPS}}", "{{WITHDRAWAL_WORKFLOW_STEPS}}",
+                "{{ADDITIONAL_DATA_FIELDS}}", "{{STATE_LOGGING_CODE}}"
+            ])
         }
         
-        template_file = template_map.get(template_type)
-        if not template_file:
-            return self._get_default_test_template()
-        
-        template_path = self.templates_dir / template_file
-        
-        try:
-            if template_path.exists():
-                with open(template_path, 'r') as f:
-                    return f.read()
-            else:
-                # Return built-in template if file doesn't exist
-                return self._get_builtin_template(template_type)
-        except Exception as e:
-            logger.warning(f"Error loading template {template_type}: {e}")
-            return self._get_default_test_template()
-    
-    def _get_builtin_template(self, template_type: str) -> str:
-        """Get built-in template content."""
-        if template_type == "unit":
-            return self._get_unit_test_template()
-        elif template_type == "integration":
-            return self._get_integration_test_template()
-        elif template_type == "invariant":
-            return self._get_invariant_test_template()
-        elif template_type == "fuzz":
-            return self._get_fuzz_test_template()
-        elif template_type == "security":
-            return self._get_security_test_template()
-        else:
-            return self._get_default_test_template()
+        return templates.get(template_type, (self._get_default_test_template(), ["{{CONTRACT_NAME}}"]))
     
     def _get_unit_test_template(self) -> str:
-        """Get unit test template."""
-        return """
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+        """Best-practice unit test template with comprehensive patterns."""
+        return """// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../src/ContractName.sol";
+import {Test, console} from "forge-std/Test.sol";
+import "../src/{{CONTRACT_NAME}}.sol";
 
-contract ContractNameTest is Test {
-    ContractName public contractName;
-    
-    // Test accounts
-    address public owner = address(0x1);
-    address public user1 = address(0x2);
-    address public user2 = address(0x3);
-    
+contract {{CONTRACT_NAME}}Test is Test {
+    {{CONTRACT_NAME}} public {{CONTRACT_INSTANCE}};
+
+    // Test accounts using makeAddr for better debugging
+    address public {{OWNER_ACCOUNT}} = makeAddr("owner");
+    address public {{USER_ACCOUNT}} = makeAddr("user");
+    address public {{OTHER_USER}} = makeAddr("otherUser");
+
+    // Events for testing (copy from contract)
+    event {{EVENT_NAME}}(address indexed user, uint256 amount);
+
     function setUp() public {
-        vm.prank(owner);
-        contractName = new ContractName();
-    }
-    
-    function testInitialState() public {
-        // Test initial contract state
-        assertEq(contractName.owner(), owner);
-        // Add more initial state assertions
-    }
-    
-    function testBasicFunctionality() public {
-        // Test basic contract functionality
-        vm.prank(user1);
-        contractName.someFunction();
+        vm.prank({{OWNER_ACCOUNT}});
+        {{CONTRACT_INSTANCE}} = new {{CONTRACT_NAME}}();
         
-        // Add assertions
-        assertTrue(true);
+        // Setup initial balances if needed
+        vm.deal({{USER_ACCOUNT}}, 10 ether);
+        vm.deal({{OTHER_USER}}, 10 ether);
     }
-    
-    function testAccessControl() public {
-        // Test access control mechanisms
-        vm.prank(user1);
-        vm.expectRevert("Unauthorized");
-        contractName.onlyOwnerFunction();
+
+    // ====== BASIC FUNCTIONALITY TESTS ======
+
+    function test_initialState() public {
+        assertEq({{CONTRACT_INSTANCE}}.owner(), {{OWNER_ACCOUNT}}, "Owner should be set correctly");
+        // Add other initial state assertions
     }
-    
-    function testErrorConditions() public {
-        // Test error conditions and edge cases
-        vm.expectRevert("Invalid input");
-        contractName.functionWithValidation(0);
+
+    function test_{{FUNCTION_NAME}}_whenValidInput_shouldSucceed() public {
+        // Arrange
+        uint256 {{INPUT_VALUE}} = 100;
+        
+        // Act
+        vm.prank({{USER_ACCOUNT}});
+        {{CONTRACT_INSTANCE}}.{{FUNCTION_NAME}}({{INPUT_VALUE}});
+        
+        // Assert
+        assertEq({{CONTRACT_INSTANCE}}.{{STATE_VARIABLE}}(), {{EXPECTED_VALUE}}, "State should be updated correctly");
     }
-    
-    function testEvents() public {
-        // Test event emissions
+
+    // ====== ERROR CONDITION TESTS ======
+
+    function test_{{FUNCTION_NAME}}_whenUnauthorized_shouldRevert() public {
+        vm.prank({{USER_ACCOUNT}});
+        vm.expectRevert({{CONTRACT_NAME}}.Unauthorized.selector);
+        {{CONTRACT_INSTANCE}}.{{PROTECTED_FUNCTION}}();
+    }
+
+    function test_{{FUNCTION_NAME}}_whenInvalidInput_shouldRevert() public {
+        vm.prank({{USER_ACCOUNT}});
+        vm.expectRevert("{{ERROR_MESSAGE}}");
+        {{CONTRACT_INSTANCE}}.{{FUNCTION_NAME}}(0); // Invalid input
+    }
+
+    // ====== EVENT EMISSION TESTS ======
+
+    function test_{{FUNCTION_NAME}}_whenCalled_shouldEmitEvent() public {
+        uint256 amount = 100;
+        
         vm.expectEmit(true, true, true, true);
-        emit SomeEvent(user1, 100);
+        emit {{EVENT_NAME}}({{USER_ACCOUNT}}, amount);
         
-        vm.prank(user1);
-        contractName.functionThatEmitsEvent(100);
+        vm.prank({{USER_ACCOUNT}});
+        {{CONTRACT_INSTANCE}}.{{FUNCTION_NAME}}(amount);
     }
-}
-        """
-    
-    def _get_integration_test_template(self) -> str:
-        """Get integration test template."""
-        return """
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
 
-import "forge-std/Test.sol";
-import "../src/Contract1.sol";
-import "../src/Contract2.sol";
+    // ====== EDGE CASE TESTS ======
 
-contract IntegrationTest is Test {
-    Contract1 public contract1;
-    Contract2 public contract2;
-    
-    // Test accounts
-    address public owner = address(0x1);
-    address public user1 = address(0x2);
-    address public user2 = address(0x3);
-    
-    function setUp() public {
-        vm.prank(owner);
-        contract1 = new Contract1();
-        contract2 = new Contract2(address(contract1));
-    }
-    
-    function testWorkflowIntegration() public {
-        // Test complete workflow across contracts
-        vm.prank(user1);
-        contract1.step1();
-        
-        vm.prank(user1);
-        contract2.step2();
-        
-        // Verify final state
-        assertEq(contract1.getState(), 2);
-        assertEq(contract2.getState(), 1);
-    }
-    
-    function testCrossContractInteraction() public {
-        // Test interactions between contracts
-        vm.prank(user1);
-        contract2.callContract1Function();
-        
-        // Verify the interaction worked
-        assertTrue(contract1.wasCalledByContract2());
-    }
-}
-        """
-    
-    def _get_invariant_test_template(self) -> str:
-        """Get invariant test template."""
-        return """
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "forge-std/Test.sol";
-import "../src/ContractName.sol";
-
-contract InvariantTest is Test {
-    ContractName public contractName;
-    
-    function setUp() public {
-        contractName = new ContractName();
-        
-        // Target contract for invariant testing
-        targetContract(address(contractName));
-    }
-    
-    function invariant_totalSupplyAlwaysPositive() public {
-        // Example invariant: total supply should never be negative
-        assertGe(contractName.totalSupply(), 0);
-    }
-    
-    function invariant_balancesSumToTotalSupply() public {
-        // Example invariant: sum of all balances equals total supply
-        uint256 totalBalances = 0;
-        address[] memory accounts = contractName.getAllAccounts();
-        
-        for (uint256 i = 0; i < accounts.length; i++) {
-            totalBalances += contractName.balanceOf(accounts[i]);
-        }
-        
-        assertEq(totalBalances, contractName.totalSupply());
-    }
-    
-    function invariant_ownershipIsConsistent() public {
-        // Example invariant: contract should always have a valid owner
-        assertNotEq(contractName.owner(), address(0));
-    }
-}
-        """
-    
-    def _get_fuzz_test_template(self) -> str:
-        """Get fuzz test template."""
-        return """
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "forge-std/Test.sol";
-import "../src/ContractName.sol";
-
-contract FuzzTest is Test {
-    ContractName public contractName;
-    
-    function setUp() public {
-        contractName = new ContractName();
-    }
-    
-    function testFuzzDeposit(uint256 amount) public {
-        amount = bound(amount, 1, 1000e18);
-        
-        vm.deal(address(this), amount);
-        uint256 initialBalance = contractName.totalBalance();
-        
-        contractName.deposit{value: amount}();
-        
-        assertEq(contractName.totalBalance(), initialBalance + amount);
-    }
-    
-    function testFuzzWithdraw(uint256 depositAmount, uint256 withdrawAmount) public {
-        depositAmount = bound(depositAmount, 1, 1000e18);
-        withdrawAmount = bound(withdrawAmount, 1, depositAmount);
-        
-        // Setup: deposit first
-        vm.deal(address(this), depositAmount);
-        contractName.deposit{value: depositAmount}();
-        
-        // Test: withdraw
-        contractName.withdraw(withdrawAmount);
-        
-        assertEq(contractName.totalBalance(), depositAmount - withdrawAmount);
-    }
-}
-        """
-    
-    def _get_security_test_template(self) -> str:
-        """Get security test template."""
-        return """
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "forge-std/Test.sol";
-import "../src/ContractName.sol";
-
-contract SecurityTest is Test {
-    ContractName public contractName;
-    
-    function setUp() public {
-        contractName = new ContractName();
-    }
-    
-    function testAccessControl() public {
-        vm.expectRevert("Ownable: caller is not the owner");
-        contractName.onlyOwnerFunction();
-    }
-    
-    function testReentrancyProtection() public {
-        vm.expectRevert("ReentrancyGuard: reentrant call");
-        // Test reentrancy attack
-    }
-    
-    function testIntegerOverflow() public {
-        // Test integer overflow scenarios
+    function test_{{FUNCTION_NAME}}_whenMaxValue_shouldWork() public {
         uint256 maxValue = type(uint256).max;
         
-        vm.expectRevert();
-        contractName.functionWithArithmetic(maxValue, 1);
+        vm.prank({{USER_ACCOUNT}});
+        // Should either work or revert gracefully
+        try {{CONTRACT_INSTANCE}}.{{FUNCTION_NAME}}(maxValue) {
+            // If it succeeds, verify state is correct
+            assertTrue({{CONTRACT_INSTANCE}}.{{STATE_VARIABLE}}() >= 0);
+        } catch {
+            // If it reverts, that's also acceptable for edge cases
+        }
     }
-    
-    function testFrontRunningProtection() public {
-        // Test front-running protection mechanisms
-        // Implementation depends on specific contract logic
+
+    // ====== FUZZ TESTS ======
+
+    function testFuzz_{{FUNCTION_NAME}}(uint256 {{FUZZ_INPUT}}) public {
+        {{FUZZ_INPUT}} = bound({{FUZZ_INPUT}}, 1, 1000000e18);
+        
+        vm.prank({{USER_ACCOUNT}});
+        {{CONTRACT_INSTANCE}}.{{FUNCTION_NAME}}({{FUZZ_INPUT}});
+        
+        // Verify invariants hold
+        assertTrue({{CONTRACT_INSTANCE}}.{{INVARIANT_CHECK}}(), "Invariant should hold");
+    }
+}"""
+
+    def _get_invariant_test_template(self) -> str:
+        """Best-practice invariant test template using Handler pattern."""
+        return """// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {StdInvariant, Test} from "forge-std/StdInvariant.sol";
+import {{{HANDLER_NAME}}} from "./handlers/{{HANDLER_NAME}}.sol";
+import {{{CONTRACT_NAME}}} from "../../src/{{CONTRACT_NAME}}.sol";
+
+/**
+ * @title {{CONTRACT_NAME}} Invariant Tests
+ * @notice Tests system-level properties that should always hold
+ * @dev Uses Handler pattern for effective stateful fuzzing
+ */
+contract {{CONTRACT_NAME}}InvariantTest is StdInvariant, Test {
+    {{CONTRACT_NAME}} public {{CONTRACT_INSTANCE}};
+    {{HANDLER_NAME}} public handler;
+
+    function setUp() public {
+        // Deploy contract
+        {{CONTRACT_INSTANCE}} = new {{CONTRACT_NAME}}();
+        
+        // Deploy handler with reference to contract
+        handler = new {{HANDLER_NAME}}({{CONTRACT_INSTANCE}});
+        
+        // Configure invariant testing
+        targetContract(address(handler));
+        
+        // Optional: Exclude specific functions from fuzzing
+        // bytes4[] memory selectors = new bytes4[](1);
+        // selectors[0] = {{HANDLER_NAME}}.functionToExclude.selector;
+        // targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
+    }
+
+    // ====== CORE INVARIANTS ======
+
+    function invariant_{{INVARIANT_NAME}}() public view {
+        // {{INVARIANT_DESCRIPTION}}
+        assertTrue(
+            {{CONTRACT_INSTANCE}}.{{INVARIANT_CONDITION}}(),
+            "{{INVARIANT_DESCRIPTION}} should always hold"
+        );
+    }
+
+    function invariant_balanceConsistency() public view {
+        // Example: Total supply should equal sum of all balances
+        uint256 totalSupply = {{CONTRACT_INSTANCE}}.totalSupply();
+        uint256 handlerBalance = {{CONTRACT_INSTANCE}}.balanceOf(address(handler));
+        
+        // Add more balance checks as needed
+        assertGe(totalSupply, handlerBalance, "Total supply should be >= handler balance");
+    }
+
+    function invariant_stateTransitions() public view {
+        // Example: Contract should never be in invalid state
+        assertTrue(
+            {{CONTRACT_INSTANCE}}.isValidState(),
+            "Contract should always be in valid state"
+        );
+    }
+
+    // ====== CALL SUMMARY ======
+
+    function invariant_callSummary() public view {
+        // Log statistics about fuzzing runs
+        console.log("--- Invariant Test Summary ---");
+        console.log("Total calls made:", handler.totalCalls());
+        console.log("Successful calls:", handler.successfulCalls());
+        console.log("Failed calls:", handler.failedCalls());
+        console.log("Current contract state:", {{CONTRACT_INSTANCE}}.{{STATE_VARIABLE}}());
     }
 }
-        """
+
+// ====== HANDLER CONTRACT TEMPLATE ======
+// Create this file at: test/handlers/{{HANDLER_NAME}}.sol
+
+/*
+contract {{HANDLER_NAME}} is Test {
+    {{CONTRACT_NAME}} public immutable {{CONTRACT_INSTANCE}};
     
-    def _get_default_test_template(self) -> str:
-        """Get default test template."""
-        return """
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+    uint256 public totalCalls;
+    uint256 public successfulCalls;
+    uint256 public failedCalls;
 
-import "forge-std/Test.sol";
-import "../src/ContractName.sol";
+    modifier countCall(bool success) {
+        totalCalls++;
+        if (success) successfulCalls++;
+        else failedCalls++;
+        _;
+    }
 
-contract ContractNameTest is Test {
-    ContractName public contractName;
+    constructor({{CONTRACT_NAME}} _{{CONTRACT_INSTANCE}}) {
+        {{CONTRACT_INSTANCE}} = _{{CONTRACT_INSTANCE}};
+    }
+
+    function {{HANDLER_FUNCTION}}(uint256 amount) public countCall(true) {
+        amount = bound(amount, 1, 1000000e18);
+        
+        try {{CONTRACT_INSTANCE}}.{{FUNCTION_NAME}}(amount) {
+            // Function succeeded
+        } catch {
+            // Function failed - this might be expected
+            failedCalls++;
+            successfulCalls--; // Adjust count
+        }
+    }
+
+    // Add more handler functions for different contract interactions
+}
+*/"""
+
+    def _get_security_test_template(self) -> str:
+        """Comprehensive security test template with common attack patterns."""
+        return """// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {Test, console} from "forge-std/Test.sol";
+import "../src/{{CONTRACT_NAME}}.sol";
+
+/**
+ * @title {{CONTRACT_NAME}} Security Tests
+ * @notice Comprehensive security testing with common attack patterns
+ * @dev Tests for access control, reentrancy, economic exploits, and more
+ */
+contract {{CONTRACT_NAME}}SecurityTest is Test {
+    {{CONTRACT_NAME}} public {{CONTRACT_INSTANCE}};
+
+    // Test accounts
+    address public owner = makeAddr("owner");
+    address public user = makeAddr("user");
+    address public attacker = makeAddr("attacker");
+    address public admin = makeAddr("admin");
+
+    function setUp() public {
+        vm.prank(owner);
+        {{CONTRACT_INSTANCE}} = new {{CONTRACT_NAME}}();
+        
+        // Setup balances for testing
+        vm.deal(user, 10 ether);
+        vm.deal(attacker, 5 ether);
+    }
+
+    // ====== ACCESS CONTROL TESTS ======
+
+    function test_{{PROTECTED_FUNCTION}}_whenCalledByOwner_shouldSucceed() public {
+        vm.prank(owner);
+        {{CONTRACT_INSTANCE}}.{{PROTECTED_FUNCTION}}();
+        
+        // Verify expected state change
+        assertTrue({{CONTRACT_INSTANCE}}.{{EXPECTED_STATE}}(), "Function should succeed for owner");
+    }
+
+    function test_{{PROTECTED_FUNCTION}}_whenCalledByAttacker_shouldRevert() public {
+        vm.prank(attacker);
+        vm.expectRevert({{CONTRACT_NAME}}.Unauthorized.selector);
+        {{CONTRACT_INSTANCE}}.{{PROTECTED_FUNCTION}}();
+    }
+
+    function test_roleBasedAccess_whenUserLacksRole_shouldRevert() public {
+        bytes32 requiredRole = {{CONTRACT_INSTANCE}}.{{REQUIRED_ROLE}}();
+        
+        vm.prank(user);
+        vm.expectRevert(); // Should revert with AccessControl error
+        {{CONTRACT_INSTANCE}}.{{ROLE_PROTECTED_FUNCTION}}();
+    }
+
+    // ====== REENTRANCY TESTS ======
+
+    function test_{{FUNCTION_NAME}}_whenReentrant_shouldRevert() public {
+        ReentrancyAttacker attackerContract = new ReentrancyAttacker({{CONTRACT_INSTANCE}});
+        
+        // Fund the attacker contract
+        vm.deal(address(attackerContract), 1 ether);
+        
+        vm.expectRevert("ReentrancyGuard: reentrant call");
+        attackerContract.attack();
+    }
+
+    // ====== ECONOMIC EXPLOIT TESTS ======
+
+    function test_flashLoanAttack_shouldBeMitigated() public {
+        FlashLoanAttacker flashAttacker = new FlashLoanAttacker({{CONTRACT_INSTANCE}});
+        
+        // Simulate flash loan attack
+        vm.expectRevert("{{EXPECTED_PROTECTION_ERROR}}");
+        flashAttacker.executeFlashLoanAttack(1000000e18);
+    }
+
+    function test_priceManipulation_shouldBeResistant() public {
+        // Setup price manipulation scenario
+        uint256 normalPrice = {{CONTRACT_INSTANCE}}.getCurrentPrice();
+        
+        // Attempt to manipulate price
+        vm.prank(attacker);
+        {{CONTRACT_INSTANCE}}.{{PRICE_AFFECTING_FUNCTION}}(type(uint256).max);
+        
+        uint256 manipulatedPrice = {{CONTRACT_INSTANCE}}.getCurrentPrice();
+        
+        // Price change should be limited by safeguards
+        uint256 maxAllowedChange = normalPrice * 10 / 100; // 10% max change
+        assertLt(
+            manipulatedPrice > normalPrice ? manipulatedPrice - normalPrice : normalPrice - manipulatedPrice,
+            maxAllowedChange,
+            "Price manipulation should be limited"
+        );
+    }
+
+    // ====== FRONT-RUNNING TESTS ======
+
+    function test_frontRunningProtection() public {
+        // Setup legitimate transaction
+        uint256 userValue = 100e18;
+        
+        // Attacker tries to front-run
+        vm.prank(attacker);
+        {{CONTRACT_INSTANCE}}.{{VULNERABLE_FUNCTION}}(userValue + 1);
+        
+        // User's transaction should still work or be protected
+        vm.prank(user);
+        {{CONTRACT_INSTANCE}}.{{VULNERABLE_FUNCTION}}(userValue);
+        
+        // Verify protection mechanisms worked
+        assertTrue({{CONTRACT_INSTANCE}}.{{PROTECTION_CHECK}}(), "Front-running protection should work");
+    }
+
+    // ====== INPUT VALIDATION TESTS ======
+
+    function test_{{FUNCTION_NAME}}_whenZeroInput_shouldHandle() public {
+        vm.prank(user);
+        
+        // Should either revert gracefully or handle zero correctly
+        try {{CONTRACT_INSTANCE}}.{{FUNCTION_NAME}}(0) {
+            // If it succeeds, verify state is still valid
+            assertTrue({{CONTRACT_INSTANCE}}.{{INVARIANT_CHECK}}(), "Zero input should maintain invariants");
+        } catch Error(string memory reason) {
+            // Graceful revert is acceptable
+            assertEq(reason, "{{EXPECTED_ZERO_ERROR}}", "Should revert with expected error");
+        }
+    }
+
+    function test_{{FUNCTION_NAME}}_whenMaxInput_shouldHandle() public {
+        vm.prank(user);
+        
+        uint256 maxInput = type(uint256).max;
+        
+        try {{CONTRACT_INSTANCE}}.{{FUNCTION_NAME}}(maxInput) {
+            // Verify no overflow or unexpected behavior
+            assertTrue({{CONTRACT_INSTANCE}}.{{INVARIANT_CHECK}}(), "Max input should maintain invariants");
+        } catch {
+            // Overflow protection is acceptable
+        }
+    }
+
+    // ====== TIME MANIPULATION TESTS ======
+
+    function test_timeBasedFunction_whenTimeManipulated_shouldResist() public {
+        // Record initial state
+        uint256 initialValue = {{CONTRACT_INSTANCE}}.{{TIME_DEPENDENT_VALUE}}();
+        
+        // Fast forward time significantly
+        vm.warp(block.timestamp + 365 days);
+        
+        // Function should handle time jumps gracefully
+        vm.prank(user);
+        {{CONTRACT_INSTANCE}}.{{TIME_DEPENDENT_FUNCTION}}();
+        
+        // Verify reasonable behavior
+        uint256 newValue = {{CONTRACT_INSTANCE}}.{{TIME_DEPENDENT_VALUE}}();
+        assertGt(newValue, initialValue, "Value should increase with time");
+        assertLt(newValue, initialValue * 2, "Value increase should be reasonable");
+    }
+}
+
+// ====== ATTACK CONTRACT IMPLEMENTATIONS ======
+
+contract ReentrancyAttacker {
+    {{CONTRACT_NAME}} public target;
+    bool public attacked = false;
+
+    constructor({{CONTRACT_NAME}} _target) {
+        target = _target;
+    }
+
+    function attack() external payable {
+        target.{{VULNERABLE_FUNCTION}}{value: msg.value}();
+    }
+
+    receive() external payable {
+        if (!attacked && address(target).balance > 0) {
+            attacked = true;
+            target.{{VULNERABLE_FUNCTION}}();
+        }
+    }
+}
+
+contract FlashLoanAttacker {
+    {{CONTRACT_NAME}} public target;
+
+    constructor({{CONTRACT_NAME}} _target) {
+        target = _target;
+    }
+
+    function executeFlashLoanAttack(uint256 amount) external {
+        // Simulate receiving flash loan
+        // Perform manipulation
+        target.{{MANIPULATION_FUNCTION}}(amount);
+        
+        // Simulate repaying flash loan
+        // Attack should be mitigated by this point
+    }
+}"""
+
+    def _get_fork_test_template(self) -> str:
+        """Fork testing template for mainnet integration tests."""
+        return """// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {Test, console} from "forge-std/Test.sol";
+import "../src/{{CONTRACT_NAME}}.sol";
+
+/**
+ * @title {{CONTRACT_NAME}} Fork Tests
+ * @notice Tests contract behavior against real mainnet state
+ * @dev Requires MAINNET_RPC_URL environment variable
+ */
+contract {{CONTRACT_NAME}}ForkTest is Test {
+    {{CONTRACT_NAME}} public {{CONTRACT_INSTANCE}};
+    
+    // Mainnet addresses (update with actual addresses)
+    address constant {{MAINNET_TOKEN}} = {{TOKEN_ADDRESS}};
+    address constant {{WHALE_ADDRESS}} = {{WHALE_ACCOUNT}};
+    address constant {{PROTOCOL_ADDRESS}} = {{REAL_PROTOCOL_ADDRESS}};
+    
+    // Test accounts
+    address public user = makeAddr("user");
     
     function setUp() public {
-        contractName = new ContractName();
-    }
-    
-    function testExample() public {
-        assertTrue(true);
-    }
-}
-        """
-    
-    # Template usage instructions
-    async def _get_template_usage_instructions(self, template_type: str) -> List[str]:
-        """Get usage instructions for a template."""
-        common_instructions = [
-            "1. Copy the template to your test directory",
-            "2. Replace 'ContractName' with your actual contract name",
-            "3. Update import paths to match your project structure",
-            "4. Customize test cases for your specific contract logic",
-            "5. Run tests with 'forge test'"
-        ]
+        // Create fork at specific block for consistent testing
+        vm.createFork(vm.envString("MAINNET_RPC_URL"), {{FORK_BLOCK}});
         
-        specific_instructions = {
+        // Deploy our contract
+        {{CONTRACT_INSTANCE}} = new {{CONTRACT_NAME}}({{MAINNET_DEPENDENCIES}});
+        
+        // Setup test conditions
+        vm.deal(user, 10 ether);
+    }
+
+    function test_integration_withRealProtocol() public {
+        // Get real state from mainnet
+        uint256 realBalance = IERC20({{MAINNET_TOKEN}}).balanceOf({{WHALE_ADDRESS}});
+        assertGt(realBalance, 0, "Whale should have token balance");
+        
+        // Test interaction with real protocol
+        vm.prank({{WHALE_ADDRESS}});
+        IERC20({{MAINNET_TOKEN}}).transfer(address({{CONTRACT_INSTANCE}}), 1000e18);
+        
+        // Verify our contract works with real tokens
+        uint256 contractBalance = IERC20({{MAINNET_TOKEN}}).balanceOf(address({{CONTRACT_INSTANCE}}));
+        assertEq(contractBalance, 1000e18, "Contract should receive real tokens");
+    }
+
+    function test_realWorldScenario_{{SCENARIO_NAME}}() public {
+        // Simulate real-world usage scenario
+        uint256 amount = 100e18;
+        
+        // Impersonate whale account
+        vm.startPrank({{WHALE_ADDRESS}});
+        
+        // Perform real interaction
+        IERC20({{MAINNET_TOKEN}}).approve(address({{CONTRACT_INSTANCE}}), amount);
+        {{CONTRACT_INSTANCE}}.{{REAL_WORLD_FUNCTION}}(amount);
+        
+        vm.stopPrank();
+        
+        // Verify expected behavior with real state
+        assertTrue({{CONTRACT_INSTANCE}}.{{SUCCESS_CONDITION}}(), "Real-world scenario should work");
+    }
+
+    function test_gasUsage_onMainnetFork() public {
+        uint256 gasBefore = gasleft();
+        
+        vm.prank(user);
+        {{CONTRACT_INSTANCE}}.{{GAS_EXPENSIVE_FUNCTION}}();
+        
+        uint256 gasUsed = gasBefore - gasleft();
+        console.log("Gas used:", gasUsed);
+        
+        // Verify gas usage is reasonable
+        assertLt(gasUsed, {{MAX_GAS_LIMIT}}, "Gas usage should be within limits");
+    }
+}"""
+
+    def _get_helper_test_template(self) -> str:
+        """Helper test template with common utility functions."""
+        # Read the helper template from the templates directory
+        try:
+            from pathlib import Path
+            template_path = Path(__file__).parent.parent / "templates" / "test_helper_template.sol"
+            with open(template_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except Exception as e:
+            # Fallback template if file reading fails
+            return """// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {Test, console} from "forge-std/Test.sol";
+import {IERC20} from "forge-std/interfaces/IERC20.sol";
+
+/**
+ * @title TestHelper
+ * @dev Centralized helper functions for smart contract testing
+ */
+contract TestHelper is Test {
+    
+    function setupStandardAccounts() internal returns (
+        address owner,
+        address admin, 
+        address user1,
+        address user2,
+        address attacker
+    ) {
+        owner = makeAddr("owner");
+        admin = makeAddr("admin");
+        user1 = makeAddr("user1");
+        user2 = makeAddr("user2");
+        attacker = makeAddr("attacker");
+        
+        vm.deal(owner, 100 ether);
+        vm.deal(admin, 50 ether);
+        vm.deal(user1, 10 ether);
+        vm.deal(user2, 10 ether);
+        vm.deal(attacker, 5 ether);
+    }
+    
+    function giveTokens(IERC20 token, address user, uint256 amount) internal {
+        deal(address(token), user, amount);
+    }
+    
+    function timeWarpAndMine(uint256 timeInSeconds, uint256 blocks) internal {
+        vm.warp(block.timestamp + timeInSeconds);
+        vm.roll(block.number + blocks);
+    }
+}"""
+
+    def _get_default_test_template(self) -> str:
+        """Default fallback template."""
+        return """// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {Test, console} from "forge-std/Test.sol";
+import "../src/{{CONTRACT_NAME}}.sol";
+
+contract {{CONTRACT_NAME}}Test is Test {
+    {{CONTRACT_NAME}} public {{CONTRACT_INSTANCE}};
+    
+    address public owner = makeAddr("owner");
+    
+    function setUp() public {
+        vm.prank(owner);
+        {{CONTRACT_INSTANCE}} = new {{CONTRACT_NAME}}();
+    }
+    
+    function test_example() public {
+        assertTrue(true, "Example test should pass");
+    }
+}"""
+
+    def _get_template_usage_instructions(self, template_type: str) -> List[str]:
+        """Get usage instructions for each template type."""
+        instructions = {
             "unit": [
-                "6. Focus on testing individual functions",
-                "7. Test both success and failure scenarios",
-                "8. Verify state changes and event emissions"
+                "Replace {{CONTRACT_NAME}} with your actual contract name",
+                "Update {{OWNER_ACCOUNT}}, {{USER_ACCOUNT}} with meaningful names",
+                "Customize {{FUNCTION_NAME}} and related placeholders for your specific functions",
+                "Add contract-specific events and error types",
+                "Implement comprehensive edge cases for your contract logic"
             ],
             "integration": [
-                "6. Test complete workflows across multiple contracts",
-                "7. Verify cross-contract interactions",
-                "8. Test user journey scenarios"
+                "Define {{CONTRACT_A_NAME}} and {{CONTRACT_B_NAME}} for your interacting contracts",
+                "Specify {{WORKFLOW_NAME}} to describe the user journey being tested",
+                "Implement the multi-step interaction logic",
+                "Verify end-to-end state changes across contracts"
             ],
             "invariant": [
-                "6. Define system invariants that should always hold",
-                "7. Use targetContract() to specify contracts to test",
-                "8. Run with 'forge test --invariant'"
-            ],
-            "fuzz": [
-                "6. Use bound() to limit fuzz input ranges",
-                "7. Test with random inputs to find edge cases",
-                "8. Configure fuzz runs in foundry.toml"
+                "Create the Handler contract in test/handlers/{{HANDLER_NAME}}.sol",
+                "Define system invariants that should always hold",
+                "Implement handler functions that call your contract with fuzzing",
+                "Use bound() to constrain fuzz inputs to valid ranges"
             ],
             "security": [
-                "6. Test access control mechanisms",
-                "7. Verify protection against common attacks",
-                "8. Test with adversarial inputs"
+                "Identify specific attack vectors relevant to your contract",
+                "Implement attack contracts that simulate real exploits",
+                "Test both that attacks fail AND that legitimate usage works",
+                "Include economic and oracle manipulation scenarios if applicable"
+            ],
+            "fork": [
+                "Set MAINNET_RPC_URL environment variable",
+                "Update mainnet addresses with real protocol addresses",
+                "Choose appropriate fork block number for consistent testing",
+                "Test realistic scenarios with actual mainnet state"
+            ],
+            "helper": [
+                "Save as test/utils/TestHelper.sol for easy import across test files",
+                "Replace {{CONTRACT_NAME}} and {{CONTRACT_INSTANCE}} with your contract details",
+                "Customize {{TEST_DATA_TYPE}} struct to match your test data needs",
+                "Implement specific workflow steps in {{DEPOSIT_WORKFLOW_STEPS}} and {{WITHDRAWAL_WORKFLOW_STEPS}}",
+                "Add contract-specific state assertions in {{STATE_ASSERTIONS}}",
+                "Import in your test files: import '../utils/TestHelper.sol'",
+                "Inherit from TestHelper: contract MyTest is TestHelper"
             ]
         }
         
-        return common_instructions + specific_instructions.get(template_type, [])
-    
-    # Analysis and documentation methods
-    def _generate_project_recommendations(self, analysis: Dict[str, Any]) -> List[str]:
-        """Generate recommendations based on project analysis."""
-        recommendations = []
+        common_instructions = [
+            "Copy template to your test directory",
+            "Replace all {{PLACEHOLDER}} values with your specific values",
+            "Run tests with: forge test",
+            "Use --gas-report flag for gas analysis",
+            "Add more test cases specific to your contract's functionality"
+        ]
         
-        if not analysis.get("is_foundry_project"):
-            recommendations.append("Initialize as Foundry project with 'forge init --force'")
-        
-        if not analysis.get("contracts"):
-            recommendations.append("Add smart contracts to the src/ directory")
-        
-        if not analysis.get("tests"):
-            recommendations.append("Create test files in the test/ directory")
-            recommendations.append("Use the MCP test templates to get started quickly")
-        
-        if len(analysis.get("contracts", [])) > len(analysis.get("tests", [])):
-            recommendations.append("Add more test coverage - you have more contracts than test files")
-        
-        return recommendations
-    
-    def _analyze_coverage_data(self, coverage_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze coverage data and provide insights."""
-        analysis = {
-            "status": "success" if coverage_data.get("success") else "error",
-            "insights": [],
-            "recommendations": []
-        }
-        
-        if coverage_data.get("success") and coverage_data.get("summary"):
-            summary = coverage_data["summary"]
-            coverage_pct = summary.get("coverage_percentage", 0)
-            
-            if coverage_pct < 50:
-                analysis["insights"].append("Low test coverage detected")
-                analysis["recommendations"].append("Focus on adding basic test coverage")
-            elif coverage_pct < 80:
-                analysis["insights"].append("Moderate test coverage")
-                analysis["recommendations"].append("Add tests for edge cases and error conditions")
-            else:
-                analysis["insights"].append("Good test coverage")
-                analysis["recommendations"].append("Consider adding invariant and fuzz tests")
-        
-        return analysis
-    
-    # Documentation content methods
-    async def _get_getting_started_guide(self) -> str:
-        """Get getting started guide content."""
-        return """
-# Getting Started with Smart Contract Testing
-
-## Overview
-This guide helps you get started with comprehensive smart contract testing using Foundry.
-
-## Prerequisites
-- Foundry installed (`curl -L https://foundry.paradigm.xyz | bash`)
-- Basic Solidity knowledge
-- Understanding of testing concepts
-
-## Quick Start
-1. Navigate to your project directory
-2. Initialize the testing agent: Use the `initialize_protocol_testing_agent` tool
-3. Follow the guided workflow to create comprehensive tests
-4. Run tests with `forge test`
-
-## Testing Philosophy
-- Test early and often
-- Focus on critical paths and edge cases
-- Include security testing from the start
-- Maintain high test coverage
-- Document test scenarios clearly
-        """
-    
-    async def _get_foundry_guide(self) -> str:
-        """Get Foundry guide content."""
-        return """
-# Foundry Testing Guide
-
-## Key Commands
-- `forge test`: Run all tests
-- `forge test --coverage`: Run tests with coverage
-- `forge test --gas-report`: Generate gas usage report
-- `forge test --invariant`: Run invariant tests
-- `forge test --fuzz`: Run fuzz tests
-
-## Test Structure
-- Use `setUp()` for test initialization
-- Prefix test functions with `test`
-- Use `vm.prank()` for access control testing
-- Use `vm.expectRevert()` for error testing
-- Use `vm.expectEmit()` for event testing
-
-## Best Practices
-- Keep tests isolated and independent
-- Use descriptive test names
-- Test both success and failure scenarios
-- Include gas usage tests
-- Organize tests by functionality
-        """
-    
-    async def _get_security_testing_guide(self) -> str:
-        """Get security testing guide content."""
-        return """
-# Security Testing Best Practices
-
-## Common Vulnerabilities to Test
-1. **Access Control**: Verify only authorized users can execute functions
-2. **Reentrancy**: Test protection against reentrancy attacks
-3. **Integer Overflow**: Test arithmetic operations
-4. **Front-running**: Test MEV protection mechanisms
-5. **Oracle Manipulation**: Test price feed dependencies
-
-## Testing Strategies
-- Use adversarial thinking
-- Test with malicious inputs
-- Verify invariants under attack
-- Test economic incentives
-- Include integration security tests
-
-## Tools and Techniques
-- Fuzz testing for edge cases
-- Invariant testing for system properties
-- Mock malicious contracts
-- Simulate attack scenarios
-        """
-    
-    async def _get_coverage_strategies_guide(self) -> str:
-        """Get coverage strategies guide content."""
-        return """
-# Test Coverage Strategies
-
-## Coverage Types
-1. **Line Coverage**: Percentage of code lines executed
-2. **Branch Coverage**: Percentage of decision branches taken
-3. **Function Coverage**: Percentage of functions called
-4. **Statement Coverage**: Percentage of statements executed
-
-## Coverage Targets
-- **Minimum**: 80% line coverage
-- **Good**: 90% line coverage with 85% branch coverage
-- **Excellent**: 95% line coverage with 90% branch coverage
-
-## Strategies
-- Start with critical functions
-- Add edge case tests
-- Include error condition tests
-- Test all access control paths
-- Verify all event emissions
-        """
-    
-    async def _get_troubleshooting_guide(self) -> str:
-        """Get troubleshooting guide content."""
-        return """
-# Troubleshooting Common Issues
-
-## Common Problems and Solutions
-
-### Tests Not Running
-- Ensure test files have `.t.sol` extension
-- Check that test functions start with `test`
-- Verify imports are correct
-
-### Coverage Issues
-- Ensure forge-std is properly imported
-- Check that contracts are in src/ directory
-- Verify foundry.toml configuration
-
-### Gas Estimation Errors
-- Use `--gas-limit` flag for high-gas tests
-- Check for infinite loops in contracts
-- Verify external calls are properly mocked
-
-### Access Control Tests Failing
-- Use `vm.prank()` to simulate different callers
-- Check that modifiers are properly implemented
-- Verify test expectations match contract behavior
-
-## Getting Help
-- Check Foundry documentation
-- Review test templates
-- Use the MCP testing tools for guidance
-        """ 
+        return common_instructions + instructions.get(template_type, []) 

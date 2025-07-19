@@ -1,7 +1,9 @@
 """
-Smart Contract Testing MCP Server - Testing Prompts
+Smart Contract Testing MCP Server - Testing Prompts (Refactored)
 
-This module provides guided prompts for testing workflows and analysis.
+This module provides focused, tool-oriented prompts to guide the AI agent's
+testing workflows and analysis. Prompts are streamlined to be direct and
+guide the agent to use MCP tools and resources effectively.
 """
 
 import logging
@@ -14,8 +16,8 @@ class TestingPrompts:
     """
     Guided prompts for testing workflows and analysis.
     
-    This class provides structured prompts that guide users through different
-    testing scenarios and analysis tasks.
+    Provides focused, tool-oriented prompts that guide AI agents to use
+    the MCP's tools and resources for effective testing workflows.
     """
     
     def __init__(self):
@@ -23,569 +25,417 @@ class TestingPrompts:
         logger.info("Testing prompts initialized")
     
     def register_prompts(self, mcp) -> None:
-        """
-        Register all testing prompts with the MCP server.
+        """Register all testing prompts with the MCP server."""
         
-        Args:
-            mcp: FastMCP server instance
-        """
-        # Contract analysis prompt
+        # Contract analysis prompt - guides agent to comprehensive testing analysis
         @mcp.prompt(
             name="analyze-contract-for-testing",
-            description="Analyze a contract and provide comprehensive testing recommendations"
+            description="Analyze a contract and provide comprehensive testing recommendations using MCP resources"
         )
         async def analyze_contract_for_testing(contract_path: str) -> List[Dict[str, Any]]:
-            """
-            Analyze a contract and provide testing recommendations.
-            
-            Args:
-                contract_path: Path to the contract file to analyze
-                
-            Returns:
-                List of prompt messages for contract analysis
-            """
+            """Generates a prompt to analyze a single contract for testing."""
             return [
                 {
                     "role": "system",
-                    "content": await self._get_contract_analysis_system_prompt()
+                    "content": await self._get_master_system_prompt()
                 },
                 {
                     "role": "user",
                     "content": f"""
-Please analyze the contract at: {contract_path}
+Analyze the contract at: `{contract_path}`
 
-Provide a comprehensive testing analysis including:
+**Required Analysis:**
 
 1. **Contract Overview**
-   - Contract purpose and functionality
-   - Key state variables and their roles
-   - Main functions and their interactions
-   - Inheritance hierarchy and dependencies
+   - Purpose and primary functionality
+   - Key state variables and critical functions
+   - Security risk profile (access control, external calls, value handling)
 
-2. **Testing Strategy**
-   - Critical functions that need testing
-   - Edge cases and boundary conditions
-   - Error scenarios and revert conditions
-   - State transition testing needs
+2. **Testing Strategy** 
+   - Reference `testing://foundry-patterns` for best practices
+   - Identify which patterns from `testing://security-patterns` apply
+   - Propose 3-5 high-priority test cases with specific function targets
 
-3. **Security Considerations**
-   - Access control mechanisms
-   - Potential attack vectors
-   - Reentrancy concerns
-   - Integer overflow/underflow risks
+3. **Template Recommendations**
+   - Which templates from `testing://templates` to use (`unit`, `security`, `invariant`, etc.)
+   - Required mocks and test setup (MockERC20, MockOracle, etc.)
+   - Specific {{PLACEHOLDER}} values for code generation
 
-4. **Test Categories Required**
-   - Unit tests for individual functions
-   - Integration tests for function interactions
-   - Invariant tests for system properties
-   - Fuzz tests for robustness
+4. **Implementation Guidance**
+   - Recommended test file structure following foundry-patterns
+   - Security test scenarios based on identified vulnerabilities
+   - Coverage targets and success criteria
 
-5. **Specific Test Recommendations**
-   - High-priority test cases
-   - Mock and fixture requirements
-   - Gas optimization test scenarios
-   - Event emission testing
-
-Generate specific, actionable test cases with expected outcomes.
+Provide actionable, specific recommendations that can be immediately implemented.
                     """
                 }
             ]
         
-        # Test strategy design prompt
+        # Test strategy design prompt - guides comprehensive planning
         @mcp.prompt(
-            name="design-test-strategy",
-            description="Design comprehensive testing strategy for smart contracts"
+            name="design-test-strategy", 
+            description="Design comprehensive testing strategy using MCP resources and best practices"
         )
         async def design_test_strategy(
-            contracts: str,
-            risk_profile: str = "medium",
+            contracts: str, 
+            risk_profile: str = "medium", 
             coverage_target: int = 90
         ) -> List[Dict[str, Any]]:
-            """
-            Design comprehensive testing strategy for smart contracts.
-            
-            Args:
-                contracts: Contract names or descriptions to analyze
-                risk_profile: Risk assessment level (low, medium, high)
-                coverage_target: Target coverage percentage
-                
-            Returns:
-                List of prompt messages for strategy design
-            """
+            """Generates a prompt to design a complete testing strategy."""
             return [
                 {
-                    "role": "system",
-                    "content": await self._get_test_strategy_system_prompt()
+                    "role": "system", 
+                    "content": await self._get_master_system_prompt()
                 },
                 {
                     "role": "user",
                     "content": f"""
-Design a comprehensive testing strategy for the following contracts: {contracts}
+Design a comprehensive testing strategy for: `{contracts}`
 
-Parameters:
+**Parameters:**
 - Risk Profile: {risk_profile}
 - Coverage Target: {coverage_target}%
 
-Please provide a detailed strategy including:
+**Required Strategy Components:**
 
-1. **Testing Framework Setup**
-   - Foundry configuration recommendations
-   - Test file organization structure
-   - Dependency and mock management
-   - Continuous integration setup
+1. **File Organization**
+   - Use `testing://foundry-patterns` file structure
+   - Map each contract to appropriate test files (unit, security, invariant, fork)
 
-2. **Test Categories & Priorities**
-   - Unit testing approach and priorities
-   - Integration testing scenarios
-   - Invariant testing for system properties
-   - Fuzz testing for edge cases
-   - Security testing requirements
+2. **Testing Priorities**
+   - Phase 1: Critical function unit tests
+   - Phase 2: Security tests from `testing://security-patterns` 
+   - Phase 3: Integration and invariant testing
+   - Phase 4: Fork testing and edge cases
 
-3. **Coverage Strategy**
-   - Line coverage targets by contract
-   - Branch coverage requirements
-   - Function coverage priorities
-   - Path coverage for critical flows
+3. **Security Focus** 
+   - Identify applicable vulnerability patterns from `testing://security-patterns`
+   - Risk-based security testing plan (high-risk areas first)
+   - Attack scenario simulation requirements
 
-4. **Risk-Based Testing**
-   - High-risk areas requiring extra attention
-   - Security vulnerability testing
-   - Economic attack vector testing
-   - Gas optimization verification
+4. **Implementation Plan**
+   - Template usage from `testing://templates` for each test type
+   - Required mock contracts and external dependencies
+   - Workflow execution using `execute_testing_workflow` tool
 
-5. **Implementation Timeline**
-   - Phased testing implementation plan
-   - Resource allocation recommendations
-   - Milestone definitions and success criteria
-   - Maintenance and update procedures
+5. **Success Metrics**
+   - Coverage targets by contract and test type
+   - Security testing completeness criteria
+   - Quality gates and review checkpoints
 
-6. **Quality Assurance**
-   - Test quality metrics
-   - Review and validation processes
-   - Documentation requirements
-   - Performance benchmarking
-
-Provide specific, actionable recommendations with code examples where helpful.
+Provide a concrete, actionable strategy that leverages MCP tools and resources.
                     """
                 }
             ]
         
-        # Coverage review prompt
+        # Coverage review prompt - guides agent to use tools first
         @mcp.prompt(
             name="review-test-coverage",
-            description="Review current test coverage and suggest improvements (analyze current directory)"
+            description="Review current test coverage and suggest improvements using MCP analysis tools"
         )
         async def review_test_coverage() -> List[Dict[str, Any]]:
-            """
-            Review current test coverage and suggest improvements.
-            
-            Returns:
-                List of prompt messages for coverage review
-            """
+            """Generates a prompt to review test coverage using MCP tools."""
             return [
                 {
                     "role": "system",
-                    "content": await self._get_coverage_review_system_prompt()
+                    "content": await self._get_master_system_prompt()
                 },
                 {
-                    "role": "user",
+                    "role": "user", 
                     "content": """
-Please review the test coverage for the current project directory.
+Review the current project's test coverage and provide improvement recommendations.
 
-Analyze and provide recommendations for:
+**Required Process:**
 
-1. **Current Coverage Analysis**
-   - Line coverage assessment
-   - Branch coverage gaps
-   - Function coverage completeness
-   - Critical path coverage
+1. **Initial Analysis**
+   - FIRST: Call `analyze_current_test_coverage` tool to get current coverage data
+   - THEN: Call `analyze_project_context` for deeper project understanding
 
-2. **Gap Identification**
-   - Uncovered code paths
-   - Missing edge cases
-   - Untested error conditions
-   - Integration gaps
+2. **Coverage Assessment**
+   - Current line, branch, and function coverage percentages
+   - Gap analysis: identify top 3 functions/contracts with lowest coverage
+   - Quality assessment: are tests meaningful or just coverage-focused?
 
-3. **Quality Assessment**
-   - Test quality and maintainability
-   - Test organization effectiveness
-   - Performance of existing tests
-   - Anti-pattern identification
+3. **Improvement Recommendations**
+   - Specific missing test cases for each identified gap
+   - Reference `testing://security-patterns` for security test gaps
+   - Template recommendations from `testing://templates` for new tests
 
-4. **Improvement Recommendations**
-   - Specific tests to add
-   - Refactoring opportunities
-   - Coverage enhancement strategies
-   - Performance optimizations
+4. **Action Plan**
+   - Prioritized list of tests to add (critical gaps first)
+   - Recommended workflow: which `execute_testing_workflow` type to use
+   - Timeline and effort estimates for improvements
 
-5. **Implementation Priority**
-   - High-priority missing tests
-   - Quick wins for coverage improvement
-   - Long-term enhancement plan
-   - Resource allocation suggestions
+**Output Format:**
+- Current coverage summary with clear metrics
+- Top 3 priority improvements with specific test recommendations
+- Actionable next steps using MCP tools and resources
 
-Use the analyze_current_test_coverage tool first to get current coverage data, then provide specific, actionable recommendations with code examples where appropriate.
+Use the MCP tools to gather data first, then provide specific, implementable recommendations.
                     """
                 }
             ]
         
-        # Security testing prompt
+        # Security testing design prompt - focuses on attack scenarios
         @mcp.prompt(
             name="design-security-tests",
-            description="Design security-focused test scenarios for smart contracts"
+            description="Design security-focused test scenarios using security patterns resource"
         )
         async def design_security_tests(
             contract_types: str = "general",
             threat_model: str = "comprehensive"
         ) -> List[Dict[str, Any]]:
-            """
-            Design security-focused test scenarios.
-            
-            Args:
-                contract_types: Types of contracts (DeFi, NFT, governance, etc.)
-                threat_model: Threat model scope (basic, comprehensive, advanced)
-                
-            Returns:
-                List of prompt messages for security testing
-            """
+            """Generates a prompt for security-focused testing design."""
             return [
                 {
                     "role": "system",
-                    "content": await self._get_security_testing_system_prompt()
+                    "content": await self._get_master_system_prompt()
                 },
                 {
                     "role": "user",
                     "content": f"""
-Design comprehensive security testing scenarios for {contract_types} contracts.
+Design comprehensive security testing for {contract_types} contracts.
 
-Threat Model: {threat_model}
+**Threat Model:** {threat_model}
 
-Please provide security testing recommendations for:
+**Required Security Analysis:**
 
-1. **Access Control Testing**
-   - Role-based access control verification
-   - Unauthorized access prevention
-   - Privilege escalation prevention
-   - Multi-signature validation
+1. **Vulnerability Assessment**
+   - Reference `testing://security-patterns` for applicable attack vectors
+   - Map contract functions to relevant security patterns
+   - Identify high-risk areas (access control, external calls, value transfers)
 
-2. **Reentrancy Testing**
-   - Single-function reentrancy
-   - Cross-function reentrancy
-   - Cross-contract reentrancy
-   - Read-only reentrancy
+2. **Attack Scenario Design**
+   - Access Control: unauthorized access attempts, privilege escalation
+   - Reentrancy: single-function and cross-function reentrancy attacks  
+   - Economic: flash loan attacks, price manipulation, MEV exploitation
+   - Input Validation: boundary testing, overflow conditions, malformed data
 
-3. **Economic Attack Testing**
-   - Front-running scenarios
-   - MEV exploitation vectors
-   - Flash loan attacks
-   - Oracle manipulation
+3. **Test Implementation**
+   - Use security test template from `testing://templates/security`
+   - Implement attack contracts for realistic exploit simulation
+   - Add defensive testing to verify protection mechanisms work
 
-4. **Input Validation Testing**
-   - Boundary value testing
-   - Malformed input handling
-   - Integer overflow/underflow
-   - Type confusion attacks
+4. **Coverage Requirements**
+   - All privileged functions must have access control tests
+   - All external calls must have reentrancy tests
+   - All price-dependent functions must have manipulation tests
+   - All user inputs must have validation tests
 
-5. **State Manipulation Testing**
-   - Invariant violation attempts
-   - State transition attacks
-   - Storage collision testing
-   - Proxy upgrade security
+5. **Test Cases**
+   - Provide 3-5 specific attack scenarios with expected outcomes
+   - Include both "attack should fail" and "legitimate use should work" tests
+   - Reference specific patterns from `testing://security-patterns`
 
-6. **Integration Security Testing**
-   - External contract interactions
-   - Dependency security validation
-   - Composability security risks
-   - Third-party integration testing
-
-Provide specific test cases with attack scenarios and expected defensive behaviors.
+Design comprehensive security tests that simulate real-world attacks while verifying defensive mechanisms.
                     """
                 }
             ]
         
-        # Test optimization prompt
+        # Test optimization prompt - focuses on improving existing tests
         @mcp.prompt(
-            name="optimize-test-performance",
-            description="Optimize test suite performance and efficiency"
+            name="optimize-test-performance", 
+            description="Optimize test suite performance and efficiency using best practices"
         )
         async def optimize_test_performance(
             performance_issues: str = "general",
             optimization_goals: str = "speed and coverage"
         ) -> List[Dict[str, Any]]:
-            """
-            Optimize test suite performance and efficiency.
-            
-            Args:
-                performance_issues: Specific performance issues to address
-                optimization_goals: Optimization objectives
-                
-            Returns:
-                List of prompt messages for test optimization
-            """
+            """Generates a prompt for test suite optimization."""
             return [
                 {
                     "role": "system",
-                    "content": await self._get_test_optimization_system_prompt()
+                    "content": await self._get_master_system_prompt()
                 },
                 {
                     "role": "user",
                     "content": f"""
-Optimize the test suite performance focusing on: {optimization_goals}
+Optimize test suite performance for: {optimization_goals}
 
-Current performance issues: {performance_issues}
+**Current Issues:** {performance_issues}
 
-Please provide optimization recommendations for:
+**Required Optimization Analysis:**
 
-1. **Test Execution Speed**
+1. **Performance Assessment**
+   - Use `analyze_current_test_coverage` to understand current test landscape
+   - Identify slow-running tests and bottlenecks
+   - Assess redundant or overlapping test coverage
+
+2. **Optimization Strategy**
+   - Reference `testing://foundry-patterns` for efficient test organization
+   - Eliminate redundant tests while maintaining coverage
+   - Optimize test setup and common operations
+
+3. **Implementation Improvements**
    - Parallel test execution strategies
-   - Test setup and teardown optimization
-   - Mock and fixture efficiency
-   - State management optimization
+   - Efficient mock usage and state management
+   - Strategic use of fuzz testing vs exhaustive testing
+   - Gas optimization in test scenarios
 
-2. **Coverage Efficiency**
-   - Eliminate redundant tests
-   - Optimize test case selection
-   - Improve test coverage per execution time
-   - Strategic test prioritization
+4. **Quality Maintenance**
+   - Ensure optimizations don't reduce test effectiveness
+   - Maintain comprehensive security test coverage
+   - Preserve edge case and error condition testing
 
-3. **Resource Optimization**
-   - Memory usage optimization
-   - Gas cost reduction in tests
-   - Network interaction minimization
-   - Computation efficiency improvements
-
-4. **Test Organization**
-   - Logical test grouping
-   - Shared setup optimization
-   - Test dependency management
-   - Modular test design
-
-5. **CI/CD Integration**
-   - Parallel pipeline execution
-   - Selective test execution
-   - Caching strategies
+5. **Workflow Integration**
+   - Recommend `execute_testing_workflow` improvements
+   - CI/CD optimization strategies
    - Incremental testing approaches
 
-6. **Monitoring and Metrics**
-   - Performance benchmarking
-   - Regression detection
-   - Quality metrics tracking
-   - Continuous improvement processes
-
-Provide specific, actionable optimizations with implementation examples.
+Provide specific, actionable optimizations that improve speed while maintaining quality.
                     """
                 }
             ]
         
         logger.info("Testing prompts registered successfully")
     
-    # System prompt generators
-    async def _get_contract_analysis_system_prompt(self) -> str:
-        """Generate system prompt for contract analysis with security guidance."""
-        # Load security audit guidance
+    async def _get_master_system_prompt(self) -> str:
+        """Generate the master system prompt for consistency across all prompts."""
         security_guidance = await self._load_security_audit_guidance()
         
         return f"""
+You are a world-class smart contract security engineer and testing expert specializing in Foundry-based Solidity testing. You combine deep technical expertise with practical implementation skills to create production-ready, audit-quality test suites.
+
+**Your Core Identity:**
+- Elite Ethereum security auditor with 10+ years of experience
+- Expert in Foundry testing framework and advanced Solidity patterns  
+- Specialist in detecting and preventing AI-generated test failures
+- Focused on practical, implementable solutions over theoretical concepts
+
+**Your Primary Directives:**
+
+1. **Leverage MCP Resources**: Always reference and use the provided MCP resources:
+   - `testing://foundry-patterns` for best practices and code snippets
+   - `testing://security-patterns` for vulnerability testing approaches
+   - `testing://templates` for production-ready test templates
+   - `testing://documentation` for comprehensive methodologies
+
+2. **Tool-First Approach**: Guide users to use MCP tools for analysis:
+   - `initialize_protocol_testing_agent` for project setup and workflow planning
+   - `analyze_project_context` for deep project understanding
+   - `execute_testing_workflow` for structured implementation
+   - `analyze_current_test_coverage` for coverage assessment
+
+3. **Security-First Mindset**: Every recommendation must prioritize security:
+   - Test all access controls and authorization mechanisms
+   - Simulate realistic attack scenarios, not just happy paths
+   - Verify defensive mechanisms actually work under attack
+   - Focus on high-impact vulnerabilities first
+
+4. **Anti-AI-Failure Expert**: Detect and prevent common AI testing mistakes:
+   - Eliminate circular logic in tests (testing implementation against itself)
+   - Create meaningful mocks that can fail
+   - Test actual error conditions, not just happy paths
+   - Use independent expected values for validation
+
+5. **Practical Implementation**: Provide actionable, specific guidance:
+   - Use {{PLACEHOLDER}} syntax for dynamic code generation
+   - Reference specific templates and patterns by name
+   - Give concrete next steps with tool usage
+   - Focus on implementable solutions over theoretical advice
+
+**Integrated Security Framework:**
 {security_guidance}
 
-You are operating as a world-class smart contract testing advisor with deep expertise in Solidity, Foundry, and security best practices.
+**Response Guidelines:**
+- Be direct and technical - avoid fluff or overly verbose explanations
+- Always reference specific MCP resources and tools in your recommendations  
+- Provide concrete code examples using templates and patterns
+- Focus on practical next steps the user can immediately implement
+- Maintain audit-level quality standards in all recommendations
 
-Your role is to:
-1. Analyze smart contracts for testability and security using world-class audit methodologies
-2. Identify critical testing requirements based on professional security practices
-3. Recommend comprehensive testing strategies incorporating industry best practices
-4. Provide specific, actionable test cases with security considerations
-5. Apply the security audit guidance provided above to all recommendations
-
-Always provide:
-- Clear, actionable recommendations based on professional audit practices
-- Specific test case examples that follow security best practices
-- Security considerations aligned with Trail of Bits, OpenZeppelin, and ConsenSys methodologies
-- Performance implications and gas optimization considerations
-- Best practices alignment with world-class security standards
-
-Focus on practical, implementable advice that meets production-ready security standards.
-        """
-    
-    async def _get_test_strategy_system_prompt(self) -> str:
-        """Generate system prompt for test strategy design."""
-        return """
-You are a senior smart contract testing strategist with expertise in comprehensive testing methodologies.
-
-Your expertise includes:
-- Foundry testing framework mastery
-- Risk-based testing approaches
-- Security-first testing strategies
-- Performance optimization
-- CI/CD integration
-
-Provide strategies that are:
-- Comprehensive yet practical
-- Risk-appropriate
-- Implementable with available resources
-- Aligned with industry best practices
-- Scalable and maintainable
-
-Always consider the full testing lifecycle from development to production.
-        """
-    
-    async def _get_coverage_review_system_prompt(self) -> str:
-        """Generate system prompt for coverage review."""
-        return """
-You are a quality assurance expert specializing in smart contract test coverage analysis.
-
-Your focus areas:
-- Coverage gap identification
-- Quality assessment of existing tests
-- Improvement prioritization
-- Refactoring recommendations
-- Performance optimization
-
-Provide reviews that:
-- Identify critical coverage gaps
-- Assess test quality and maintainability
-- Prioritize improvements by impact
-- Suggest specific enhancements
-- Balance coverage with efficiency
-
-Always provide actionable, prioritized recommendations.
-        """
-    
-    async def _get_security_testing_system_prompt(self) -> str:
-        """Generate system prompt for security testing."""
-        return """
-You are a smart contract security expert with deep knowledge of common vulnerabilities and attack vectors.
-
-Your security expertise covers:
-- OWASP Smart Contract Top 10
-- DeFi-specific attack vectors
-- Reentrancy and access control
-- Economic and governance attacks
-- Cross-contract interaction risks
-
-Design security tests that:
-- Cover known vulnerability patterns
-- Test defensive mechanisms
-- Validate access controls
-- Simulate real-world attacks
-- Ensure proper error handling
-
-Always provide comprehensive security test scenarios with clear attack vectors and expected defenses.
-        """
-    
-    async def _get_test_optimization_system_prompt(self) -> str:
-        """Generate system prompt for test optimization."""
-        return """
-You are a performance optimization expert specializing in smart contract testing efficiency.
-
-Your optimization focus:
-- Test execution speed
-- Resource utilization
-- Coverage efficiency
-- CI/CD integration
-- Maintenance overhead
-
-Provide optimizations that:
-- Reduce execution time
-- Improve resource efficiency
-- Maintain or improve coverage
-- Enhance maintainability
-- Scale with project growth
-
-        Always balance speed with coverage and quality.
+Your goal is to guide users to create comprehensive, secure, production-ready test suites using the MCP's tools and resources effectively.
         """
     
     async def _load_security_audit_guidance(self) -> str:
-        """Load security audit guidance from the guidance document."""
+        """Load security audit guidance with simplified, robust approach."""
         try:
-            # Try to load from the docs directory
-            guidance_path = Path(__file__).parent.parent / "docs" / "security-audit-guidance.md"
-            if guidance_path.exists():
-                with open(guidance_path, 'r', encoding='utf-8') as f:
+            # Primary path: look for comprehensive security framework
+            security_framework_path = Path(__file__).parent.parent / "docs" / "security-audit-guidance.md"
+            
+            if security_framework_path.exists():
+                with open(security_framework_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 
-                # Extract key sections for LLM context
-                sections_to_include = [
-                    "## AI IDENTITY AND EXPERTISE",
-                    "## CORE SECURITY AUDIT METHODOLOGY",
-                    "## AI CODING AGENT FAILURE PATTERNS",
-                    "## SECURITY CHECKLIST BY PROTOCOL TYPE"
-                ]
-                
-                extracted_content = []
-                lines = content.split('\n')
-                current_section = None
-                include_line = False
-                
-                for line in lines:
-                    # Check if this is a section header we want to include
-                    if any(section in line for section in sections_to_include):
-                        current_section = line
-                        include_line = True
-                        extracted_content.append(line)
-                        continue
-                    
-                    # Check if we're at a new section we don't want
-                    if line.startswith("## ") and current_section and not any(section in line for section in sections_to_include):
-                        include_line = False
-                        current_section = None
-                        continue
-                    
-                    # Include line if we're in a section we want
-                    if include_line:
-                        extracted_content.append(line)
-                
-                return '\n'.join(extracted_content)
+                # Extract key sections for LLM context (simplified approach)
+                if "## AI IDENTITY AND EXPERTISE" in content:
+                    # Extract relevant sections for system prompt
+                    return self._extract_key_sections(content)
+                else:
+                    return content[:3000]  # First 3000 chars if no clear structure
+            
             else:
-                logger.warning(f"Security audit guidance not found at {guidance_path}")
+                logger.warning(f"Security guidance not found at {security_framework_path}")
                 return self._get_fallback_security_guidance()
                 
         except Exception as e:
             logger.error(f"Error loading security audit guidance: {e}")
             return self._get_fallback_security_guidance()
     
+    def _extract_key_sections(self, content: str) -> str:
+        """Extract key sections from security guidance for system prompt."""
+        key_sections = [
+            "## AI IDENTITY AND EXPERTISE",
+            "## CORE SECURITY AUDIT METHODOLOGY", 
+            "## AI CODING AGENT FAILURE PATTERNS",
+            "## VULNERABILITY PATTERNS TO TEST"
+        ]
+        
+        extracted = []
+        lines = content.split('\n')
+        current_section = None
+        include_section = False
+        
+        for line in lines:
+            # Check if this line starts a section we want
+            if any(section in line for section in key_sections):
+                current_section = line
+                include_section = True
+                extracted.append(line)
+            # Check if this line starts a different section (stop including)
+            elif line.startswith("## ") and include_section:
+                if not any(section in line for section in key_sections):
+                    include_section = False
+                    current_section = None
+                else:
+                    # This is another section we want
+                    extracted.append(line)
+            # Include lines if we're in a relevant section
+            elif include_section:
+                extracted.append(line)
+        
+        # Limit to reasonable size for system prompt
+        result = '\n'.join(extracted)
+        return result[:4000] if len(result) > 4000 else result
+    
     def _get_fallback_security_guidance(self) -> str:
-        """Fallback security guidance if file cannot be loaded."""
+        """Fallback security guidance when file loading fails."""
         return """
-## AI IDENTITY AND EXPERTISE
+## SECURITY TESTING PRINCIPLES
 
-**YOU ARE A WORLD CLASS ETHEREUM ENGINEER THAT HAS DEEP KNOWLEDGE OF BUILDING SMART CONTRACTS AND PROTOCOLS, YOU HAVE ALSO SPENT OVER A DECADE WORKING AS AN AUDITOR FOR A TOP SMART CONTRACT SECURITY FIRM AS ONE OF THE BEST PERFORMING AUDITORS**
-
-Your expertise includes:
-- Deep knowledge of the Ethereum Virtual Machine and Solidity language internals
-- Extensive experience with DeFi protocols, cross-chain bridges, and complex financial primitives
-- Mastery of formal verification techniques and symbolic execution
-- Expert-level understanding of economic attack vectors and MEV exploitation
-- Comprehensive knowledge of all major smart contract vulnerabilities and their exploitations
-
-## CORE SECURITY AUDIT METHODOLOGY
-
-Always apply these critical security patterns:
-
-### Access Control Vulnerabilities
-- Verify all privileged functions have appropriate access controls
+**Access Control Testing:**
+- Test unauthorized access to all privileged functions
+- Verify role-based permissions work correctly
 - Test privilege escalation scenarios
-- Validate role-based permissions are correctly implemented
 
-### Reentrancy Vulnerabilities
-- Follow Checks-Effects-Interactions pattern
-- Test all external calls for reentrancy potential
-- Verify ReentrancyGuard usage
+**Reentrancy Testing:**
+- Test all functions with external calls for reentrancy
+- Simulate realistic attack contracts
+- Verify ReentrancyGuard protection works
 
-### Common Attack Vectors
-- Flash loan attacks and oracle manipulation
-- MEV exploitation and front-running
-- Integer overflow/underflow conditions
-- Signature replay and malleability
+**Economic Testing:**
+- Test flash loan attack scenarios
+- Verify oracle manipulation resistance  
+- Test MEV protection mechanisms
 
-## AI CODING AGENT FAILURE PATTERNS
+**Input Validation:**
+- Test boundary conditions and edge cases
+- Verify overflow/underflow protection
+- Test malformed input handling
 
-**YOU ARE AN EXPERT SOLIDITY SECURITY ENGINEER CONSTANTLY ANNOYED BY THE CIRCULAR LOGIC AND THE CHEATING TO ACCOMPLISH TEST GOALS THAT ARE PRODUCED BY AI CODING AGENTS AND LLMS**
-
-Watch for these AI failures:
-- Circular logic testing (testing implementation against itself)
-- Mock cheating (mocks that always return expected values)
-- Insufficient edge case coverage
-- Missing security scenarios
-- Always-passing tests that provide no validation
+**AI FAILURE PREVENTION:**
+- Avoid circular logic in tests (testing implementation against itself)
+- Create meaningful mocks that can fail
+- Test actual error conditions, not just happy paths
+- Use independent expected values for validation
         """ 

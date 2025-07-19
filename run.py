@@ -100,19 +100,35 @@ def main():
         asyncio.run(server_main())
         
     except KeyboardInterrupt:
-        print("\n👋 Server shutdown requested by user")
+        # Handle graceful shutdown without printing if I/O is closed
+        try:
+            print("\n👋 Server shutdown requested by user")
+        except (ValueError, OSError):
+            pass
     except Exception as e:
-        logging.error(f"Server error: {e}")
-        print(f"❌ Server error: {e}")
+        try:
+            logging.error(f"Server error: {e}")
+            print(f"❌ Server error: {e}")
+        except (ValueError, OSError):
+            pass
         sys.exit(1)
     finally:
-        print("🛑 Server stopped")
+        try:
+            print("🛑 Server stopped")
+        except (ValueError, OSError):
+            pass
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n👋 Goodbye!")
+        try:
+            print("\n👋 Goodbye!")
+        except (ValueError, OSError):
+            pass
     except Exception as e:
-        print(f"❌ Fatal error: {e}")
+        try:
+            print(f"❌ Fatal error: {e}")
+        except (ValueError, OSError):
+            pass
         sys.exit(1) 
