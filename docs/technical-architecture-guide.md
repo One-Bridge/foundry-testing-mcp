@@ -1,79 +1,78 @@
-# Foundry Testing MCP v2.0 - Technical Architecture Guide
+# Foundry Testing MCP - Technical Architecture Guide
 
 ## Overview
 
-The Foundry Testing MCP v2.0 provides context-aware, professional-grade smart contract testing guidance through intelligent project analysis, adaptive workflows, and integrated security methodologies. This document provides comprehensive technical documentation for the enhanced architecture featuring sophisticated context analysis, AI quality assurance, and real Foundry tool integration.
+The Foundry Testing MCP provides smart contract testing assistance through project analysis, adaptive workflows, and integration with Foundry tools. This document provides technical documentation for the architecture components, their current implementation status, and known limitations.
 
-## Enhanced System Architecture v2.0
+## System Architecture
 
 ### High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    MCP Client (Cursor/Claude)               │
-│                 Context-Aware Interface                     │
-│               Enhanced Tool Descriptions                    │
+│                   Standard MCP Interface                    │
 └─────────────────────────────────────────────────────────────┘
                               │
             ┌─────────────────────────────────────────────────┐
-            │             Enhanced MCP Server v2.0           │
+            │             FastMCP Server                      │
             │                                                 │
             │  ┌─────────────────┐  ┌─────────────────────┐  │
-            │  │ Context Analysis│  │   Adaptive Workflow │  │
-            │  │    Engine       │  │      Engine         │  │
+            │  │ Project Analysis│  │   Workflow          │  │
+            │  │    Engine       │  │   Management        │  │
             │  │                 │  │                     │  │
-            │  │ • ProjectAnalyzer│  │ • Dynamic Generation│  │
-            │  │ • AI Failure    │  │ • Contextual Phases │  │
-            │  │   Detector      │  │ • Progressive Guide │  │
-            │  │ • Coverage Parse│  │ • Session Management│  │
+            │  │ • ProjectAnalyzer│  │ • TestingTools     │  │
+            │  │ • AI Failure    │  │ • Session Tracking │  │
+            │  │   Detector      │  │ • Phase Planning   │  │
+            │  │ • AST Analyzer  │  │ • Context Awareness│  │
             │  └─────────────────┘  └─────────────────────┘  │
             │                                                 │
             │  ┌─────────────────┐  ┌─────────────────────┐  │
-            │  │ Security        │  │  Enhanced Foundry   │  │
-            │  │ Methodology     │  │    Integration      │  │
-            │  │ Integration     │  │                     │  │
-            │  │                 │  │ • Real Coverage     │  │
-            │  │ • Trail of Bits │  │   Parsing           │  │
-            │  │ • OpenZeppelin  │  │ • Multi-format      │  │
-            │  │ • ConsenSys     │  │   Support           │  │
-            │  │ • DeFi Security │  │ • Command Coord     │  │
+            │  │ Template and    │  │  Foundry            │  │
+            │  │ Resource        │  │  Integration        │  │
+            │  │ System          │  │                     │  │
+            │  │                 │  │ • Command Execution│  │
+            │  │ • Testing       │  │ • Coverage Parsing │  │
+            │  │   Resources     │  │ • Error Handling   │  │
+            │  │ • Testing       │  │ • Output Analysis  │  │
+            │  │   Prompts       │  │                     │  │
             │  └─────────────────┘  └─────────────────────┘  │
             │                                                 │
             │  ┌─────────────────────────────────────────┐    │
-            │  │           Enhanced Tool Suite           │    │
+            │  │            MCP Tool Suite               │    │
             │  │                                         │    │
             │  │ • initialize_protocol_testing_agent    │    │
             │  │ • analyze_project_context              │    │
             │  │ • execute_testing_workflow             │    │
             │  │ • analyze_current_test_coverage        │    │
-            │  │ • validate_current_project             │    │
+            │  │ • validate_current_directory           │    │
             │  │ • debug_directory_detection            │    │
-            │  │ • get_server_info                      │    │
+            │  │ • discover_foundry_projects            │    │
             │  └─────────────────────────────────────────┘    │
             └─────────────────────────────────────────────────┘
                               │
         ┌─────────────────────────────────────────────────────┐
         │                Foundry Toolchain                    │
-        │        forge test • forge coverage • anvil          │
+        │        forge test • forge coverage • forge build    │
         │              cast • forge script                    │
         └─────────────────────────────────────────────────────┘
 ```
 
 ## Core System Components
 
-### 1. Context Analysis Engine
+### 1. Project Analysis Engine
 
-The Context Analysis Engine provides sophisticated understanding of project state and testing maturity, addressing the critical "context blindness" issue identified in user feedback.
+The Project Analysis Engine provides project state understanding and testing maturity assessment.
 
 #### ProjectAnalyzer Component
 
-**Purpose**: Comprehensive project state analysis and testing maturity assessment
+**Purpose**: Project state analysis and testing maturity classification
 
 **Key Capabilities**:
-- **Testing Phase Detection**: Automatically categorizes projects into none/basic/intermediate/advanced/production phases
-- **Security Level Assessment**: Evaluates security testing maturity using professional audit standards
-- **Contract Risk Analysis**: Analyzes contract complexity and security patterns
-- **Gap Identification**: Identifies specific testing gaps with priority-based recommendations
+- **Testing Phase Detection**: Categorizes projects into none/basic/intermediate/advanced/production phases based on test count, coverage, and patterns
+- **Security Level Assessment**: Evaluates security testing maturity using basic pattern detection
+- **Contract Analysis**: Basic analysis of contract structure and complexity
+- **Gap Identification**: Identifies missing testing areas with recommendations
 
 **Core Methods**:
 ```python
@@ -86,23 +85,25 @@ class ProjectAnalyzer:
 ```
 
 **Testing Phase Classification**:
-- **Production**: 50+ tests, 85%+ coverage, security tests, fuzz/invariants, integration tests
-- **Advanced**: 20+ tests, 75%+ coverage, 5+ security tests, fuzz OR invariants, mocks
-- **Intermediate**: 10+ tests, 60%+ coverage, mocks, 2+ security tests OR fuzzing
+- **Production**: 50+ tests, 85%+ coverage, security tests, advanced patterns
+- **Advanced**: 20+ tests, 75%+ coverage, some security tests, mocks
+- **Intermediate**: 10+ tests, 60%+ coverage, basic patterns
 - **Basic**: 3+ tests, 30%+ coverage
 - **None**: Minimal or no tests
 
+**Implementation Status**: ✅ Working with basic pattern recognition
+
 #### AIFailureDetector Component
 
-**Purpose**: Quality assurance for AI-generated tests to prevent false confidence
+**Purpose**: Quality assurance for test code to identify common issues
 
-**Detected Failure Patterns**:
+**Detected Patterns** (8 types):
 - **Circular Logic**: Tests that validate implementation against itself
 - **Mock Cheating**: Mocks that always return expected values
-- **Insufficient Edge Cases**: Missing boundary and error condition testing
-- **Missing Security Scenarios**: Lack of attack vector testing
-- **Always-Passing Tests**: Tests that provide no actual validation
-- **Implementation Dependency**: Tests that depend on specific implementation details
+- **Insufficient Edge Cases**: Missing boundary condition testing
+- **Missing Security Scenarios**: Lack of access control or attack testing
+- **Always-Passing Tests**: Tests that provide no validation
+- **Implementation Dependency**: Tests coupled to specific implementation details
 
 **Core Methods**:
 ```python
@@ -113,86 +114,134 @@ class AIFailureDetector:
     def detect_mock_cheating(content: str) -> List[TestFailure]
 ```
 
-#### Enhanced Coverage Analysis
+**Implementation Status**: ✅ Working with regex and basic AST pattern detection
 
-**Real Foundry Integration**:
-- **Multiple Format Support**: Parses lcov, summary, and json coverage formats
-- **Actual Percentage Extraction**: Uses real `forge coverage` output instead of generic analysis
-- **File-by-File Analysis**: Detailed coverage breakdown by contract file
-- **Contextual Recommendations**: Coverage advice based on actual testing phase
+#### AST Analysis
+
+**Purpose**: Semantic code analysis for Solidity contracts
+
+**Capabilities**:
+- Basic contract structure analysis
+- Function and modifier detection
+- Import and inheritance parsing
+- Fallback to regex patterns when AST parsing fails
+
+**Implementation Status**: ✅ Working with fallback mechanisms
+
+### 2. Foundry Integration
+
+The Foundry integration provides real tool coordination and output parsing.
+
+#### FoundryAdapter Component
+
+**Real Tool Integration**:
+- **Coverage Analysis**: Parses `forge coverage` output in multiple formats (lcov, summary, json)
+- **Test Execution**: Coordinates `forge test` commands with coverage generation
+- **Output Parsing**: Extracts coverage percentages and file-by-file analysis
+- **Error Handling**: Manages subprocess execution issues and provides fallbacks
 
 **Core Methods**:
 ```python
 class FoundryAdapter:
+    async def generate_coverage_report(project_path: str, format: str = "lcov")
     def _parse_summary_coverage(summary_output: str) -> Dict[str, Any]
     def _extract_percentage(text: str) -> float
-    def _generate_contextual_coverage_analysis(coverage_percentage: float, files: List) -> str
     def _extract_basic_coverage_info(stderr_output: str) -> Dict[str, Any]
 ```
 
-### 2. Adaptive Workflow Engine
+**Known Issues**:
+- Subprocess execution problems in some environments
+- Coverage parsing may fail with complex project structures
+- Directory detection issues with some MCP client configurations
 
-The Adaptive Workflow Engine provides contextual, progressive guidance that builds on existing work rather than generic workflows that restart from scratch.
+**Implementation Status**: ✅ Working with known limitations
 
-#### Dynamic Workflow Generation
+### 3. Template and Resource System
 
-**Contextual Workflow Types**:
+#### TestingResources Component
 
-```python
-async def _generate_contextual_workflows(project_info: Dict[str, Any]) -> Dict[str, Any]:
-    # Generates workflows based on current project state
-    
-    # For new projects (no tests)
-    workflows["create_foundational_suite"] = {
-        "phases": 3, 
-        "effort": "1-2 weeks",
-        "focus": "Establishing testing infrastructure"
-    }
-    
-    # For basic tests (< 10 tests or coverage < 50%)
-    workflows["expand_test_coverage"] = {
-        "phases": 3,
-        "effort": "1 week", 
-        "focus": "Building comprehensive coverage"
-    }
-    
-    # For solid foundations (good coverage, some security)
-    workflows["enhance_security_testing"] = {
-        "phases": 4,
-        "effort": "1-2 weeks",
-        "focus": "Advanced security and integration"
-    }
-    
-    # For multi-contract systems
-    workflows["integration_testing_focus"] = {
-        "phases": 3,
-        "effort": "1 week",
-        "focus": "Contract interactions and workflows"
-    }
-    
-    # For DeFi protocols
-    workflows["defi_security_testing"] = {
-        "phases": 4,
-        "effort": "2-3 weeks", 
-        "focus": "Economic attacks and DeFi vulnerabilities"
-    }
-    
-    # For production preparation
-    workflows["comprehensive_audit_prep"] = {
-        "phases": 5,
-        "effort": "2-4 weeks",
-        "focus": "Audit-ready test suites"
-    }
-```
+**Purpose**: Provides templates, documentation, and best-practice patterns
 
-#### Contextual Phase Generation
+**Available Resources** (5 total):
+1. `testing://foundry-patterns` - Best practices and file organization
+2. `testing://security-patterns` - Security testing approaches
+3. `testing://templates/{template_type}` - Specific template access
+4. `testing://templates` - Template catalog overview
+5. `testing://documentation` - Testing methodologies
 
-**Phase Generators by Workflow Type**:
-- `_generate_security_focused_phases()` - Security assessment → Vulnerability testing → Advanced security
-- `_generate_coverage_expansion_phases()` - Gap analysis → Systematic implementation → Quality enhancement
-- `_generate_defi_security_phases()` - Risk assessment → Economic attacks → Integration security
-- `_generate_integration_phases()` - Architecture analysis → Cross-contract testing → Performance validation
-- `_generate_audit_prep_phases()` - Coverage review → Security validation → Documentation preparation
+**Template Types** (6 total):
+- **unit**: Basic unit test template
+- **integration**: Multi-contract interaction testing
+- **invariant**: Property-based testing with handler pattern
+- **security**: Access control and attack scenario testing
+- **fork**: Mainnet forking test template
+- **helper**: Common utility functions (newly added)
+
+**Template Features**:
+- Dynamic placeholder substitution (`{{CONTRACT_NAME}}`, `{{FUNCTION_NAME}}`, etc.)
+- Usage instructions for each template type
+- Best-practice patterns and conventions
+
+**Implementation Status**: ✅ Fully implemented with helper template recently added
+
+#### TestingPrompts Component
+
+**Purpose**: Provides structured guidance prompts for testing scenarios
+
+**Available Prompts** (5 total):
+1. `analyze-contract-for-testing` - Contract analysis framework
+2. `design-test-strategy` - Testing strategy development
+3. `review-test-coverage` - Coverage review and improvement
+4. `design-security-tests` - Security testing approaches
+5. `optimize-test-performance` - Performance optimization guidance
+
+**Implementation Status**: ✅ Working with basic prompt templates
+
+### 4. MCP Tool Suite
+
+#### Core Tools Implementation
+
+**🚀 initialize_protocol_testing_agent**
+- **Purpose**: Entry point for project analysis and workflow recommendations
+- **Implementation**: ✅ Working with project state detection
+- **Capabilities**: Project structure analysis, maturity assessment, workflow recommendations
+- **Session Management**: Creates persistent sessions for workflow continuity
+
+**🔍 analyze_project_context**
+- **Purpose**: Deep analysis with AI failure detection and improvement planning
+- **Implementation**: ✅ Working with comprehensive analysis capabilities
+- **Capabilities**: Testing phase assessment, AI failure detection, contract risk analysis
+- **Output**: Detailed reports with prioritized recommendations
+
+**⚡ execute_testing_workflow**
+- **Purpose**: Structured workflow execution with adaptive phases
+- **Implementation**: ✅ Working with context-aware phase generation
+- **Capabilities**: Multi-phase planning, session continuity, progress tracking
+- **Workflow Types**: create_foundational_suite, expand_test_coverage, comprehensive, security, etc.
+
+**📊 analyze_current_test_coverage**
+- **Purpose**: Coverage analysis using real Foundry output
+- **Implementation**: ✅ Working with known subprocess issues
+- **Capabilities**: Real coverage parsing, gap identification, contextual recommendations
+- **Limitations**: May fail in some environments due to subprocess execution
+
+**✅ validate_current_directory**
+- **Purpose**: Project validation and environment troubleshooting
+- **Implementation**: ✅ Working with basic validation
+- **Capabilities**: Foundry installation check, project structure validation
+- **Output**: Setup recommendations and issue resolution guidance
+
+**🐛 debug_directory_detection**
+- **Purpose**: Advanced troubleshooting for directory and path issues
+- **Implementation**: ✅ Working with environment analysis
+- **Capabilities**: Environment variable analysis, path resolution debugging
+- **Use Case**: Resolves MCP client/server directory mismatches
+
+**🔍 discover_foundry_projects**
+- **Purpose**: Find available Foundry projects in directory structure
+- **Implementation**: ✅ Working with project discovery
+- **Capabilities**: Automatic project detection, metadata collection
+- **Use Case**: Multiple project environments and auto-detection failures
 
 #### Session Management
 
@@ -208,273 +257,176 @@ class TestingSession:
     analysis_results: Dict[str, Any]
 ```
 
-**Session Continuity**: Maintains context across multiple tool interactions, enabling progressive guidance that builds on previous work.
+**Features**:
+- Persistent session state across tool interactions
+- Workflow progress tracking
+- Context continuity for multi-step processes
 
-### 3. Professional Security Integration
+**Implementation Status**: ✅ Basic implementation working
 
-#### Integrated Security Frameworks
+### 5. Data Flow Architecture
 
-**Trail of Bits Methodology**:
-- Access control maturity levels (Level 1-4)
-- Architectural risk assessment
-- Invariant-driven development
-- Security pattern validation
-
-**OpenZeppelin Standards**:
-- Security checklists and best practices
-- Smart contract weakness registry
-- Quality measures and documentation standards
-- Security-first development lifecycle
-
-**ConsenSys Practices**:
-- Vulnerability pattern analysis
-- Automated security analysis integration
-- Threat modeling methodologies
-- Incident response planning
-
-#### DeFi-Specific Security Testing
-
-**Economic Attack Scenarios**:
-- Flash loan attack simulations
-- Oracle manipulation testing
-- MEV extraction resistance
-- Liquidity and slippage validation
-- Governance attack scenarios
-
-**Security Pattern Detection**:
-```python
-security_patterns = {
-    "access_control": ["onlyOwner", "onlyRole", "AccessControl"],
-    "reentrancy": ["nonReentrant", "ReentrancyGuard"],
-    "oracle_usage": ["oracle", "Chainlink", "TWAP"],
-    "flash_loans": ["flashLoan", "AAVE", "dYdX"],
-    "governance": ["Governor", "Timelock", "vote"]
-}
-```
-
-### 4. Enhanced Tool Suite
-
-#### Core Tools with Enhanced Descriptions
-
-**🚀 initialize_protocol_testing_agent**
-- **Purpose**: Entry point that analyzes current project and recommends workflows
-- **Context Awareness**: Understands existing testing infrastructure
-- **Output**: Contextual workflow options based on project maturity
-
-**🔍 analyze_project_context**
-- **Purpose**: Deep analysis with AI failure detection and improvement planning
-- **Capabilities**: Testing phase assessment, security evaluation, AI quality assurance
-- **Output**: Comprehensive analysis with prioritized improvement roadmap
-
-**⚡ execute_testing_workflow**
-- **Purpose**: Context-aware workflow execution with adaptive phases
-- **Intelligence**: Builds on existing work rather than restarting from scratch
-- **Output**: Progressive guidance with specific deliverables
-
-**📊 analyze_current_test_coverage**
-- **Purpose**: Real coverage analysis using actual Foundry output
-- **Integration**: Parses `forge coverage` results for accurate assessment
-- **Output**: Contextual coverage recommendations with gap identification
-
-**✅ validate_current_project**
-- **Purpose**: Project validation and environment troubleshooting
-- **Capabilities**: Foundry installation check, project structure validation
-- **Output**: Setup recommendations and issue resolution
-
-**🐛 debug_directory_detection**
-- **Purpose**: Advanced troubleshooting for MCP directory/path issues
-- **Diagnostics**: Environment variable analysis, path resolution debugging
-- **Output**: Specific configuration fixes and troubleshooting guidance
-
-**ℹ️ get_server_info**
-- **Purpose**: Comprehensive server information and capability overview
-- **Capabilities**: Tool catalog, workflow relationships, usage guidance
-- **Output**: Complete documentation of available tools and best practices
-
-### 5. Enhanced Foundry Integration
-
-#### Real Coverage Parsing
-
-**Multiple Format Support**:
-```python
-async def generate_coverage_report(project_path: str, format: str = "lcov"):
-    # Runs tests first to ensure coverage data
-    test_result = await self.run_tests(project_path, coverage=True)
-    
-    # Then generates coverage report
-    if format == "summary":
-        command.extend(["--report", "summary"])
-    elif format == "lcov":
-        command.extend(["--report", "lcov"])
-    elif format == "json":
-        command.extend(["--report", "json"])
-```
-
-**Contextual Coverage Analysis**:
-```python
-def _generate_contextual_coverage_analysis(coverage_percentage: float, files: List):
-    # Provides appropriate feedback based on actual coverage levels
-    if coverage_percentage >= 95:
-        return f"Excellent coverage achieved ({coverage_percentage}%)! Consider formal verification."
-    elif coverage_percentage >= 90:
-        return f"Very good coverage ({coverage_percentage}%)! Add security testing."
-    # ... contextual analysis based on actual achievement
-```
-
-#### Command Coordination
-
-**Integrated Test Execution**:
-- Coordinates `forge test` with `forge coverage`
-- Handles multiple coverage report formats
-- Provides fallback coverage extraction from stderr
-- Validates test execution before coverage analysis
-
-## Data Flow Architecture
-
-### 1. Context Analysis Flow
+#### Analysis Flow
 
 ```
 Project Files → ProjectAnalyzer → Testing Phase Detection
      ↓                ↓                    ↓
 Test Files → Contract Analysis → Security Level Assessment
      ↓                ↓                    ↓
-Coverage Data → Gap Identification → Contextual Recommendations
+Coverage Data → Gap Identification → Recommendations
 ```
 
-### 2. Workflow Generation Flow
+#### Workflow Execution Flow
 
 ```
-Project Analysis → Contextual Workflows → Adaptive Phases → Progressive Guidance
+Project Analysis → Workflow Selection → Phase Planning → Implementation Guidance
        ↓                    ↓                 ↓                    ↓
-Current State → Workflow Selection → Phase Planning → Execution Plan
+Current State → Appropriate Workflow → Structured Phases → Specific Actions
 ```
 
-### 3. Quality Assurance Flow
+#### Quality Assurance Flow
 
 ```
-Test Files → AI Failure Detection → Quality Report → Remediation Guidance
+Test Files → AI Failure Detection → Issue Report → Remediation Guidance
      ↓              ↓                    ↓               ↓
-Content Analysis → Pattern Detection → Severity Rating → Action Items
+Content Analysis → Pattern Matching → Severity Assessment → Action Items
 ```
 
-## Performance and Scalability
+## Implementation Status Summary
 
-### Optimization Strategies
+### Fully Implemented Components ✅
 
-**Project Analysis**:
-- Incremental analysis for large projects
-- Caching of analysis results
-- Parallel processing of contract files
-- Efficient pattern matching algorithms
+- **All 7 MCP Tools**: Complete with parameter validation and error handling
+- **Project Analysis**: Testing maturity assessment with 5-tier classification
+- **AI Failure Detection**: 8 failure types with pattern recognition
+- **Template System**: 6 template types including new helper template
+- **Resource System**: 5 MCP resources with dynamic content
+- **Prompt System**: 5 structured prompts for guidance
+- **Foundry Integration**: Real command execution with output parsing
+- **Session Management**: Basic session persistence and state tracking
 
-**Coverage Processing**:
-- Streaming coverage report parsing
-- Efficient percentage extraction
-- Cached coverage calculations
-- Multi-format support optimization
+### Known Issues and Limitations ⚠️
 
-**Workflow Management**:
-- Session state persistence
-- Progressive loading of workflow phases
-- Memory-efficient session management
-- Scalable session storage
+**Environment Issues**:
+- **Directory Detection**: May fail in some MCP client configurations
+- **Subprocess Execution**: Coverage analysis can fail due to subprocess issues
+- **Path Resolution**: Client/server directory mismatches in some setups
 
-### Error Handling and Resilience
+**Analysis Limitations**:
+- **AST Analysis**: Falls back to regex patterns when Solidity parsing fails
+- **Coverage Parsing**: Best-effort parsing with fallback mechanisms
+- **Pattern Detection**: Basic pattern recognition, not comprehensive semantic analysis
 
-**Graceful Degradation**:
-- Fallback coverage extraction from stderr
-- Basic analysis when detailed parsing fails
-- Alternative directory detection methods
-- Robust error recovery mechanisms
+**Integration Issues**:
+- **MCP Client Compatibility**: Some naming convention issues with certain clients
+- **Tool Routing**: Occasional tool discovery problems
+- **Error Handling**: Some edge cases not fully covered
 
-**User Experience Continuity**:
-- Helpful error messages with solutions
-- Progressive functionality when components fail
-- Clear troubleshooting guidance
-- Reliable project validation
+### Performance Characteristics
+
+**Analysis Performance**:
+- Project analysis: ~1-3 seconds for typical projects
+- Coverage analysis: Depends on `forge coverage` execution time
+- AI failure detection: ~1-2 seconds per test file
+
+**Memory Usage**:
+- Session storage: Minimal overhead for typical workflows
+- AST parsing: Memory usage depends on contract complexity
+- Template loading: Templates loaded on-demand
+
+**Scalability**:
+- Handles projects with 50+ contracts effectively
+- Performance degrades with very large projects (100+ contracts)
+- Session management scales to typical development workflows
 
 ## Security Considerations
 
 ### Code Execution Safety
 
 **Foundry Command Execution**:
-- Validated command construction
-- Secure working directory handling
-- Safe path resolution
-- Error boundary management
+- Validated command construction with parameter sanitization
+- Execution limited to standard Foundry commands
+- Working directory validation and containment
+- Error boundary management for subprocess failures
 
 **File System Access**:
-- Restricted to project directories
-- Validated path inputs
-- Read-only analysis operations
-- Secure temporary file handling
+- Read-only analysis operations on project files
+- Restricted to project directory scope
+- Validated path inputs to prevent directory traversal
+- Temporary file cleanup after analysis
 
 ### Data Privacy
 
 **Project Information**:
-- Local-only analysis
-- No external data transmission
-- Temporary analysis data cleanup
-- User consent for data processing
+- All analysis performed locally without external transmission
+- No sensitive project data stored permanently
+- Session data cleanup after workflow completion
+- User control over data processing and analysis
 
-## Integration Points
+## Deployment and Configuration
 
-### MCP Client Integration
+### Installation Requirements
 
-**Enhanced Tool Descriptions**:
-- Detailed usage guidance for AI assistants
-- Clear workflow recommendations
-- Specific input/output specifications
-- Contextual usage examples
+**Python Dependencies**:
+- Python 3.8+ with required packages from requirements.txt
+- FastMCP framework for MCP server implementation
+- Foundry toolchain integration dependencies
 
-**Session Continuity**:
-- Persistent session management
-- Cross-tool context sharing
-- Progressive workflow state
-- Intelligent recommendation chaining
+**Foundry Integration**:
+- Foundry installation required for full functionality
+- `forge`, `cast`, and other Foundry tools must be accessible
+- Proper Foundry project structure (foundry.toml, src/, test/)
 
-### Foundry Toolchain Integration
+### Configuration Options
 
-**Command Line Interface**:
-- Direct forge/cast/anvil integration
-- Real-time output parsing
-- Multi-format support
-- Error handling and recovery
+**Environment Variables**:
+- `LOG_LEVEL`: Controls logging verbosity (DEBUG, INFO, WARNING, ERROR)
+- `MCP_CLIENT_CWD`: Override working directory for MCP client integration
+- `FOUNDRY_PROFILE`: Specify Foundry profile for tool execution
 
-**Development Workflow**:
-- Seamless integration with existing Foundry workflows
-- Non-intrusive analysis and recommendations
-- Progressive enhancement of existing projects
-- Production-ready output generation
+**MCP Client Integration**:
+- Server startup with `run_clean.py` for production (silent operation)
+- Development mode with `run.py` for debugging (verbose logging)
+- HTTP mode support for development and testing
 
-## Deployment Architecture
+### Known Deployment Issues
 
-### Development Environment
+**Common Problems**:
+- Directory detection failures requiring MCP client configuration
+- Subprocess execution issues in containerized environments
+- Path resolution problems with relative vs absolute paths
 
-**Local Installation**:
-- Python package with dependency management
-- Foundry toolchain integration
-- MCP server configuration
-- Development tool integration
+**Troubleshooting**:
+- Use `debug_directory_detection()` tool for path issues
+- Check Foundry installation with `validate_current_directory()`
+- Review MCP client configuration for proper working directory setup
+- Monitor server logs for detailed error information
 
-**Configuration Management**:
-- Environment variable support
-- Project-specific settings
-- Tool integration configuration
-- Session persistence options
+## Future Development Considerations
 
-### Production Considerations
+### Improvement Areas
 
-**Performance Requirements**:
-- Sub-second project analysis for typical projects
-- Efficient coverage processing
-- Scalable session management
-- Responsive tool interactions
+**Enhanced Analysis**:
+- More sophisticated AST analysis with better Solidity parsing
+- Improved pattern recognition for security vulnerabilities
+- Better handling of complex project structures
 
-**Monitoring and Maintenance**:
-- Performance metrics collection
-- Error tracking and reporting
-- Usage analytics (privacy-preserving)
-- Continuous improvement feedback loops
+**Tool Integration**:
+- More robust subprocess execution and error handling
+- Better compatibility with various MCP client configurations
+- Enhanced coverage analysis with more detailed reporting
 
-This enhanced architecture provides a solid foundation for professional-grade smart contract testing guidance that understands context, adapts to project needs, and delivers expert-level recommendations through sophisticated analysis and progressive workflows. 
+**User Experience**:
+- More contextual recommendations based on project type
+- Better error messages and troubleshooting guidance
+- Improved session management and workflow continuity
+
+### Technical Debt
+
+**Current Limitations**:
+- Subprocess execution reliability needs improvement
+- Directory detection logic could be more robust
+- Error handling could be more comprehensive
+- AST analysis fallback mechanisms need refinement
+
+This technical architecture provides a realistic view of the current implementation status, acknowledging both capabilities and limitations while providing practical guidance for deployment and usage. 

@@ -61,13 +61,13 @@ class FoundryAdapter:
     
     def _resolve_project_path(self, project_path: str = "") -> str:
         """
-        Simple project path resolution - uses current directory or explicit path.
+        Resolve the project path to analyze - prioritizes user's working directory.
         
         Args:
             project_path: Optional explicit project path
             
         Returns:
-            Absolute path to the project directory
+            Absolute path to the project directory to analyze
         """
         # If explicit path provided, use it
         if project_path and project_path not in ["", "."]:
@@ -75,17 +75,24 @@ class FoundryAdapter:
             logger.debug(f"Using explicit project path: {resolved_path}")
             return resolved_path
         
-        # Check for MCP_CLIENT_CWD (set by MCP client)
+        # Priority 1: MCP_CLIENT_CWD (user's working directory from MCP client)
         mcp_client_cwd = os.getenv("MCP_CLIENT_CWD")
         if mcp_client_cwd:
             resolved_path = str(Path(mcp_client_cwd).resolve())
-            logger.debug(f"Using MCP client directory: {resolved_path}")
+            logger.debug(f"Using MCP client working directory: {resolved_path}")
             return resolved_path
         
-        # Use current working directory
-        resolved_path = str(Path.cwd().resolve())
-        logger.debug(f"Using current working directory: {resolved_path}")
-        return resolved_path
+        # Priority 2: MCP_PROJECT_PATH (explicit project override)
+        mcp_project_path = os.getenv("MCP_PROJECT_PATH")
+        if mcp_project_path:
+            resolved_path = str(Path(mcp_project_path).resolve())
+            logger.debug(f"Using MCP project path: {resolved_path}")
+            return resolved_path
+        
+        # Priority 3: Current working directory
+        current_dir = str(Path.cwd().resolve())
+        logger.debug(f"Using current working directory: {current_dir}")
+        return current_dir
     
     async def _run_command(self, command: List[str], cwd: str = None) -> Tuple[int, str, str]:
         """

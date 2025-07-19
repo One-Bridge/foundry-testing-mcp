@@ -1,54 +1,68 @@
-# Function Map - Foundry Testing MCP v2.0
+# Function Map - Foundry Testing MCP
 
 ## Overview
 
-This document provides a comprehensive map of all functions across the Foundry Testing MCP system components. Each function is described in non-technical terms to help readers understand the complete functional surface area and how logic flows through the application.
+This document provides a comprehensive map of all functions across the Foundry Testing MCP system components. Each function is described with its actual implementation status and capabilities based on the current codebase.
 
 ## Core MCP Tools (User-Facing Interface)
 
-These are the primary tools that users interact with through their AI assistants.
+These are the primary tools that users interact with through their MCP clients.
 
 ### initialize_protocol_testing_agent()
 **Purpose**: Entry point that analyzes the current smart contract project and recommends appropriate testing workflows.
 **Operation**: Scans the project directory, identifies existing contracts and tests, evaluates project maturity, and provides specific next steps based on current state.
+**Parameters**: analysis_mode (interactive/direct), project_path (optional)
 **Logic Flow**: This is always the first function called, which then directs users to other appropriate tools.
-**Current State**: ✅ Fully implemented with interactive and direct analysis modes
+**Current State**: ✅ Implemented with AST-enhanced analysis and contextual workflow generation
 
 ### analyze_project_context()
 **Purpose**: Performs deep analysis of project testing quality and identifies improvement opportunities with AI failure detection.
 **Operation**: Examines existing test files for quality issues, calculates risk scores for contracts, detects AI-generated test failures, and creates prioritized improvement plans.
+**Parameters**: include_ai_failure_detection (bool), generate_improvement_plan (bool), project_path (optional)
 **Logic Flow**: Called after initial analysis when detailed assessment is needed, feeds results into workflow execution.
-**Current State**: ✅ Fully implemented with comprehensive AI failure detection system
+**Current State**: ✅ Implemented with comprehensive AI failure detection system
 
 ### execute_testing_workflow()
 **Purpose**: Implements structured testing improvements through guided, multi-phase workflows.
 **Operation**: Creates detailed implementation plans with specific phases, tracks progress through testing maturity levels, and provides step-by-step guidance for comprehensive test suite development.
+**Parameters**: workflow_type, objectives, scope, session_id, project_path
 **Logic Flow**: Executes the main implementation work, coordinating with analysis results to deliver targeted improvements.
-**Current State**: ✅ Fully implemented with 6+ workflow types (create_new_suite, evaluate_existing, comprehensive, security)
+**Current State**: ✅ Implemented with adaptive workflow generation based on project state
 
 ### analyze_current_test_coverage()
 **Purpose**: Provides immediate assessment of test coverage percentages and identifies specific gaps.
 **Operation**: Runs Foundry coverage analysis, calculates line and branch coverage metrics, compares against target goals, and recommends specific areas for improvement.
+**Parameters**: target_coverage (default 90), include_branches (bool)
 **Logic Flow**: Used for quick health checks and progress monitoring throughout development.
-**Current State**: ✅ Fully implemented with real forge coverage parsing
+**Current State**: ✅ Implemented with real forge coverage parsing (note: subprocess execution issues in some environments)
 
-### validate_current_project()
+### validate_current_directory()
 **Purpose**: Verifies that the project environment is properly configured for testing workflows.
 **Operation**: Checks Foundry installation, validates project structure, confirms file organization, and provides setup recommendations when issues are found.
+**Parameters**: None
 **Logic Flow**: Troubleshooting tool used when other functions report configuration problems.
-**Current State**: ✅ Fully implemented with comprehensive validation checks
+**Current State**: ✅ Implemented with comprehensive validation checks
 
 ### debug_directory_detection()
 **Purpose**: Diagnoses and resolves issues where the MCP system cannot locate project files correctly.
 **Operation**: Analyzes directory detection logic, examines environment variables, identifies client-server directory mismatches, and provides specific configuration fixes.
+**Parameters**: None
 **Logic Flow**: Advanced troubleshooting tool used when directory-related errors persist after basic validation.
-**Current State**: ✅ Fully implemented with detailed debugging output
+**Current State**: ✅ Implemented with detailed debugging output and MCP client configuration guidance
 
-### get_server_info()
+### discover_foundry_projects()
+**Purpose**: Finds Foundry projects in the directory structure for project selection.
+**Operation**: Scans common directories for Foundry projects, returns list with metadata, helps AI agents choose correct project path.
+**Parameters**: None
+**Logic Flow**: Project discovery tool for automatic project detection.
+**Current State**: ✅ Implemented with automatic discovery capabilities
+
+### get_server_info() (integrated in TestingMCPServer)
 **Purpose**: Provides comprehensive information about server capabilities, tools, and usage guidance.
 **Operation**: Catalogs available tools, explains workflow relationships, provides usage examples, and delivers orientation information for new users.
+**Parameters**: None
 **Logic Flow**: Information system that helps users understand and effectively utilize the MCP capabilities.
-**Current State**: ✅ Fully implemented with complete capability overview
+**Current State**: ✅ Implemented as part of server infrastructure
 
 ## Foundry Integration Layer (FoundryAdapter)
 
@@ -64,7 +78,7 @@ These functions provide direct integration with the Foundry smart contract devel
 **Purpose**: Executes comprehensive test coverage analysis using Foundry tools.
 **Operation**: Runs `forge coverage` with appropriate flags, processes output in multiple formats (lcov, summary, json), and provides detailed coverage metrics.
 **Logic Flow**: Core coverage analysis engine used by coverage tools.
-**Current State**: ✅ Fully implemented with multi-format support
+**Current State**: ✅ Implemented with multi-format support (note: some subprocess execution issues)
 
 ### run_tests()
 **Purpose**: Executes smart contract tests using Foundry with optional coverage and gas reporting.
@@ -82,41 +96,53 @@ These functions provide direct integration with the Foundry smart contract devel
 **Purpose**: Comprehensive validation of Foundry project setup and configuration.
 **Operation**: Checks for foundry.toml, validates directory structure, verifies dependencies, and ensures proper project organization.
 **Logic Flow**: Project validation system used by multiple tools.
-**Current State**: ✅ Fully implemented with detailed validation reporting
+**Current State**: ✅ Implemented with detailed validation reporting
 
 ## Project Analysis Engine (ProjectAnalyzer)
 
 These functions provide intelligent analysis of project state and testing quality.
 
-### analyze_testing_phase()
+### analyze_project()
+**Purpose**: Main entry point for comprehensive project analysis.
+**Operation**: Coordinates all analysis components to produce complete ProjectState with testing phase, security level, contracts, and tests analysis.
+**Logic Flow**: Central analysis function used by MCP tools.
+**Current State**: ✅ Implemented with AST integration and comprehensive analysis
+
+### _analyze_contract_file()
+**Purpose**: Analyzes individual contract files using AST-based semantic analysis.
+**Operation**: Uses ASTAnalyzer for semantic understanding, identifies functions, state variables, security patterns, and calculates risk scores.
+**Logic Flow**: Contract-level analysis with fallback to regex patterns when AST fails.
+**Current State**: ✅ Implemented with AST-first approach and regex fallback
+
+### _analyze_test_file()
+**Purpose**: Analyzes individual test files using AST-based semantic analysis.
+**Operation**: Identifies test patterns, security tests, mock usage, fuzz testing, and calculates complexity scores using semantic analysis.
+**Logic Flow**: Test-level analysis with pattern recognition.
+**Current State**: ✅ Implemented with AST analysis and pattern detection
+
+### _determine_testing_phase()
 **Purpose**: Determines current level of testing sophistication within the project.
 **Operation**: Analyzes existing test patterns, counts test functions, evaluates test comprehensiveness, and classifies project into maturity levels (none/basic/intermediate/advanced/production).
 **Logic Flow**: Classification system used to tailor recommendations and workflow selection.
-**Current State**: ✅ Fully implemented with 5-tier maturity classification
+**Current State**: ✅ Implemented with 5-tier maturity classification
 
-### analyze_security_testing()
+### _determine_security_level()
 **Purpose**: Evaluates the current state of security-focused testing within the project.
 **Operation**: Reviews security test patterns, checks for vulnerability coverage, assesses access control testing, and rates security testing maturity.
 **Logic Flow**: Security-specific assessment that influences workflow priorities and recommendations.
 **Current State**: ✅ Implemented with security pattern detection
 
-### calculate_contract_risk_score()
+### _calculate_risk_score()
 **Purpose**: Assigns risk scores to individual contracts based on complexity and security patterns.
 **Operation**: Analyzes contract code for complexity indicators, identifies security-sensitive patterns, evaluates external dependencies, and calculates numerical risk scores.
 **Logic Flow**: Risk assessment used to prioritize testing efforts and identify high-priority contracts.
-**Current State**: ✅ Implemented with comprehensive risk factors
+**Current State**: ✅ Implemented with both AST and regex-based scoring
 
-### generate_improvement_plan()
+### _generate_recommendations()
 **Purpose**: Creates actionable improvement plans based on project analysis results.
 **Operation**: Synthesizes analysis results, prioritizes improvements by impact and effort, creates phased implementation plans, and provides specific recommendations.
 **Logic Flow**: Planning system that translates analysis into actionable guidance.
-**Current State**: ✅ Fully implemented with priority-based planning
-
-### detect_existing_patterns()
-**Purpose**: Identifies existing testing patterns and methodologies already in use.
-**Operation**: Scans test files for established patterns, recognizes testing frameworks, identifies security testing approaches, and catalogs existing capabilities.
-**Logic Flow**: Pattern recognition that informs adaptive workflow selection.
-**Current State**: ✅ Implemented with pattern library
+**Current State**: ✅ Implemented with contextual recommendations based on project state
 
 ## AI Failure Detection System (AIFailureDetector)
 
@@ -126,37 +152,19 @@ These functions identify and prevent common issues with AI-generated test code.
 **Purpose**: Examines individual test files for problematic patterns that indicate AI-generated failures.
 **Operation**: Parses test code structure using AST analysis, identifies suspicious patterns, detects logical inconsistencies, and flags potential quality issues with severity ratings.
 **Logic Flow**: Quality assurance component that validates test reliability before relying on coverage metrics.
-**Current State**: ✅ Fully implemented with 8 failure types detection
+**Current State**: ✅ Implemented with 8 failure types detection using AST and regex patterns
 
-### detect_circular_logic()
-**Purpose**: Identifies tests that validate contracts against their own implementation rather than specifications.
-**Operation**: Analyzes test logic patterns using regex matching, identifies self-referential validation, detects implementation dependencies, and flags tests that cannot provide meaningful validation.
-**Logic Flow**: Specific failure detection that prevents false confidence in test suites.
-**Current State**: ✅ Implemented with pattern matching and AST analysis
-
-### detect_mock_cheating()
-**Purpose**: Finds test mocks that always return expected values, making tests meaningless.
-**Operation**: Examines mock implementations, identifies overly simplistic behaviors, detects mocks without failure scenarios, and flags unrealistic test conditions.
-**Logic Flow**: Quality validation that ensures tests can actually fail when they should.
-**Current State**: ✅ Implemented with mock pattern analysis
-
-### detect_missing_edge_cases()
-**Purpose**: Identifies areas where tests fail to cover boundary conditions and error scenarios.
-**Operation**: Analyzes test input ranges, identifies missing boundary testing, checks for error condition coverage, and highlights gaps in edge case testing.
-**Logic Flow**: Completeness validation that ensures comprehensive test coverage.
-**Current State**: ✅ Implemented with edge case pattern detection
-
-### detect_always_passing_tests()
-**Purpose**: Finds tests with assertions that can never fail, providing false confidence.
-**Operation**: Analyzes assertion patterns, identifies trivial assertions like assertTrue(true), detects self-comparing variables, and flags meaningless validations.
-**Logic Flow**: Critical failure detection that prevents false security confidence.
-**Current State**: ✅ Implemented with assertion pattern analysis
+### _detect_ast_based_failures()
+**Purpose**: Uses AST semantic analysis to detect AI failures more accurately than regex patterns.
+**Operation**: Analyzes test function structure, identifies semantic issues, and provides context-aware failure detection.
+**Logic Flow**: Advanced failure detection using semantic understanding.
+**Current State**: ✅ Implemented with AST integration and enhanced accuracy
 
 ### generate_failure_report()
 **Purpose**: Creates comprehensive reports of detected AI-generated test failures with remediation guidance.
 **Operation**: Aggregates detected issues, prioritizes problems by severity, provides specific fix recommendations, and generates actionable improvement plans.
 **Logic Flow**: Reporting system that translates technical analysis into practical improvement guidance.
-**Current State**: ✅ Fully implemented with detailed reporting and recommendations
+**Current State**: ✅ Implemented with detailed reporting and remediation suggestions
 
 ### suggest_improvements()
 **Purpose**: Provides specific, actionable suggestions for fixing detected AI failures.
@@ -164,83 +172,118 @@ These functions identify and prevent common issues with AI-generated test code.
 **Logic Flow**: Remediation system that turns problem detection into solution guidance.
 **Current State**: ✅ Implemented with comprehensive suggestion engine
 
-## Professional Testing Guidance (TestingPrompts)
+## AST Analysis Engine (ASTAnalyzer)
 
-These functions provide structured guidance based on professional security methodologies.
+These functions provide semantic code analysis using Abstract Syntax Trees.
 
-### get_professional_guidance()
-**Purpose**: Provides expert-level testing guidance incorporating methodologies from leading security firms.
-**Operation**: Delivers structured guidance based on Trail of Bits, OpenZeppelin, and ConsenSys methodologies, with specific focus on DeFi security patterns and economic attack scenarios.
-**Logic Flow**: Professional knowledge base that elevates testing to audit-ready standards.
-**Current State**: ✅ Implemented with comprehensive methodology integration
+### analyze_solidity_file()
+**Purpose**: Performs semantic analysis of Solidity contract files using AST.
+**Operation**: Uses solc compiler to generate AST, parses semantic structure, identifies security patterns, and calculates complexity metrics.
+**Logic Flow**: Core semantic analysis with fallback handling when AST generation fails.
+**Current State**: ✅ Implemented with solc integration and comprehensive semantic analysis
 
-### generate_security_prompts()
-**Purpose**: Creates specialized prompts for security-focused testing scenarios.
-**Operation**: Generates prompts for specific attack vectors, incorporates threat modeling, guides vulnerability testing, and ensures comprehensive security validation.
-**Logic Flow**: Security guidance system that applies professional audit standards to testing.
-**Current State**: ✅ Implemented with security-specific prompt generation
+### analyze_test_file()
+**Purpose**: Performs semantic analysis of Solidity test files.
+**Operation**: Analyzes test structure, identifies test patterns, and provides semantic understanding of test organization.
+**Logic Flow**: Test-specific semantic analysis.
+**Current State**: ✅ Implemented with test pattern recognition
 
-### get_workflow_prompts()
-**Purpose**: Provides contextual prompts for different workflow phases and objectives.
-**Operation**: Generates phase-specific guidance, adapts prompts to project maturity, provides implementation direction, and ensures professional standards throughout.
-**Logic Flow**: Workflow support system that maintains quality and professionalism.
-**Current State**: ✅ Implemented with adaptive prompt generation
+### _extract_contract_nodes()
+**Purpose**: Extracts contract-level semantic information from AST.
+**Operation**: Identifies contracts, functions, state variables, events, and their relationships within the AST structure.
+**Logic Flow**: AST parsing for contract structure.
+**Current State**: ✅ Implemented with comprehensive node extraction
+
+### _detect_security_patterns()
+**Purpose**: Identifies security patterns in contract code using semantic analysis.
+**Operation**: Recognizes access control patterns, reentrancy guards, oracle dependencies, and other security-relevant patterns through AST analysis.
+**Logic Flow**: Security pattern detection using semantic understanding.
+**Current State**: ✅ Implemented with pattern library
 
 ## Resource Management System (TestingResources)
 
 These functions provide access to templates, documentation, and project-specific resources.
 
-### get_test_template()
-**Purpose**: Generates specific test templates for different testing scenarios and contract types.
-**Operation**: Selects appropriate template based on testing needs, customizes template content for specific use cases, and provides usage instructions.
-**Logic Flow**: Template delivery system that accelerates test creation with proven structures.
-**Current State**: ✅ Implemented with unit, integration, and invariant templates
-
-### get_comprehensive_testing_guide()
-**Purpose**: Provides detailed testing guides tailored to current project state and objectives.
-**Operation**: Generates context-aware documentation, incorporates project-specific recommendations, provides step-by-step guidance, and ensures comprehensive coverage.
-**Logic Flow**: Documentation system that supports implementation with detailed guidance.
-**Current State**: ✅ Implemented with dynamic guide generation
+### get_foundry_testing_patterns()
+**Purpose**: Provides structured testing patterns and best practices with code snippets.
+**Operation**: Returns comprehensive testing patterns, file organization, naming conventions, and implementation examples.
+**Resource**: `testing://foundry-patterns`
+**Current State**: ✅ Implemented with actionable patterns and code examples
 
 ### get_security_testing_patterns()
 **Purpose**: Delivers security-specific testing patterns and vulnerability scenarios.
-**Operation**: Provides attack scenario templates, vulnerability testing patterns, economic attack simulations, and defensive testing strategies.
-**Logic Flow**: Security resource system that ensures comprehensive vulnerability coverage.
+**Operation**: Provides vulnerability test cases, attack scenarios, and security testing approaches with implementation examples.
+**Resource**: `testing://security-patterns`
 **Current State**: ✅ Implemented with comprehensive security pattern library
 
-### get_foundry_integration_guide()
-**Purpose**: Provides guidance for optimal integration with Foundry tools and workflows.
-**Operation**: Delivers Foundry-specific best practices, tool integration patterns, optimization strategies, and troubleshooting guidance.
-**Logic Flow**: Tool integration support that maximizes Foundry capabilities.
-**Current State**: ✅ Implemented with detailed Foundry integration guidance
+### get_test_template()
+**Purpose**: Generates specific test templates for different testing scenarios and contract types.
+**Operation**: Selects appropriate template based on testing needs, provides template content with placeholders, and includes usage instructions.
+**Resource**: `testing://templates/{template_type}`
+**Current State**: ✅ Implemented with unit, integration, invariant, security, and fork templates
+
+### get_available_templates()
+**Purpose**: Lists all available test templates with descriptions and use cases.
+**Operation**: Provides template catalog with descriptions, use cases, and placeholder information.
+**Resource**: `testing://templates`
+**Current State**: ✅ Implemented with complete template catalog
+
+### get_testing_documentation()
+**Purpose**: Provides comprehensive testing methodologies and documentation.
+**Operation**: Delivers testing guides, methodologies, coverage strategies, and best practices.
+**Resource**: `testing://documentation`
+**Current State**: ✅ Implemented with comprehensive documentation
+
+## Prompt System (TestingPrompts)
+
+These functions provide structured guidance based on professional testing methodologies.
+
+### analyze_contract_for_testing
+**Purpose**: Provides expert-level guidance for analyzing contracts for testing requirements.
+**Operation**: Generates prompts with master system prompt integration, references MCP resources, and provides specific analysis framework.
+**Current State**: ✅ Implemented with professional methodology integration
+
+### design_test_strategy
+**Purpose**: Creates structured prompts for comprehensive testing strategy development.
+**Operation**: Guides test strategy design with risk-based approaches, resource references, and implementation planning.
+**Current State**: ✅ Implemented with comprehensive strategy guidance
+
+### review_test_coverage
+**Purpose**: Provides prompts for systematic test coverage review and improvement.
+**Operation**: Guides coverage analysis workflow, tool usage, and improvement planning.
+**Current State**: ✅ Implemented with tool-oriented coverage guidance
+
+### design_security_tests
+**Purpose**: Creates prompts for security-focused testing approaches.
+**Operation**: Guides security testing design with vulnerability focus, attack scenarios, and defense validation.
+**Current State**: ✅ Implemented with security-specific guidance
+
+### optimize_test_performance
+**Purpose**: Provides prompts for test suite optimization and efficiency improvement.
+**Operation**: Guides performance optimization with quality maintenance and workflow integration.
+**Current State**: ✅ Implemented with optimization strategies
 
 ## Server Infrastructure (TestingServer)
 
 These functions manage the overall MCP server operation and component coordination.
 
-### register_tools()
-**Purpose**: Registers all MCP tools with the FastMCP server framework.
-**Operation**: Initializes tool definitions, establishes parameter schemas, configures tool metadata, and enables MCP client integration.
-**Logic Flow**: System initialization that enables MCP protocol communication.
-**Current State**: ✅ Fully implemented with FastMCP integration
+### __init__()
+**Purpose**: Initializes the main MCP server with all components and dependency injection.
+**Operation**: Sets up FastMCP server, initializes all components with proper dependencies, handles configuration, and manages component registration.
+**Logic Flow**: Server initialization with enhanced error handling.
+**Current State**: ✅ Implemented with comprehensive initialization and error handling
 
-### register_resources()
-**Purpose**: Makes documentation and templates available as MCP resources.
-**Operation**: Registers resource endpoints, configures access patterns, enables dynamic content generation, and supports client resource requests.
-**Logic Flow**: Resource system that provides comprehensive documentation access.
-**Current State**: ✅ Implemented with dynamic resource generation
+### _register_components()
+**Purpose**: Registers all MCP tools, resources, and prompts with the FastMCP server framework.
+**Operation**: Coordinates component registration, handles tool definitions, configures resource endpoints, and enables MCP protocol communication.
+**Logic Flow**: System initialization that enables MCP protocol communication.
+**Current State**: ✅ Implemented with enhanced logging and error handling
 
 ### run_server()
 **Purpose**: Manages the main server execution loop and handles client connections.
 **Operation**: Starts server processes, manages client communications, coordinates component interactions, and handles shutdown procedures.
 **Logic Flow**: Server management system that enables MCP client connectivity and operation.
-**Current State**: ✅ Fully implemented with robust error handling
-
-### handle_stdio()
-**Purpose**: Manages stdio-based communication with MCP clients.
-**Operation**: Processes stdin/stdout communication, handles JSON-RPC protocol, manages request/response cycles, and ensures reliable communication.
-**Logic Flow**: Communication layer that enables MCP protocol operation.
-**Current State**: ✅ Implemented with FastMCP framework
+**Current State**: ✅ Implemented with stdio and http transport modes
 
 ## Logic Flow Summary
 
@@ -251,26 +294,33 @@ The system operates through coordinated interactions between these functional la
 3. **Implementation Phase**: `execute_testing_workflow()` guides structured improvements with contextual workflows
 4. **Validation Phase**: `analyze_current_test_coverage()` monitors progress using real Foundry output
 5. **Quality Assurance**: AI failure detection prevents false confidence from flawed tests
-6. **Professional Standards**: Integrated security methodologies ensure audit-ready results
+6. **Resource Access**: Templates and documentation support implementation
 7. **Support Systems**: Foundry integration, resource management, and troubleshooting support all phases
 
 ## Current Implementation Status
 
 ### Fully Implemented Components ✅
 - **All 7 Core MCP Tools**: Complete with parameter validation and error handling
-- **AI Failure Detection**: 8 failure types with comprehensive analysis
+- **AI Failure Detection**: 8 failure types with AST and regex-based analysis
 - **Project Analysis**: Multi-tier maturity assessment with risk scoring
+- **AST Analysis**: Semantic code analysis with fallback to regex patterns
 - **Foundry Integration**: Real tool integration with output parsing
-- **Professional Guidance**: Security methodology integration
-- **Resource System**: Templates and dynamic documentation
+- **Resource System**: 5 MCP resources with templates and dynamic documentation
+- **Prompt System**: 5 structured prompts with professional methodologies
 - **Server Infrastructure**: FastMCP-based with robust communication
+
+### Known Issues and Limitations ⚠️
+- **Directory Detection**: May fail in some MCP client configurations
+- **Coverage Integration**: Subprocess execution issues in some environments
+- **Context Detection**: Occasional null pointer exceptions in project analysis
+- **Tool Routing**: Some naming convention issues with MCP clients
 
 ### Key Capabilities Verified ✅
 - **Context Awareness**: Adapts to current project state rather than generic advice
 - **Real Tool Integration**: Parses actual `forge coverage` and `forge test` output
 - **AI Quality Assurance**: Detects and prevents common AI-generated test failures
-- **Professional Standards**: Integrates methodologies from leading security firms
-- **Adaptive Workflows**: 6+ workflow types that build on existing work
+- **Template System**: Comprehensive templates with placeholder substitution
+- **AST Analysis**: Semantic understanding with regex fallback
 - **Comprehensive Troubleshooting**: Directory detection and project validation
 
-This functional architecture enables context-aware, quality-assured testing guidance that adapts to project needs while maintaining professional security standards. The system's modular design allows for targeted functionality while ensuring comprehensive coverage of testing requirements. 
+This functional architecture provides smart contract testing assistance through the MCP protocol, with documented limitations and ongoing development to address real-world usage issues. The modular design allows for targeted improvements while maintaining core functionality. 

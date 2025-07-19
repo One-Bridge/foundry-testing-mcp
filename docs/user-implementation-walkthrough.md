@@ -1,8 +1,8 @@
-# Foundry Testing MCP v2.0 - User Implementation Walkthrough
+# Foundry Testing MCP - User Implementation Walkthrough
 
 ## Quick Start Guide
 
-This walkthrough demonstrates how to use the Foundry Testing MCP v2.0 to create comprehensive, professional-grade tests for smart contracts. The enhanced system provides context-aware guidance that understands your current project state and adapts workflows to your testing maturity level, integrating professional security methodologies and real Foundry tool analysis.
+This walkthrough demonstrates how to use the Foundry Testing MCP to assist with smart contract testing for Solidity projects. The system provides project analysis, testing workflow guidance, and integration with Foundry tools.
 
 ## Prerequisites
 
@@ -30,386 +30,310 @@ ls -la
 
 ### MCP Server Setup
 
-The Foundry Testing MCP v2.0 is designed to work with MCP clients like Cursor with Claude. Ensure your MCP client is configured to connect to the testing server.
+The Foundry Testing MCP is designed to work with MCP clients like Cursor with Claude. Configure your MCP client to connect to the testing server using the provided configuration.
 
-## Core Workflow: Context-Aware Testing
+## Core Workflow: Project Analysis and Testing Guidance
 
-### Step 1: Initialize with Context Analysis
+### Step 1: Initialize Project Analysis
 
-**Always start here** - The MCP will analyze your current project state and provide tailored guidance.
+Start with the main entry point tool to analyze your current project state.
 
 **Tool**: `initialize_protocol_testing_agent`
 
+**Parameters**:
+- `analysis_mode`: "interactive" (guided) or "direct" (immediate analysis)
+- `project_path`: Optional path (auto-detects if not provided)
+
+**Example Usage**:
 ```
-USER: I want to improve the testing for my DeFi protocol. We have some basic tests but need better coverage and security testing.
+USER: I want to analyze my DeFi protocol for testing. We have some basic tests but need guidance on improving coverage and security testing.
 
-ASSISTANT: I'll analyze your current project and recommend the best testing approach. Let me start by understanding your current state.
+AI Assistant: I'll analyze your current project state and recommend appropriate testing approaches.
 
-[Calls: initialize_protocol_testing_agent with analysis_mode="interactive"]
-```
-
-**Enhanced Response**: The system now provides:
-- **Current State Summary**: Testing phase, test count, coverage estimate, identified patterns
-- **Contextual Workflow Options**: Six specialized workflows based on your project maturity
-- **Effort Estimates**: Realistic timelines (1-4 weeks) based on current state
-- **Next Steps**: Clear guidance tailored to your specific situation
-
-### Step 2: Choose Context-Appropriate Workflow
-
-Based on your project analysis, you'll receive workflow options like:
-
-#### For New Projects (No Tests)
-```json
-{
-  "create_foundational_suite": {
-    "title": "Create Foundational Test Suite",
-    "phases": 3,
-    "effort": "1-2 weeks",
-    "focus": "Establishing testing infrastructure from scratch"
-  }
-}
+[Tool Call: initialize_protocol_testing_agent(analysis_mode="interactive")]
 ```
 
-#### For Basic Tests (< 10 tests)
-```json
-{
-  "expand_test_coverage": {
-    "title": "Expand Test Coverage & Quality", 
-    "phases": 3,
-    "effort": "1 week",
-    "focus": "Building on existing tests to achieve comprehensive coverage"
-  }
-}
+**Expected Response**: The system provides:
+- Project structure analysis
+- Testing maturity classification (none/basic/intermediate/advanced/production)
+- Security level assessment
+- Available workflow recommendations
+- Session ID for continued work
+
+### Step 2: Detailed Project Assessment (Optional)
+
+For more comprehensive analysis including AI failure detection.
+
+**Tool**: `analyze_project_context`
+
+**Parameters**:
+- `include_ai_failure_detection`: true (recommended for AI-generated tests)
+- `generate_improvement_plan`: true (recommended)
+- `project_path`: Optional path
+
+**Example Usage**:
+```
+USER: Can you analyze our existing tests for quality issues and provide a detailed improvement plan?
+
+AI Assistant: I'll perform a comprehensive analysis including AI failure detection.
+
+[Tool Call: analyze_project_context(include_ai_failure_detection=true, generate_improvement_plan=true)]
 ```
 
-#### For Solid Foundations (Good Coverage)
-```json
-{
-  "enhance_security_testing": {
-    "title": "Advanced Security & Integration Testing",
-    "phases": 4, 
-    "effort": "1-2 weeks",
-    "focus": "Adding sophisticated security testing and integration scenarios"
-  }
-}
-```
+**Expected Response**:
+- Testing phase and security level analysis
+- AI failure detection report (if enabled)
+- Contract risk scoring
+- Prioritized improvement plan
 
-#### For DeFi Protocols
-```json
-{
-  "defi_security_testing": {
-    "title": "DeFi Protocol Security Testing",
-    "phases": 4,
-    "effort": "2-3 weeks", 
-    "focus": "Economic attacks and DeFi-specific vulnerabilities"
-  }
-}
-```
+### Step 3: Execute Testing Workflow
 
-### Step 3: Execute Contextual Workflow
+Implement structured testing improvements based on analysis results.
 
 **Tool**: `execute_testing_workflow`
 
+**Parameters**:
+- `workflow_type`: Selected based on project state
+- `objectives`: Specific testing goals
+- `scope`: "unit", "integration", "comprehensive", "security"
+- `session_id`: From initialization step
+- `project_path`: Optional path
+
+**Available Workflow Types**:
+- `create_foundational_suite`: For new projects with minimal testing
+- `enhance_coverage`: Build on existing tests to improve coverage
+- `security_focus`: Add comprehensive security testing
+- `integration_testing`: Multi-contract interaction testing
+
+**Example Usage**:
 ```
-USER: Let's go with the "enhance_security_testing" workflow since we have good basic coverage but need security focus.
+USER: Let's execute the security_focus workflow to add comprehensive security testing to our existing test suite.
 
-ASSISTANT: Perfect choice! I can see you have solid test foundations. Let me create a security-focused workflow that builds on your existing 45 tests and 78% coverage.
+AI Assistant: I'll create a structured security testing workflow based on your project's current state.
 
-[Calls: execute_testing_workflow with workflow_type="enhance_security_testing", objectives="Add comprehensive security testing for DeFi protocol", scope="comprehensive"]
-```
-
-**Enhanced Workflow Planning**: The system now analyzes your current context and provides:
-
-**Current Context Integration**:
-```json
-{
-  "current_context": {
-    "testing_phase": "intermediate", 
-    "security_level": "basic",
-    "test_count": 45,
-    "coverage_pct": 78.5,
-    "has_security_tests": true,
-    "contract_types": ["defi", "governance"]
-  }
-}
+[Tool Call: execute_testing_workflow(workflow_type="security_focus", objectives="Add comprehensive security testing for DeFi protocol", scope="security", session_id="<session_id>")]
 ```
 
-**Adaptive Phases**: Instead of generic phases, you get contextual phases that build on your work:
+## Analysis and Monitoring Tools
 
-**Phase 1: Security Assessment & Gap Analysis**
-- Audit existing security tests for completeness
-- Identify missing attack vector coverage
-- Assess contract risk patterns and vulnerabilities  
-- Map security requirements to contract types
-
-**Phase 2: Vulnerability Testing Implementation**
-- Add access control and privilege escalation tests
-- Implement reentrancy attack simulations
-- Create oracle manipulation test scenarios
-- Add flash loan attack resistance testing
-
-**Phase 3: Advanced Security Testing**
-- Implement property-based security testing
-- Add invariant tests for critical security properties
-- Create fuzz tests for input validation
-- Add economic attack scenario testing
-
-## Advanced Features
-
-### Real Coverage Analysis
+### Coverage Analysis
 
 **Tool**: `analyze_current_test_coverage`
 
-The MCP now parses actual `forge coverage` output instead of providing generic analysis:
+**Parameters**:
+- `target_coverage`: Target percentage (default 90)
+- `include_branches`: Include branch coverage analysis
 
-```bash
-# The MCP runs this internally:
-forge test --coverage
-forge coverage --report summary
+**Usage**: Get current coverage metrics and gap identification
 
-# Then provides contextual analysis:
-```
-
-**Before (Generic)**: "Very poor coverage. Comprehensive testing strategy required."
-**After (Context-Aware)**: "Very good coverage (92%)! Add edge cases, security tests, and integration scenarios to reach production standards."
-
-**Enhanced Coverage Insights**:
-- **File-by-file breakdown** from actual Foundry output
-- **Contextual recommendations** based on testing phase
-- **Gap identification** with specific uncovered areas
-- **Priority-based improvement suggestions**
-
-### AI Quality Assurance
-
-**Tool**: `analyze_project_context` (with AI failure detection)
-
-The system now detects common AI-generated test failures:
-
-```
-USER: Can you check if our AI-generated tests have any quality issues?
-
-ASSISTANT: I'll analyze your tests for common AI failure patterns that could provide false confidence.
-
-[Calls: analyze_project_context with include_ai_failure_detection=true]
-```
-
-**AI Failure Detection Results**:
-```json
-{
-  "ai_failure_analysis": {
-    "status": "moderate_issues",
-    "failures_detected": [
-      {
-        "type": "circular_logic",
-        "file": "test/TokenTest.t.sol", 
-        "line": 45,
-        "description": "Test validates contract against its own implementation",
-        "severity": "high",
-        "remediation": "Test against expected behavior, not implementation"
-      },
-      {
-        "type": "mock_cheating",
-        "file": "test/OracleTest.t.sol",
-        "line": 67,
-        "description": "Mock always returns expected value without validation",
-        "severity": "medium", 
-        "remediation": "Add realistic mock behavior and edge cases"
-      }
-    ]
-  }
-}
-```
-
-### Professional Security Integration
-
-The MCP now integrates methodologies from leading security audit firms:
-
-**Trail of Bits Framework**:
-- Access control maturity assessment (Level 1-4)
-- Architectural risk evaluation
-- Invariant-driven development
-
-**OpenZeppelin Standards**:
-- Security pattern validation
-- Comprehensive checklists
-- Quality measures compliance
-
-**ConsenSys Practices**: 
-- Vulnerability pattern analysis
-- Threat modeling approaches
-- Economic attack scenarios
-
-### DeFi-Specific Security Testing
-
-For DeFi protocols, the system provides specialized security testing:
-
-**Economic Attack Scenarios**:
-```solidity
-// Flash loan attack simulation
-function testFlashLoanAttack() public {
-    // Setup: Deploy vulnerable contract
-    // Execute: Simulate flash loan attack
-    // Verify: Attack is prevented/mitigated
-}
-
-// Oracle manipulation testing  
-function testOracleManipulation() public {
-    // Setup: Mock oracle with manipulated price
-    // Execute: Attempt price manipulation exploit
-    // Verify: System responds appropriately
-}
-
-// MEV protection validation
-function testMEVProtection() public {
-    // Setup: Simulate MEV extraction attempt
-    // Execute: Front-running/sandwich attack
-    // Verify: Protection mechanisms work
-}
-```
-
-## Workflow Examples
-
-### Example 1: New DeFi Project
-
-**Starting Point**: Empty project with contracts but no tests
-
-```
-1. initialize_protocol_testing_agent()
-   → Detects: No tests, DeFi contracts, high risk
-   → Recommends: "create_foundational_suite" workflow
-
-2. execute_testing_workflow("create_foundational_suite", "Create comprehensive test suite for AMM protocol")
-   → Phase 1: Contract analysis and risk assessment
-   → Phase 2: Test architecture design
-   → Phase 3: Core test implementation
-
-3. analyze_current_test_coverage()
-   → Progress tracking and gap identification
-```
-
-### Example 2: Existing Project Enhancement
-
-**Starting Point**: Project with 25 tests, 65% coverage, basic security
-
-```
-1. initialize_protocol_testing_agent()
-   → Detects: Intermediate phase, needs security focus
-   → Recommends: "enhance_security_testing" workflow
-
-2. analyze_project_context(include_ai_failure_detection=true)
-   → Identifies: AI test quality issues, security gaps
-   → Provides: Prioritized improvement plan
-
-3. execute_testing_workflow("enhance_security_testing", "Add comprehensive security testing")
-   → Builds on existing 25 tests
-   → Focuses on security gaps and attack vectors
-   → Progressive enhancement rather than restart
-```
-
-### Example 3: Production Preparation
-
-**Starting Point**: Mature project preparing for audit
-
-```
-1. initialize_protocol_testing_agent()
-   → Detects: Advanced phase, audit preparation needed
-   → Recommends: "comprehensive_audit_prep" workflow
-
-2. execute_testing_workflow("comprehensive_audit_prep", "Prepare for security audit")
-   → Phase 1: Comprehensive coverage review (95%+ target)
-   → Phase 2: Security testing validation
-   → Phase 3: Documentation and evidence preparation
-   → Phase 4: Formal verification preparation
-   → Phase 5: Audit documentation packages
-```
-
-## Troubleshooting and Validation
+**Note**: This tool integrates with Foundry's `forge coverage` command. Some environments may experience subprocess execution issues.
 
 ### Project Validation
 
-**Tool**: `validate_current_project`
+**Tool**: `validate_current_directory`
 
-If you encounter issues, start with project validation:
+**Usage**: Verify project setup and Foundry configuration
+**When to Use**: When encountering setup or configuration issues
 
-```
-USER: The MCP tools aren't finding my contracts properly.
-
-ASSISTANT: Let me validate your project setup and diagnose any issues.
-
-[Calls: validate_current_project()]
-```
-
-**Enhanced Validation**:
-- **Foundry Installation Check**: Versions and accessibility
-- **Project Structure Analysis**: foundry.toml, src/, test/ validation  
-- **Environment Diagnostics**: Path resolution and permissions
-- **Setup Recommendations**: Specific fixes for identified issues
-
-### Directory Detection Debugging  
+### Troubleshooting
 
 **Tool**: `debug_directory_detection`
 
-For advanced troubleshooting when the MCP seems to be working in the wrong directory:
+**Usage**: Diagnose directory detection and path issues
+**When to Use**: When tools report wrong directory or cannot find project files
 
-```
-USER: The MCP thinks I'm in my home directory but I'm in my project folder.
+### Project Discovery
 
-ASSISTANT: Let me debug the directory detection and provide specific configuration fixes.
+**Tool**: `discover_foundry_projects`
 
-[Calls: debug_directory_detection()]
-```
+**Usage**: Find available Foundry projects in directory structure
+**When to Use**: When working with multiple projects or auto-detection fails
 
-**Enhanced Debugging**:
-- **Environment Variable Analysis**: MCP_CLIENT_CWD, MCP_PROJECT_PATH inspection
-- **Path Resolution Debugging**: Shows resolved vs actual paths
-- **Client Configuration Examples**: Specific MCP client setup guidance
-- **Troubleshooting Instructions**: Step-by-step resolution guide
+## Using MCP Resources
+
+The system provides several resources accessible through MCP clients:
+
+### Testing Patterns
+- **Resource**: `testing://foundry-patterns`
+- **Content**: Best practices, file organization, naming conventions with code examples
+
+### Security Patterns
+- **Resource**: `testing://security-patterns`
+- **Content**: Vulnerability test cases and security testing approaches
+
+### Test Templates
+- **Resource**: `testing://templates/{template_type}`
+- **Available Types**: unit, integration, invariant, security, fork
+- **Content**: Template code with placeholders for customization
+
+### Template Catalog
+- **Resource**: `testing://templates`
+- **Content**: Overview of all available templates with descriptions
+
+### Documentation
+- **Resource**: `testing://documentation`
+- **Content**: Testing methodologies and comprehensive guides
+
+## Using MCP Prompts
+
+The system provides structured prompts for testing guidance:
+
+### Contract Analysis
+- **Prompt**: `analyze-contract-for-testing`
+- **Parameters**: `contract_path`
+- **Usage**: Get analysis framework for specific contracts
+
+### Test Strategy Design
+- **Prompt**: `design-test-strategy`
+- **Parameters**: `contracts`, `risk_profile`, `coverage_target`
+- **Usage**: Develop comprehensive testing strategies
+
+### Coverage Review
+- **Prompt**: `review-test-coverage`
+- **Usage**: Systematic coverage review and improvement guidance
+
+### Security Testing
+- **Prompt**: `design-security-tests`
+- **Parameters**: `contract_types`, `threat_model`
+- **Usage**: Design security-focused testing approaches
+
+### Performance Optimization
+- **Prompt**: `optimize-test-performance`
+- **Parameters**: `performance_issues`, `optimization_goals`
+- **Usage**: Optimize test suite performance and efficiency
+
+## Example Workflows
+
+### New Project (No Tests)
+
+1. **Initialize**: `initialize_protocol_testing_agent()`
+   - System detects no tests, recommends foundational workflow
+   
+2. **Execute**: `execute_testing_workflow(workflow_type="create_foundational_suite")`
+   - Provides step-by-step guidance for test suite creation
+   
+3. **Monitor**: `analyze_current_test_coverage()`
+   - Track progress and identify gaps
+
+### Existing Project Enhancement
+
+1. **Initialize**: `initialize_protocol_testing_agent()`
+   - System analyzes existing tests and identifies maturity level
+   
+2. **Deep Analysis**: `analyze_project_context(include_ai_failure_detection=true)`
+   - Identifies test quality issues and improvement opportunities
+   
+3. **Execute**: `execute_testing_workflow(workflow_type="enhance_coverage")`
+   - Builds on existing work with targeted improvements
+
+### Security Testing Focus
+
+1. **Initialize**: `initialize_protocol_testing_agent()`
+   - System identifies security testing gaps
+   
+2. **Execute**: `execute_testing_workflow(workflow_type="security_focus")`
+   - Comprehensive security testing implementation
+   
+3. **Validate**: Use security templates and patterns for implementation
+
+## Troubleshooting Common Issues
+
+### Directory Detection Problems
+
+**Symptoms**: Tools report wrong directory or cannot find project files
+
+**Solutions**:
+1. Use `debug_directory_detection()` for detailed analysis
+2. Check MCP client configuration for working directory settings
+3. Verify environment variables (MCP_CLIENT_CWD)
+4. Ensure proper project structure (foundry.toml, src/, test/)
+
+### Coverage Analysis Issues
+
+**Symptoms**: Coverage analysis fails or returns errors
+
+**Solutions**:
+1. Verify Foundry installation and project compilation
+2. Check test execution with `forge test`
+3. Try running `forge coverage` manually to identify issues
+4. Review project validation with `validate_current_directory()`
+
+### Tool Routing Issues
+
+**Symptoms**: Tools not found or naming convention errors
+
+**Solutions**:
+1. Check MCP client configuration
+2. Verify server startup and component registration
+3. Use development runner (`run.py`) for detailed logging
+4. Check server logs for tool registration status
+
+## Template Usage Instructions
+
+### Accessing Templates
+
+1. Use `testing://templates` resource to see available templates
+2. Request specific template with `testing://templates/{type}`
+3. Replace placeholder values in template code
+4. Follow provided usage instructions
+
+### Template Types
+
+- **Unit Tests**: Basic function-level testing with access control and error conditions
+- **Integration Tests**: Multi-contract interaction testing
+- **Invariant Tests**: Property-based testing using Handler pattern
+- **Security Tests**: Attack scenario simulation and defense validation
+- **Fork Tests**: Mainnet state integration testing
+
+### Placeholder System
+
+Templates use `{{PLACEHOLDER}}` syntax for dynamic values:
+- `{{CONTRACT_NAME}}`: Replace with your contract name
+- `{{OWNER_ACCOUNT}}`: Replace with owner address variable
+- `{{USER_ACCOUNT}}`: Replace with user address variable
+- Additional placeholders specific to each template type
 
 ## Best Practices
 
-### Context-Aware Development
+### Project Organization
 
-1. **Always Start with Analysis**: Use `initialize_protocol_testing_agent` to understand current state
-2. **Build Progressively**: Choose workflows that build on existing work
-3. **Monitor Quality**: Use AI failure detection to catch test quality issues
-4. **Use Real Data**: Leverage actual coverage analysis instead of estimates
-5. **Apply Security Standards**: Follow integrated professional methodologies
+1. Follow recommended file structure from `testing://foundry-patterns`
+2. Use descriptive test names following the pattern: `test_function_whenCondition_shouldResult`
+3. Organize tests by functionality and type (unit, integration, security)
+4. Maintain separate files for different test categories
 
-### Professional Security Integration
+### Tool Usage
 
-1. **Risk-Based Testing**: Focus on high-risk contracts and functions first
-2. **Attack Vector Coverage**: Include DeFi-specific economic attacks
-3. **Property Validation**: Use invariant testing for critical system properties
-4. **Audit Preparation**: Build toward professional audit standards from the start
+1. Always start with `initialize_protocol_testing_agent`
+2. Use `validate_current_directory` when encountering setup issues
+3. Monitor progress with `analyze_current_test_coverage`
+4. Leverage templates and patterns for consistent implementation
 
-### Tool Integration Best Practices
+### Quality Assurance
 
-1. **Foundry Alignment**: Ensure recommendations align with actual `forge` capabilities
-2. **Coverage Validation**: Use real coverage reports for decision making
-3. **Progressive Enhancement**: Build on existing infrastructure rather than replacing
-4. **Quality Assurance**: Regular AI failure detection to maintain test quality
+1. Enable AI failure detection for quality validation
+2. Focus on meaningful assertions that can actually fail
+3. Avoid circular logic in test validation
+4. Use realistic mock implementations
 
-## Success Metrics
+## Limitations and Known Issues
 
-### Context Awareness Success
+### Current Limitations
 
-- **Accurate State Detection**: MCP correctly identifies your testing phase
-- **Relevant Recommendations**: Workflow suggestions match your actual needs
-- **Progressive Guidance**: Builds on existing work rather than restarting
-- **Appropriate Effort Estimates**: Realistic timelines based on current state
+- Directory detection may fail in some MCP client configurations
+- Coverage analysis has subprocess execution issues in some environments
+- Project context detection can encounter null pointer exceptions
+- Some tool routing issues with MCP client naming conventions
 
-### Quality Assurance Success
+### Development Status
 
-- **Coverage Accuracy**: Analysis matches actual `forge coverage` output
-- **AI Quality Detection**: Identifies and helps fix AI-generated test issues  
-- **Security Integration**: Professional audit methodologies applied consistently
-- **Tool Integration**: Seamless integration with existing Foundry workflows
+The system is in active development with ongoing improvements to address real-world usage issues. Core functionality is implemented and working, with continued refinement based on user feedback.
 
-### Professional Standards Achievement
+### Getting Help
 
-- **Security Methodology Compliance**: Tests follow Trail of Bits/OpenZeppelin/ConsenSys standards
-- **Audit Readiness**: Test suites meet professional audit preparation requirements
-- **DeFi Security Coverage**: Economic attack scenarios and vulnerability testing
-- **Production Standards**: High-quality, maintainable, and comprehensive test suites
+1. Use troubleshooting tools for common issues
+2. Check server logs for detailed error information
+3. Verify Foundry installation and project setup
+4. Review MCP client configuration for proper integration
 
-The Foundry Testing MCP v2.0 transforms smart contract testing from generic AI guidance into professional-grade consulting that understands your project, builds on your work, and applies industry-leading security methodologies throughout your development process.
+This walkthrough provides practical guidance for using the Foundry Testing MCP system effectively, with awareness of current capabilities and limitations.

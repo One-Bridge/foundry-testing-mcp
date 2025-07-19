@@ -1,7 +1,9 @@
 """
-Smart Contract Testing MCP Server - Testing Tools
+Smart Contract Testing MCP Server - Testing Tools (Refactored)
 
-This module implements the core MCP tools for interactive testing workflows.
+This module implements intelligent, context-aware MCP tools for interactive
+and automated testing workflows. Tools provide contextual analysis, adaptive
+workflows, and specific actionable guidance.
 """
 
 import asyncio
@@ -13,7 +15,7 @@ from typing import Dict, Any, List, Optional
 import uuid
 
 from .foundry_adapter import FoundryAdapter, FoundryProjectError
-from .project_analyzer import ProjectAnalyzer, ProjectState
+from .project_analyzer import ProjectAnalyzer, ProjectState, TestingPhase, SecurityLevel
 from .ai_failure_detector import AIFailureDetector
 
 logger = logging.getLogger(__name__)
@@ -48,34 +50,49 @@ class TestingSession:
 
 class TestingTools:
     """
-    Core testing tools for the MCP server.
+    Intelligent, context-aware testing tools for the MCP server.
     
-    This class implements the main interactive workflow tools that guide users
-    through smart contract testing processes.
+    Provides smart workflow management with adaptive strategies based on project
+    maturity, contextual analysis with specific next steps, and intelligent
+    workflow generation tailored to real-time project state.
     """
     
-    def __init__(self, foundry_adapter: FoundryAdapter):
+    def __init__(self, foundry_adapter: FoundryAdapter, 
+                 project_analyzer: Optional[ProjectAnalyzer] = None,
+                 ai_failure_detector: Optional[AIFailureDetector] = None):
         """
-        Initialize testing tools.
+        Initialize intelligent testing tools with enhanced dependency injection.
         
         Args:
-            foundry_adapter: The Foundry adapter instance
+            foundry_adapter: The Foundry adapter instance  
+            project_analyzer: Optional ProjectAnalyzer with AST capabilities
+            ai_failure_detector: Optional AIFailureDetector with semantic analysis
         """
         self.foundry_adapter = foundry_adapter
-        self.project_analyzer = ProjectAnalyzer(foundry_adapter)
-        self.ai_failure_detector = AIFailureDetector()
-        self.active_sessions = {}  # session_id -> TestingSession
-        logger.info("Testing tools initialized with context analysis and AI failure detection")
+        
+        # Use injected dependencies or create new ones for backward compatibility
+        self.project_analyzer = project_analyzer or ProjectAnalyzer(foundry_adapter)
+        self.ai_failure_detector = ai_failure_detector or AIFailureDetector()
+        
+        self.active_sessions: Dict[str, TestingSession] = {}
+        
+        logger.info("Intelligent testing tools initialized with enhanced capabilities")
+        logger.info("-> AST-based semantic analysis: ENABLED")
+        logger.info("-> AI failure detection with context awareness: ENABLED")
+        logger.info("-> Contextual workflow generation: ENABLED")
     
     def _resolve_project_path(self, project_path: str = "") -> str:
         """
-        Simple project path resolution - uses current directory or explicit path.
+        Resolve the project path to analyze - prioritizes user's working directory.
+        
+        The goal is seamless usage: user opens their Solidity project, calls MCP tools,
+        and the tools automatically work on that project.
         
         Args:
             project_path: Optional explicit project path
             
         Returns:
-            Absolute path to the project directory
+            Absolute path to the project directory to analyze
         """
         # If explicit path provided, use it
         if project_path and project_path not in ["", "."]:
@@ -83,17 +100,37 @@ class TestingTools:
             logger.debug(f"Using explicit project path: {resolved_path}")
             return resolved_path
         
-        # Check for MCP_CLIENT_CWD (set by MCP client)
+        # Priority 1: MCP_CLIENT_CWD (user's working directory from MCP client)
         mcp_client_cwd = os.getenv("MCP_CLIENT_CWD")
         if mcp_client_cwd:
             resolved_path = str(Path(mcp_client_cwd).resolve())
-            logger.debug(f"Using MCP client directory: {resolved_path}")
+            logger.debug(f"Using MCP client working directory: {resolved_path}")
             return resolved_path
         
-        # Use current working directory
-        resolved_path = str(Path.cwd().resolve())
-        logger.debug(f"Using current working directory: {resolved_path}")
-        return resolved_path
+        # Priority 2: MCP_PROJECT_PATH (explicit project override)
+        mcp_project_path = os.getenv("MCP_PROJECT_PATH")
+        if mcp_project_path:
+            resolved_path = str(Path(mcp_project_path).resolve())
+            logger.debug(f"Using MCP project path: {resolved_path}")
+            return resolved_path
+        
+        # Priority 3: Current working directory (but warn if it's the MCP server)
+        current_dir = str(Path.cwd().resolve())
+        
+        # Check if we're in the MCP server directory
+        is_mcp_server_dir = (
+            "foundry-testing-mcp" in current_dir.lower() and
+            (Path(current_dir) / "components").exists() and
+            (Path(current_dir) / "templates").exists()
+        )
+        
+        if is_mcp_server_dir:
+            logger.warning(f"⚠️  MCP server is using its own directory: {current_dir}")
+            logger.warning("This usually means the MCP client didn't set the working directory.")
+            logger.warning("To fix: configure MCP client with 'cwd' or set MCP_CLIENT_CWD")
+        
+        logger.debug(f"Using current working directory: {current_dir}")
+        return current_dir
     
     def _validate_foundry_project(self, project_path: str) -> Dict[str, Any]:
         """
@@ -114,6 +151,29 @@ class TestingTools:
             "project_type": "unknown"
         }
         
+        # Check if this is the MCP server directory itself
+        is_mcp_server_dir = (
+            (project_path / "components").exists() and
+            (project_path / "templates").exists() and
+            (project_path / "requirements.txt").exists() and
+            "foundry-testing-mcp" in str(project_path).lower()
+        )
+        
+        if is_mcp_server_dir:
+            validation["project_type"] = "mcp_server"
+            validation["issues"].extend([
+                "⚠️  Working from MCP server directory - this is unusual",
+                "Typically you'd run MCP tools from your smart contract project directory"
+            ])
+            validation["suggestions"].extend([
+                "💡 This works, but you probably want to:",
+                "1. Navigate to your Foundry project: cd /path/to/your/project", 
+                "2. Configure your MCP client to use your project directory as working directory",
+                "3. Or create a new project: mkdir my-project && cd my-project && forge init",
+                "🎯 The tools work best when run from your actual smart contract project"
+            ])
+            # Don't return early - let it continue and try to help
+        
         # Check for foundry.toml
         if (project_path / "foundry.toml").exists():
             validation["is_valid"] = True
@@ -127,17 +187,87 @@ class TestingTools:
             validation["issues"].append("This appears to be a Truffle project")
             validation["suggestions"].append("Consider migrating to Foundry for better testing experience")
         else:
-            validation["issues"].append("No smart contract framework detected")
-            validation["suggestions"].extend([
-                "Run 'forge init --force' to initialize a Foundry project",
-                "Ensure you're in the root directory of your smart contract project"
+            # Check if this looks like a generic code directory
+            has_common_files = any([
+                (project_path / "package.json").exists(),
+                (project_path / "requirements.txt").exists(),
+                (project_path / ".git").exists(),
+                (project_path / "README.md").exists()
             ])
+            
+            if has_common_files and not (project_path / "src").exists():
+                validation["issues"].append("This appears to be a software project but not a smart contract project")
+                validation["suggestions"].extend([
+                    "🎯 Navigate to your Foundry project directory, or create one:",
+                    "   mkdir my-smart-contract-project && cd my-smart-contract-project",
+                    "   forge init",
+                    "🔧 Then configure your MCP client to use that directory"
+                ])
+            else:
+                validation["issues"].append("No smart contract framework detected")
+                validation["suggestions"].extend([
+                    "Run 'forge init --force' to initialize a Foundry project",
+                    "Ensure you're in the root directory of your smart contract project"
+                ])
         
         # Check for common directories
         if not (project_path / "src").exists() and not (project_path / "contracts").exists():
             validation["issues"].append("No contracts directory found (src/ or contracts/)")
         
         return validation
+    
+    def _diagnose_project_issues(self, validation: Dict[str, Any]) -> List[str]:
+        """
+        Generate intelligent diagnosis and recommendations for project issues.
+        
+        Args:
+            validation: Validation result from _validate_foundry_project
+            
+        Returns:
+            List of diagnostic messages and recommendations
+        """
+        diagnosis = []
+        
+        if validation.get("project_type") == "mcp_server":
+            diagnosis.extend([
+                "💡 DETECTED: Running from MCP server directory",
+                "",
+                "This is unusual but workable. Typically users run MCP tools from their",
+                "smart contract project directory for the best experience.",
+                "",
+                "RECOMMENDED WORKFLOW:",
+                "1. Navigate to your Foundry project directory (or create one)",
+                "2. Configure your MCP client to use that as the working directory",
+                "3. The tools will then analyze your actual smart contract project",
+                "",
+                "For now, I can help you set up a Foundry project!"
+            ])
+        elif validation.get("project_type") == "hardhat":
+            diagnosis.extend([
+                "📊 DETECTED: Hardhat Project",
+                "You can add Foundry support: forge init --force"
+            ])
+        elif validation.get("project_type") == "truffle":
+            diagnosis.extend([
+                "📊 DETECTED: Truffle Project", 
+                "Consider migrating to Foundry for better testing experience"
+            ])
+        elif validation.get("project_type") == "unknown":
+            issues = validation.get("issues", [])
+            if any("software project" in issue for issue in issues):
+                diagnosis.extend([
+                    "📊 DETECTED: Generic Software Project",
+                    "This appears to be a code project but not a smart contract project.",
+                    "Navigate to your Foundry project or create one."
+                ])
+            else:
+                diagnosis.extend([
+                    "❓ UNKNOWN PROJECT TYPE",
+                    "No recognized smart contract framework detected.",
+                    "Initialize a Foundry project: forge init"
+                ])
+        
+        return diagnosis
     
     def register_tools(self, mcp) -> None:
         """
@@ -150,99 +280,123 @@ class TestingTools:
         # Main workflow initialization tool
         @mcp.tool(
             name="initialize_protocol_testing_agent",
-            description="""
-            🚀 STEP 1: Initialize smart contract testing workflow - START HERE for any testing project
+            description="""🚀 STEP 1: Initialize intelligent testing workflow - START HERE for any testing project
+            
+            ENHANCED INTELLIGENCE: Uses AST analysis and project maturity assessment to provide contextual recommendations.
             
             WHEN TO USE:
-            - Beginning work on a Foundry project (new or existing)
-            - User wants to start testing or improve existing tests
-            - First interaction with any smart contract project
-            - When you need to understand project structure and recommend next steps
+            - Beginning work on any Foundry project (new or existing)
+            - First interaction with smart contract testing
+            - Need intelligent workflow recommendations based on project state
             
             WHAT IT DOES:
-            - Analyzes current project structure and testing maturity
-            - Validates Foundry project setup
-            - Recommends appropriate workflow (new test suite vs enhance existing)
-            - Creates testing session for workflow continuity
-            - Provides specific next steps based on project state
+            - AST-powered project structure and maturity analysis
+            - Validates Foundry setup with detailed diagnostics
+            - Generates contextual workflow options based on actual project state
+            - Creates persistent session for workflow continuity
+            - Provides specific, actionable next steps with tool guidance
             
             INPUTS:
             - analysis_mode: "interactive" (guided) or "direct" (immediate analysis)
-            - project_path: Optional path to project directory (auto-detects if not provided)
+            - project_path: Optional path (auto-detects current directory if not provided)
             
             OUTPUTS:
-            - Project structure analysis
-            - Available workflow options with detailed descriptions
-            - Specific recommendations based on current state
-            - Session ID for continuing work
+            - Intelligent project analysis with AST insights
+            - Contextual workflow options tailored to project maturity
+            - Specific tool recommendations for next steps
+            - Session ID for workflow continuity
             
-            WORKFLOW: This is always the FIRST tool to call. Based on results, use execute_testing_workflow or analyze_project_context next.
+            WORKFLOW: Always start here. Results guide you to execute_testing_workflow or analyze_project_context.
             """
         )
         async def initialize_protocol_testing_agent(
             analysis_mode: str = "interactive",
             project_path: str = ""
         ) -> Dict[str, Any]:
-            """
-            Initialize the interactive protocol testing agent.
-            
-            Args:
-                analysis_mode: "interactive" for guided flow, "direct" for immediate analysis
-                
-            Returns:
-                Dictionary containing workflow options and next steps
-            """
+            """Initialize intelligent protocol testing agent with AST-powered analysis."""
             try:
-                # Use provided project path or detect current working directory
+                # Enhanced project path resolution with validation
                 resolved_project_path = self._resolve_project_path(project_path)
                 
-                # Validate that we're in a valid project
+                # Advanced Foundry project validation with diagnostics
                 validation = self._validate_foundry_project(resolved_project_path)
                 
                 if not validation["is_valid"]:
+                    # Still try to help even if validation failed
+                    # Provide guidance but don't refuse to work
+                    
                     return {
-                        "status": "validation_failed",
+                        "status": "project_setup_needed", 
                         "project_path": resolved_project_path,
-                        "validation": validation,
-                        "message": "Current directory doesn't appear to be a valid Foundry project",
-                        "next_steps": [
-                            "Navigate to your smart contract project root directory",
-                            "Ensure foundry.toml exists, or run 'forge init --force'",
-                            "Try running this tool again from the project root"
-                        ]
+                        "detected_situation": validation.get("project_type", "unknown"),
+                        "guidance": {
+                            "message": "No Foundry project detected - let's help you set one up!",
+                            "current_directory": resolved_project_path,
+                            "issues_found": validation.get("issues", []),
+                            "recommendations": validation.get("suggestions", [])
+                        },
+                        "quick_setup": {
+                            "option_1": {
+                                "title": "Initialize Foundry in current directory",
+                                "command": "forge init --force",
+                                "description": "Sets up foundry.toml, src/, test/, script/ directories"
+                            },
+                            "option_2": {
+                                "title": "Create new project elsewhere", 
+                                "commands": [
+                                    "mkdir my-smart-contract-project",
+                                    "cd my-smart-contract-project", 
+                                    "forge init"
+                                ],
+                                "description": "Creates a new directory with fresh Foundry project"
+                            }
+                        },
+                        "what_happens_next": [
+                            "After setting up Foundry, re-run this tool",
+                            "The tools will analyze your contracts and recommend testing approaches",
+                            "You'll get step-by-step guidance to build comprehensive test suites"
+                        ],
+                        "ready_to_proceed": False
                     }
                 
-                # Detect project structure
-                project_info = await self._analyze_project_structure(resolved_project_path)
+                # AST-powered intelligent project analysis using ProjectAnalyzer
+                project_state = await self.project_analyzer.analyze_project(resolved_project_path)
                 
-                # Create a new session tied to this project
+                # Create enhanced session with rich project context
                 session_id = str(uuid.uuid4())
                 session = TestingSession(session_id, resolved_project_path)
+                session.project_state = project_state  # Store full project state
+                session.analysis_mode = analysis_mode
                 self.active_sessions[session_id] = session
                 
-                # Generate contextual workflow options based on current state
-                available_workflows = await self._generate_contextual_workflows(project_info)
+                # Generate intelligent, context-aware workflows
+                contextual_workflows = self._generate_intelligent_workflows(project_state)
                 
-                workflow_options = {
-                    "status": "initialized",
+                # Smart guidance based on project maturity and state
+                intelligent_guidance = self._generate_intelligent_next_steps(project_state)
+                
+                return {
+                    "status": "initialized", 
                     "session_id": session_id,
                     "project_path": resolved_project_path,
-                    "project_info": project_info,
-                    "available_workflows": available_workflows,
-                    "current_state_summary": {
-                        "testing_phase": project_info.get("testing_phase", "unknown"),
-                        "test_count": project_info.get("test_count", 0),
-                        "coverage_estimate": project_info.get("coverage_estimate", 0),
-                        "identified_patterns": project_info.get("identified_patterns", [])
+                    "intelligent_analysis": {
+                        "testing_phase": project_state.testing_phase.value,
+                        "security_level": project_state.security_level.value,
+                        "project_type": project_state.project_type,
+                        "contracts_found": len(project_state.contracts),
+                        "tests_found": len(project_state.test_files),
+                        "maturity_assessment": self._assess_project_maturity(project_state),
+                        "priority_areas": project_state.identified_gaps[:3]  # Top 3 priority gaps
                     },
-                    "next_steps": {
-                        "interactive": "Choose a workflow path tailored to your current testing maturity",
-                        "direct": "Call execute_testing_workflow with specific objectives based on your current state"
-                    },
-                    "recommendations": await self._generate_workflow_recommendations(project_info)
+                    "contextual_workflows": contextual_workflows,
+                    "intelligent_guidance": intelligent_guidance,
+                    "session_capabilities": {
+                        "ast_analysis": True,
+                        "ai_failure_detection": True,
+                        "contextual_workflows": True,
+                        "semantic_understanding": True
+                    }
                 }
-                
-                return workflow_options
                 
             except Exception as e:
                 logger.error(f"Error initializing protocol testing agent: {e}")
@@ -261,35 +415,36 @@ class TestingTools:
         # Context-aware project analysis tool
         @mcp.tool(
             name="analyze_project_context",
-            description="""
-            🔍 STEP 2: Deep project analysis with AI failure detection - Use for detailed assessment
+            description="""🔍 STEP 2: Intelligent deep analysis with AI failure detection - Advanced project assessment
+            
+            ENHANCED INTELLIGENCE: AST-powered analysis with semantic understanding and AI failure detection.
             
             WHEN TO USE:
-            - After initialize_protocol_testing_agent suggests detailed analysis
-            - User has existing tests and wants quality assessment
-            - Debugging test quality issues or low coverage
-            - Before major testing improvements
-            - When tests seem comprehensive but aren't working well
+            - Need comprehensive assessment of existing test quality
+            - Debugging test issues or unexpectedly low coverage
+            - Before major testing improvements or refactoring
+            - Validating AI-generated tests for common failures
+            - Planning security audit preparation
             
             WHAT IT DOES:
-            - Analyzes current testing phase (none/basic/intermediate/advanced/production)
-            - Evaluates security testing maturity level
-            - Detects AI-generated test failures (circular logic, mock cheating, etc.)
-            - Assesses contract risk scores and security patterns
-            - Generates prioritized improvement plan with effort estimates
+            - Advanced testing maturity assessment with specific recommendations
+            - Semantic analysis of test structure and effectiveness
+            - AI failure pattern detection (circular logic, mock cheating, insufficient coverage)
+            - Contract risk scoring with vulnerability pattern identification
+            - Generates prioritized improvement roadmap with effort estimates and tool guidance
             
             INPUTS:
-            - include_ai_failure_detection: true (recommended) - detects problematic AI-generated tests
+            - include_ai_failure_detection: true (strongly recommended) - detects AI-generated test problems
             - generate_improvement_plan: true (recommended) - creates actionable improvement roadmap
-            - project_path: Optional path to project directory (auto-detects if not provided)
+            - project_path: Optional path (auto-detects current directory if not provided)
             
             OUTPUTS:
-            - Current testing phase and security level assessment
-            - AI failure detection report (critical for AI-generated code)
-            - Contract risk analysis with security patterns
-            - Comprehensive improvement plan with priorities and timelines
+            - Comprehensive testing maturity and security level analysis
+            - AI failure detection report with specific issues and fixes
+            - Contract-by-contract risk analysis with security patterns
+            - Prioritized improvement plan with specific next steps and tool recommendations
             
-            WORKFLOW: Use after initialize_protocol_testing_agent. Results guide execute_testing_workflow parameters.
+            WORKFLOW: Use after initialize_protocol_testing_agent for deep analysis. Results provide specific guidance for execute_testing_workflow.
             """
         )
         async def analyze_project_context(
@@ -679,12 +834,16 @@ class TestingTools:
                         "ready_for_testing": True
                     }
                 else:
+                    diagnosis = self._diagnose_project_issues(validation)
+                    
                     return {
                         "status": "invalid",
                         "project_path": project_path,
                         "message": "❌ Not a valid Foundry project",
                         "issues": validation["issues"],
                         "suggestions": validation["suggestions"],
+                        "diagnosis": diagnosis,
+                        "project_type": validation.get("project_type", "unknown"),
                         "ready_for_testing": False
                     }
                     
@@ -741,6 +900,9 @@ class TestingTools:
                 # Get current directory detection
                 resolved_path = self._resolve_project_path()
                 
+                # Run validation to get specific project type
+                validation = self._validate_foundry_project(resolved_path)
+                
                 # Collect debugging information
                 debug_info = {
                     "resolved_project_path": resolved_path,
@@ -756,52 +918,87 @@ class TestingTools:
                         "is_parent_of_home": resolved_path in os.path.expanduser("~"),
                         "contains_foundry_toml": (Path(resolved_path) / "foundry.toml").exists(),
                         "contains_src_dir": (Path(resolved_path) / "src").exists(),
-                        "contains_test_dir": (Path(resolved_path) / "test").exists()
-                    }
+                        "contains_test_dir": (Path(resolved_path) / "test").exists(),
+                        "is_mcp_server_dir": validation.get("project_type") == "mcp_server"
+                    },
+                    "project_type": validation.get("project_type", "unknown")
                 }
                 
-                # Determine if directory detection is likely correct
-                likely_correct = (
-                    debug_info["path_analysis"]["contains_foundry_toml"] or
-                    (debug_info["path_analysis"]["contains_src_dir"] and 
-                     debug_info["path_analysis"]["contains_test_dir"])
-                )
-                
-                # Generate troubleshooting recommendations
+                # Generate specific recommendations based on project type
                 recommendations = []
                 
-                if not likely_correct:
+                if validation.get("project_type") == "mcp_server":
                     recommendations.extend([
-                        "❌ Directory detection appears incorrect",
-                        "🔍 The detected directory doesn't look like a Foundry project",
+                        "🎯 ISSUE IDENTIFIED: You're in the MCP server directory!",
+                        "",
+                        "❌ Problem: The MCP tools are running from the foundry-testing-mcp directory",
+                        "   This is the MCP server code, not a smart contract project.",
+                        "",
+                        "✅ Solution: Navigate to your actual Foundry project:",
+                        "",
+                        "🔧 Quick Fix:",
+                        "1. Open terminal in your smart contract project directory",
+                        "2. Or create a new one: mkdir my-protocol && cd my-protocol && forge init",
+                        "3. Configure your MCP client to use that directory:",
+                        "",
+                        "📋 MCP Client Configuration (recommended):",
+                        "```json",
+                        "{",
+                        "  \"mcpServers\": {",
+                        "    \"foundry-testing\": {",
+                        "      \"command\": \"/path/to/python\",",
+                        "      \"args\": [\"/path/to/foundry-testing-mcp/run_clean.py\"],",
+                        "      \"cwd\": \"/path/to/your/actual/project\",",
+                        "      \"env\": {",
+                        "        \"MCP_CLIENT_CWD\": \"/path/to/your/actual/project\"",
+                        "      }",
+                        "    }",
+                        "  }",
+                        "}",
+                        "```",
+                        "",
+                        "🎯 After fixing: Your project should have foundry.toml, src/, test/ directories"
+                    ])
+                elif validation.get("is_valid"):
+                    recommendations.extend([
+                        "✅ Directory detection is working correctly",
+                        "🎯 The detected directory is a valid Foundry project",
+                        "📁 Project structure looks good for testing"
+                    ])
+                elif debug_info["path_analysis"]["is_home_directory"]:
+                    recommendations.extend([
+                        "❌ Issue: MCP tools are using your home directory",
                         "",
                         "💡 Solutions:",
-                        "1. Set MCP_CLIENT_CWD environment variable to your project directory",
-                        "2. Set MCP_PROJECT_PATH environment variable to your project directory",
-                        "3. Configure your MCP client to set the working directory",
-                        "4. Pass the project path explicitly to MCP tools",
+                        "1. Navigate to your project: cd /path/to/your/foundry/project",
+                        "2. Set MCP_CLIENT_CWD environment variable",
+                        "3. Configure MCP client working directory",
                         "",
-                        "📋 Example MCP client configuration:",
-                        "```",
-                        "servers:",
-                        "  foundry-testing:",
-                        "    command: python",
-                        "    args: ['/path/to/run_clean.py']",
-                        "    cwd: /path/to/your/project",
-                        "    env:",
-                        "      MCP_CLIENT_CWD: /path/to/your/project",
+                        "🔧 MCP Client Configuration:",
+                        "```json",
+                        "{ \"cwd\": \"/path/to/your/project\", \"env\": { \"MCP_CLIENT_CWD\": \"/path/to/your/project\" } }",
                         "```"
                     ])
                 else:
                     recommendations.extend([
-                        "✅ Directory detection appears correct",
-                        "🎯 The detected directory looks like a valid Foundry project"
+                        "❌ Directory detection found issues",
+                        f"🔍 Current directory: {resolved_path}",
+                        f"📊 Project type detected: {validation.get('project_type', 'unknown')}",
+                        "",
+                        "💡 Solutions based on your situation:",
+                        *validation.get("suggestions", []),
+                        "",
+                        "🔧 If you have a Foundry project elsewhere:",
+                        "1. Set MCP_CLIENT_CWD to your project directory",
+                        "2. Configure MCP client working directory",
+                        "3. Use explicit project paths in tool calls"
                     ])
                 
                 return {
                     "status": "debug_complete",
-                    "directory_detection_correct": likely_correct,
+                    "directory_detection_correct": validation.get("is_valid", False),
                     "debug_info": debug_info,
+                    "validation": validation,
                     "recommendations": recommendations
                 }
                 
@@ -813,7 +1010,7 @@ class TestingTools:
                     "recommendations": [
                         "❌ Error occurred during directory detection debugging",
                         "🔍 Check server logs for more details",
-                        "💡 Try setting MCP_CLIENT_CWD environment variable"
+                        "💡 Try setting MCP_CLIENT_CWD environment variable to your project directory"
                     ]
                 }
         
@@ -1189,6 +1386,193 @@ class TestingTools:
         """Generate coverage recommendations."""
         return [f"Add tests to improve coverage by {gap:.1f}%"] 
     
+    def _diagnose_project_issues(self, validation: Dict[str, Any]) -> Dict[str, Any]:
+        """Diagnose specific project setup issues with actionable guidance."""
+        issues = []
+        solutions = []
+        
+        if not validation.get("has_foundry_toml", False):
+            issues.append("Missing foundry.toml configuration file")
+            solutions.append("Run 'forge init --force' to create proper Foundry structure")
+        
+        if not validation.get("has_src_dir", False):
+            issues.append("Missing src/ directory for contracts")
+            solutions.append("Create src/ directory and move contracts there")
+        
+        if not validation.get("foundry_installed", True):
+            issues.append("Foundry not installed or not in PATH")
+            solutions.append("Install Foundry: curl -L https://foundry.paradigm.xyz | bash")
+        
+        return {
+            "identified_issues": issues,
+            "actionable_solutions": solutions,
+            "severity": "high" if len(issues) > 2 else "medium",
+            "estimated_fix_time": f"{len(issues) * 2}-{len(issues) * 5} minutes"
+        }
+    
+    def _assess_project_maturity(self, project_state: ProjectState) -> str:
+        """Assess overall project testing maturity with specific description."""
+        if project_state.testing_phase == TestingPhase.PRODUCTION:
+            return "Production-ready with comprehensive testing"
+        elif project_state.testing_phase == TestingPhase.ADVANCED:
+            return "Advanced testing with security focus"
+        elif project_state.testing_phase == TestingPhase.INTERMEDIATE:
+            return "Solid foundation with room for enhancement"
+        elif project_state.testing_phase == TestingPhase.BASIC:
+            return "Basic testing setup, needs expansion"
+        else:
+            return "No testing found, starting from scratch"
+    
+    def _generate_intelligent_workflows(self, project_state: ProjectState) -> Dict[str, Any]:
+        """Generate intelligent workflows based on actual project state and maturity."""
+        workflows = {}
+        
+        # Base workflow always available
+        workflows["foundational_setup"] = {
+            "name": "Foundational Test Suite Setup",
+            "description": "Establish core testing infrastructure with best practices",
+            "suitable_for": ["new projects", "projects with minimal testing"],
+            "estimated_effort": "2-4 hours",
+            "phases": ["Setup", "Core unit tests", "Basic security tests"]
+        }
+        
+        # Context-aware workflow generation based on project state
+        if project_state.testing_phase == TestingPhase.NONE:
+            workflows["from_scratch"] = {
+                "name": "Complete Test Suite Creation",
+                "description": "Build comprehensive testing from ground up",
+                "priority": "high",
+                "estimated_effort": "1-2 days",
+                "phases": ["Project setup", "Unit testing", "Integration testing", "Security testing"]
+            }
+        
+        elif project_state.testing_phase == TestingPhase.BASIC:
+            workflows["enhance_coverage"] = {
+                "name": "Expand Test Coverage & Quality",
+                "description": "Build on existing tests with comprehensive coverage",
+                "priority": "high",
+                "estimated_effort": "6-8 hours",
+                "phases": ["Coverage analysis", "Gap filling", "Edge cases", "Integration tests"]
+            }
+        
+        elif project_state.testing_phase in [TestingPhase.INTERMEDIATE, TestingPhase.ADVANCED]:
+            workflows["security_enhancement"] = {
+                "name": "Advanced Security Testing",
+                "description": "Add comprehensive security testing and attack scenarios",
+                "priority": "medium",
+                "estimated_effort": "4-6 hours",
+                "phases": ["Security audit", "Attack scenarios", "Defense testing"]
+            }
+        
+        # Security-specific workflows based on security level
+        if project_state.security_level in [SecurityLevel.NONE, SecurityLevel.BASIC]:
+            workflows["security_focus"] = {
+                "name": "Security-First Testing Strategy",
+                "description": "Prioritize security testing for high-risk contracts",
+                "priority": "critical" if project_state.security_level == SecurityLevel.NONE else "high",
+                "estimated_effort": "1-2 days",
+                "phases": ["Threat modeling", "Access control tests", "Reentrancy tests", "Economic attacks"]
+            }
+        
+        # Multi-contract workflows
+        if len(project_state.contracts) > 1:
+            workflows["integration_testing"] = {
+                "name": "Multi-Contract Integration Testing",
+                "description": "Test complex interactions between contracts",
+                "priority": "medium",
+                "estimated_effort": "4-8 hours",
+                "phases": ["Integration mapping", "Workflow testing", "State consistency"]
+            }
+        
+        # DeFi-specific workflows
+        if project_state.project_type == "defi":
+            workflows["defi_security"] = {
+                "name": "DeFi Security Testing Suite",
+                "description": "Comprehensive DeFi-specific security testing",
+                "priority": "critical",
+                "estimated_effort": "2-3 days",
+                "phases": ["Flash loan attacks", "Oracle manipulation", "MEV resistance", "Economic exploits"]
+            }
+        
+        return workflows
+    
+    def _generate_intelligent_next_steps(self, project_state: ProjectState) -> Dict[str, Any]:
+        """Generate intelligent next steps based on project analysis."""
+        next_steps = {
+            "immediate_priority": "",
+            "recommended_tool": "",
+            "specific_actions": [],
+            "alternative_paths": []
+        }
+        
+        # Intelligent priority assessment
+        if project_state.testing_phase == TestingPhase.NONE:
+            next_steps.update({
+                "immediate_priority": "Start with foundational test setup",
+                "recommended_tool": "execute_testing_workflow with 'from_scratch' workflow",
+                "specific_actions": [
+                    "Use templates from testing://templates/unit for basic structure",
+                    "Reference testing://foundry-patterns for best practices",
+                    "Start with critical function testing"
+                ],
+                "alternative_paths": ["analyze_project_context for deeper assessment first"]
+            })
+        
+        elif project_state.security_level == SecurityLevel.NONE and len(project_state.contracts) > 0:
+            next_steps.update({
+                "immediate_priority": "Critical: Add security testing immediately",
+                "recommended_tool": "execute_testing_workflow with 'security_focus' workflow",
+                "specific_actions": [
+                    "Use testing://security-patterns for vulnerability testing",
+                    "Focus on access control and reentrancy first",
+                    "Implement attack scenarios from testing://templates/security"
+                ],
+                "alternative_paths": ["Call analyze_project_context with include_ai_failure_detection=true"]
+            })
+        
+        elif project_state.testing_phase == TestingPhase.BASIC:
+            next_steps.update({
+                "immediate_priority": "Expand test coverage and add security testing",
+                "recommended_tool": "execute_testing_workflow with 'enhance_coverage' workflow",
+                "specific_actions": [
+                    "Run analyze_current_test_coverage to identify gaps",
+                    "Add missing edge cases and error conditions",
+                    "Implement security tests for identified vulnerabilities"
+                ],
+                "alternative_paths": ["Focus on security_enhancement workflow if high-risk contracts detected"]
+            })
+        
+        elif project_state.testing_phase in [TestingPhase.INTERMEDIATE, TestingPhase.ADVANCED]:
+            if len(project_state.identified_gaps) > 0:
+                next_steps.update({
+                    "immediate_priority": f"Address identified gaps: {', '.join(project_state.identified_gaps[:2])}",
+                    "recommended_tool": "execute_testing_workflow with targeted approach",
+                    "specific_actions": [
+                        "Focus on specific gaps identified in analysis",
+                        "Consider integration_testing workflow for multi-contract systems",
+                        "Add invariant testing for system properties"
+                    ],
+                    "alternative_paths": ["analyze_project_context for detailed improvement plan"]
+                })
+            else:
+                next_steps.update({
+                    "immediate_priority": "Consider advanced testing techniques",
+                    "recommended_tool": "execute_testing_workflow with 'security_enhancement'",
+                    "specific_actions": [
+                        "Add invariant testing for system properties",
+                        "Implement fork testing for realistic scenarios",
+                        "Consider formal verification for critical properties"
+                    ],
+                    "alternative_paths": ["Prepare for security audit with audit_prep workflow"]
+                })
+        
+        # Add contract-specific guidance
+        high_risk_contracts = [c for c in project_state.contracts if c.risk_score > 0.7]
+        if high_risk_contracts:
+            next_steps["urgent_attention"] = f"High-risk contracts need immediate security testing: {', '.join(c.contract_name for c in high_risk_contracts[:2])}"
+        
+        return next_steps
+
     async def _generate_contextual_workflows(self, project_info: Dict[str, Any]) -> Dict[str, Any]:
         """
         Generate context-aware workflow options based on current project state.
