@@ -164,7 +164,7 @@ Review the current project's test coverage and provide improvement recommendatio
 4. **Action Plan**
    - Prioritized list of tests to add (critical gaps first)
    - Recommended workflow: which `execute_testing_workflow` type to use
-   - Timeline and effort estimates for improvements
+   - Implementation guidance and next steps
 
 **Output Format:**
 - Current coverage summary with clear metrics

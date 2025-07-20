@@ -1365,7 +1365,7 @@ test/
                         "Prioritize testing gaps by criticality",
                         "Design refactoring strategy for existing tests",
                         "Plan additional test categories needed",
-                        "Create enhancement roadmap with timelines",
+                        "Create enhancement roadmap",
                         "Define improved coverage targets"
                     ],
                     "deliverables": [
@@ -1373,7 +1373,7 @@ test/
                         "Prioritized improvement plan",
                         "Refactoring roadmap",
                         "Updated coverage targets",
-                        "Implementation timeline"
+                        "Implementation guidance"
                     ]
                 },
                 {
@@ -1480,8 +1480,7 @@ test/
         return {
             "identified_issues": issues,
             "actionable_solutions": solutions,
-            "severity": "high" if len(issues) > 2 else "medium",
-            "estimated_fix_time": f"{len(issues) * 2}-{len(issues) * 5} minutes"
+            "severity": "high" if len(issues) > 2 else "medium"
         }
     
     def _assess_project_maturity(self, project_state: ProjectState) -> str:
@@ -1506,7 +1505,6 @@ test/
             "name": "Foundational Test Suite Setup",
             "description": "Establish core testing infrastructure with best practices",
             "suitable_for": ["new projects", "projects with minimal testing"],
-            "estimated_effort": "2-4 hours",
             "phases": ["Setup", "Core unit tests", "Basic security tests"]
         }
         
@@ -1516,7 +1514,6 @@ test/
                 "name": "Complete Test Suite Creation",
                 "description": "Build comprehensive testing from ground up",
                 "priority": "high",
-                "estimated_effort": "1-2 days",
                 "phases": ["Project setup", "Unit testing", "Integration testing", "Security testing"]
             }
         
@@ -1525,7 +1522,6 @@ test/
                 "name": "Expand Test Coverage & Quality",
                 "description": "Build on existing tests with comprehensive coverage",
                 "priority": "high",
-                "estimated_effort": "6-8 hours",
                 "phases": ["Coverage analysis", "Gap filling", "Edge cases", "Integration tests"]
             }
         
@@ -1534,7 +1530,6 @@ test/
                 "name": "Advanced Security Testing",
                 "description": "Add comprehensive security testing and attack scenarios",
                 "priority": "medium",
-                "estimated_effort": "4-6 hours",
                 "phases": ["Security audit", "Attack scenarios", "Defense testing"]
             }
         
@@ -1544,7 +1539,6 @@ test/
                 "name": "Security-First Testing Strategy",
                 "description": "Prioritize security testing for high-risk contracts",
                 "priority": "critical" if project_state.security_level == SecurityLevel.NONE else "high",
-                "estimated_effort": "1-2 days",
                 "phases": ["Threat modeling", "Access control tests", "Reentrancy tests", "Economic attacks"]
             }
         
@@ -1554,7 +1548,6 @@ test/
                 "name": "Multi-Contract Integration Testing",
                 "description": "Test complex interactions between contracts",
                 "priority": "medium",
-                "estimated_effort": "4-8 hours",
                 "phases": ["Integration mapping", "Workflow testing", "State consistency"]
             }
         
@@ -1564,7 +1557,6 @@ test/
                 "name": "DeFi Security Testing Suite",
                 "description": "Comprehensive DeFi-specific security testing",
                 "priority": "critical",
-                "estimated_effort": "2-3 days",
                 "phases": ["Flash loan attacks", "Oracle manipulation", "MEV resistance", "Economic exploits"]
             }
         
@@ -1675,8 +1667,7 @@ test/
                     "Coverage monitoring setup"
                 ],
                 "ideal_for": "Projects with no existing tests",
-                "phases": 3,
-                "estimated_effort": "1-2 weeks"
+                "phases": 3
             }
             
         elif test_count < 10 or coverage_ratio < 0.5:
@@ -1691,8 +1682,7 @@ test/
                     "Security testing foundation"
                 ],
                 "ideal_for": "Projects with basic tests needing expansion",
-                "phases": 3,
-                "estimated_effort": "1 week"
+                "phases": 3
             }
             
         else:
@@ -1707,8 +1697,7 @@ test/
                     "Integration and cross-contract testing"
                 ],
                 "ideal_for": "Projects with solid test foundation needing security focus",
-                "phases": 4,
-                "estimated_effort": "1-2 weeks"
+                "phases": 4
             }
         
         # Add specialized workflows based on contract types
@@ -1723,8 +1712,7 @@ test/
                     "Performance and gas optimization"
                 ],
                 "ideal_for": "Multi-contract systems needing integration validation",
-                "phases": 3,
-                "estimated_effort": "1 week"
+                "phases": 3
             }
         
         # Add DeFi-specific workflows if applicable
@@ -1739,8 +1727,7 @@ test/
                     "Economic attack scenarios"
                 ],
                 "ideal_for": "DeFi protocols requiring specialized security testing",
-                "phases": 4,
-                "estimated_effort": "2-3 weeks"
+                "phases": 4
             }
         
         # Always offer comprehensive workflow for advanced users
@@ -1754,8 +1741,7 @@ test/
                 "Professional audit standards compliance"
             ],
             "ideal_for": "Production-ready protocols preparing for security audits",
-            "phases": 5,
-            "estimated_effort": "2-4 weeks"
+            "phases": 5
         }
         
         return workflows
@@ -1773,25 +1759,22 @@ test/
         }
         
         # Testing phase improvements
-        if project_state.testing_phase.value == "none":
+        if project_state.testing_phase == TestingPhase.NONE:
             priority_levels["critical"].append({
                 "category": "Testing Foundation",
                 "item": "Create basic unit tests for core contract functions",
-                "effort": "2-3 days",
                 "impact": "Establishes testing foundation"
             })
         elif project_state.testing_phase.value == "basic":
             priority_levels["high"].append({
                 "category": "Testing Maturity",
                 "item": "Add comprehensive edge case testing and error conditions",
-                "effort": "3-5 days",
                 "impact": "Improves test reliability and coverage"
             })
         elif project_state.testing_phase.value == "intermediate":
             priority_levels["medium"].append({
                 "category": "Advanced Testing",
                 "item": "Implement fuzz testing and invariant testing",
-                "effort": "5-7 days",
                 "impact": "Enhances security and robustness"
             })
         
@@ -1800,7 +1783,6 @@ test/
             priority_levels["critical"].append({
                 "category": "Security Testing",
                 "item": "Add security-focused test scenarios and attack vectors",
-                "effort": "3-5 days",
                 "impact": "Critical for production readiness"
             })
         
@@ -1809,7 +1791,6 @@ test/
             priority_levels["critical"].append({
                 "category": "Test Quality",
                 "item": "Fix AI-generated test failures and improve test quality",
-                "effort": "1-2 days",
                 "impact": "Ensures test reliability and effectiveness"
             })
         
@@ -1819,7 +1800,6 @@ test/
             priority_levels["high"].append({
                 "category": "Risk Mitigation",
                 "item": f"Add intensive testing for high-risk contracts: {', '.join(c.contract_name for c in high_risk_contracts[:3])}",
-                "effort": "2-4 days",
                 "impact": "Reduces deployment risks"
             })
         
@@ -1829,7 +1809,6 @@ test/
             priority_levels["high"].append({
                 "category": "Coverage",
                 "item": f"Improve test coverage from {coverage_pct}% to 80%+",
-                "effort": "2-3 days",
                 "impact": "Ensures comprehensive testing"
             })
         
@@ -1839,26 +1818,14 @@ test/
                 priority_levels["high"].append({
                     "category": "Security Gap",
                     "item": f"Address security gap: {gap}",
-                    "effort": "1-2 days",
                     "impact": "Improves security posture"
                 })
             elif "coverage" in gap.lower():
                 priority_levels["medium"].append({
                     "category": "Coverage Gap",
                     "item": f"Address coverage gap: {gap}",
-                    "effort": "1-2 days",
                     "impact": "Improves test comprehensiveness"
                 })
-        
-        # Generate timeline
-        total_effort_days = 0
-        for priority, items in priority_levels.items():
-            for item in items:
-                # Extract effort in days (rough estimate)
-                effort_str = item["effort"]
-                if "day" in effort_str:
-                    days = int(effort_str.split("-")[0])
-                    total_effort_days += days
         
         return {
             "current_state": {
@@ -1868,16 +1835,6 @@ test/
                 "coverage_percentage": coverage_pct
             },
             "priority_improvements": priority_levels,
-            "estimated_timeline": {
-                "total_effort_days": total_effort_days,
-                "critical_path_days": len(priority_levels["critical"]) * 2,
-                "phases": {
-                    "phase_1_critical": "Address critical issues first (1-2 weeks)",
-                    "phase_2_high": "Implement high-priority improvements (2-3 weeks)",
-                    "phase_3_medium": "Add medium-priority enhancements (1-2 weeks)",
-                    "phase_4_low": "Polish and optimize (1 week)"
-                }
-            },
             "success_metrics": {
                 "testing_phase_target": "production",
                 "security_level_target": "audit_ready",
