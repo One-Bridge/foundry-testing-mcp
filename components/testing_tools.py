@@ -27,6 +27,7 @@ class TestingSession:
         self.session_id = session_id
         self.project_path = str(Path(project_path).resolve())  # Always store absolute path
         self.current_phase = 0
+        self.completed_phases = []  # Track completed phases
         self.workflow_type = ""
         self.workflow_state = {}
         self.generated_tests = []
@@ -40,6 +41,7 @@ class TestingSession:
             "session_id": self.session_id,
             "project_path": self.project_path,
             "current_phase": self.current_phase,
+            "completed_phases": self.completed_phases,
             "workflow_type": self.workflow_type,
             "workflow_state": self.workflow_state,
             "generated_tests": self.generated_tests,
@@ -713,7 +715,8 @@ class TestingTools:
         )
         async def analyze_current_test_coverage(
             target_coverage: int = 90,
-            include_branches: bool = True
+            include_branches: bool = True,
+            project_path: str = ""
         ) -> Dict[str, Any]:
             """
             Analyze test coverage for the current project.
@@ -726,10 +729,10 @@ class TestingTools:
                 Dictionary containing coverage analysis and recommendations
             """
             try:
-                project_path = self._resolve_project_path()
+                resolved_project_path = self._resolve_project_path(project_path)
                 
                 # Validate project
-                validation = self._validate_foundry_project(project_path)
+                validation = self._validate_foundry_project(resolved_project_path)
                 if not validation["is_valid"]:
                     return {
                         "status": "validation_failed",
@@ -738,7 +741,7 @@ class TestingTools:
                 
                 # Generate coverage report
                 coverage_result = await self.foundry_adapter.generate_coverage_report(
-                    project_path, format="lcov"
+                    resolved_project_path, format="lcov"
                 )
                 
                 if not coverage_result["success"]:
@@ -755,7 +758,7 @@ class TestingTools:
                 
                 analysis = {
                     "status": "success",
-                    "project_path": project_path,
+                    "project_path": resolved_project_path,
                     "coverage_summary": coverage_result["summary"],
                     "target_coverage": target_coverage,
                     "meets_target": False,
@@ -1464,7 +1467,7 @@ test/
         # Progress monitoring after phases 2 and 3 (when tests are being created)
         if phase_number in [2, 3]:
             try:
-                progress_coverage = await self.analyze_current_test_coverage(target_coverage=80)
+                progress_coverage = await self.analyze_current_test_coverage(target_coverage=80, project_path=session.project_path)
                 validation_results["progress_coverage"] = progress_coverage
             except Exception as e:
                 logger.info(f"Progress coverage check failed: {e}")
@@ -1498,7 +1501,8 @@ test/
             # Call the coverage analysis tool
             return await self.analyze_current_test_coverage(
                 target_coverage=parameters.get("target_coverage", 90),
-                include_branches=parameters.get("include_branches", True)
+                include_branches=parameters.get("include_branches", True),
+                project_path=project_path
             )
         elif tool_name == "analyze_project_context":
             # Call the project context analysis tool  
@@ -1516,7 +1520,7 @@ test/
             # Check if tests exist first
             validation = self._validate_foundry_project(project_path)
             if validation.get("has_tests", False):
-                return await self.analyze_current_test_coverage(target_coverage=80)
+                return await self.analyze_current_test_coverage(target_coverage=80, project_path=project_path)
             else:
                 return {"message": "No tests found - starting from 0% coverage", "baseline_coverage": 0}
         except Exception as e:
