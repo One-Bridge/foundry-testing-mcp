@@ -520,23 +520,40 @@ class TestingTools:
                     ]
                 }
                 
-                # AI failure detection
-                if include_ai_failure_detection and project_state.test_files:
+                # AI failure detection - run even for projects without tests
+                if include_ai_failure_detection:
                     ai_failures = []
-                    for test_file in project_state.test_files:
-                        try:
-                            with open(test_file.path, 'r', encoding='utf-8') as f:
-                                content = f.read()
-                            
-                            failures = await self.ai_failure_detector.analyze_test_file(
-                                test_file.path, content
-                            )
-                            ai_failures.extend(failures)
-                        except Exception as e:
-                            logger.warning(f"Could not analyze {test_file.path} for AI failures: {e}")
                     
-                    # Generate failure report
+                    if project_state.test_files:
+                        # Analyze existing test files
+                        for test_file in project_state.test_files:
+                            try:
+                                with open(test_file.path, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                
+                                failures = await self.ai_failure_detector.analyze_test_file(
+                                    test_file.path, content
+                                )
+                                ai_failures.extend(failures)
+                            except Exception as e:
+                                logger.warning(f"Could not analyze {test_file.path} for AI failures: {e}")
+                    
+                    # Generate failure report (includes guidance for projects without tests)
                     failure_report = await self.ai_failure_detector.generate_failure_report(ai_failures)
+                    
+                    # Add guidance for projects without tests
+                    if not project_state.test_files:
+                        failure_report["no_tests_guidance"] = {
+                            "status": "ready_for_testing",
+                            "message": "No tests found - AI failure detection will run during test creation",
+                            "prevention_strategies": [
+                                "Use templates provided by the workflow to avoid common AI failures",
+                                "Follow test structure patterns that prevent circular logic",
+                                "Implement proper mock contracts with realistic behaviors",
+                                "Add comprehensive edge case and security scenario testing"
+                            ]
+                        }
+                    
                     analysis_result["ai_failure_analysis"] = failure_report
                 
                 # Generate improvement plan
@@ -546,6 +563,11 @@ class TestingTools:
                         analysis_result.get("ai_failure_analysis", {})
                     )
                     analysis_result["improvement_plan"] = improvement_plan
+                
+                # Enhance recommendations based on contract analysis
+                if project_state.contracts:
+                    contract_specific_guidance = self._generate_contract_specific_guidance(project_state.contracts)
+                    analysis_result["contract_specific_guidance"] = contract_specific_guidance
                 
                 return analysis_result
                 
@@ -1534,6 +1556,88 @@ test/
     async def _generate_coverage_recommendations(self, coverage_data: Dict[str, Any], gap: float) -> List[str]:
         """Generate coverage recommendations."""
         return [f"Add tests to improve coverage by {gap:.1f}%"] 
+    
+    def _generate_contract_specific_guidance(self, contracts: List) -> Dict[str, Any]:
+        """Generate specific testing guidance based on contract analysis."""
+        guidance = {
+            "contract_types_detected": [],
+            "security_priorities": [],
+            "testing_strategies": [],
+            "risk_assessment": "low"
+        }
+        
+        high_risk_contracts = []
+        defi_contracts = []
+        
+        for contract in contracts:
+            guidance["contract_types_detected"].append({
+                "name": contract.contract_name,
+                "type": contract.contract_type,
+                "risk_score": contract.risk_score,
+                "security_patterns": contract.security_patterns
+            })
+            
+            # Track high-risk contracts
+            if contract.risk_score > 0.6:
+                high_risk_contracts.append(contract)
+            
+            # Track DeFi contracts for specific guidance
+            if contract.contract_type == "defi":
+                defi_contracts.append(contract)
+        
+        # Generate risk assessment
+        max_risk = max((c.risk_score for c in contracts), default=0.1)
+        if max_risk > 0.7:
+            guidance["risk_assessment"] = "critical"
+        elif max_risk > 0.5:
+            guidance["risk_assessment"] = "high" 
+        elif max_risk > 0.3:
+            guidance["risk_assessment"] = "medium"
+        else:
+            guidance["risk_assessment"] = "low"
+        
+        # Generate security priorities
+        all_patterns = set()
+        for contract in contracts:
+            all_patterns.update(contract.security_patterns)
+        
+        priority_map = {
+            "flash_loans": "Critical: Test flash loan attack vectors and reentrancy protection",
+            "oracle_usage": "High: Test oracle manipulation and price feed validation",
+            "access_control": "High: Test role-based access control and privilege escalation",
+            "reentrancy": "Critical: Verify reentrancy protection in all state-changing functions",
+            "governance": "Medium: Test governance mechanisms and voting processes"
+        }
+        
+        for pattern in all_patterns:
+            if pattern in priority_map:
+                guidance["security_priorities"].append(priority_map[pattern])
+        
+        # Generate testing strategies based on contract types
+        if defi_contracts:
+            guidance["testing_strategies"].extend([
+                "Implement comprehensive fuzz testing for financial calculations",
+                "Test deposit/withdrawal workflows with edge cases",
+                "Verify slippage protection and MEV resistance",
+                "Test integration with external price feeds and oracles",
+                "Implement invariant testing for core financial properties"
+            ])
+        
+        if any(c.contract_type == "governance" for c in contracts):
+            guidance["testing_strategies"].extend([
+                "Test voting mechanisms and quorum requirements",
+                "Verify timelock and execution delays",
+                "Test delegation and vote weight calculations"
+            ])
+        
+        if any(c.contract_type == "token" for c in contracts):
+            guidance["testing_strategies"].extend([
+                "Test ERC20 compliance and standard functions",
+                "Verify mint/burn mechanics and total supply consistency",
+                "Test approval and allowance mechanisms"
+            ])
+        
+        return guidance
     
     def _diagnose_project_issues(self, validation: Dict[str, Any]) -> Dict[str, Any]:
         """Diagnose specific project setup issues with actionable guidance."""
