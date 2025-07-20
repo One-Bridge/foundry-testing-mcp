@@ -767,24 +767,17 @@ class TestingTools:
                 )
                 
                 if not coverage_result["success"]:
-                    # Enhanced error analysis with specific solutions
-                    error_analysis = self._analyze_coverage_failure(coverage_result)
-                    
                     return {
                         "status": "error",
                         "error": "Failed to generate coverage report",
                         "details": coverage_result["stderr"],
-                        "error_analysis": error_analysis,
-                        "specific_solutions": error_analysis.get("solutions", []),
-                        "foundry_config_suggestions": error_analysis.get("config_suggestions", {}),
-                        "immediate_fix": error_analysis.get("immediate_fix", ""),
                         "suggestions": [
                             "Ensure tests exist in the test/ directory",
                             "Run 'forge test' first to verify tests work",
                             "Check that contracts exist in the src/ directory"
-                        ],
-                        "prevention_for_future": error_analysis.get("prevention_guidance", "")
-                    }                
+                        ]
+                    }
+                
                 analysis = {
                     "status": "success",
                     "project_path": resolved_project_path,
@@ -824,141 +817,6 @@ class TestingTools:
                     ]
                 }
         
-        # Foundry configuration validation tool
-        @mcp.tool(
-            name="validate_foundry_config",
-            description="""
-            🔧 Validate and fix foundry.toml configuration to prevent compilation errors
-            
-            WHEN TO USE:
-            - Before running coverage analysis on complex contracts
-            - After encountering "Stack too deep" compilation errors
-            - Setting up new projects with optimization requirements
-            - Proactive prevention of common foundry compilation issues
-            
-            WHAT IT DOES:
-            - Checks existing foundry.toml configuration
-            - Detects missing viaIR and optimizer settings
-            - Provides ready-to-use foundry.toml configuration
-            - Offers specific commands to fix compilation issues
-            
-            OUTPUTS:
-            - Configuration analysis with specific recommendations
-            - Ready-to-use foundry.toml content
-            - Specific commands to resolve issues
-            """
-        )
-        async def validate_foundry_config(
-            prevent_stack_errors: bool = True,
-            project_path: str = ""
-        ) -> Dict[str, Any]:
-            """
-            Validate foundry.toml configuration and provide fixes for compilation issues.
-            
-            Args:
-                prevent_stack_errors: Whether to ensure viaIR and optimizer are enabled
-                project_path: Optional path to project directory
-                
-            Returns:
-                Dictionary containing configuration analysis and recommendations
-            """
-            try:
-                resolved_project_path = self._resolve_project_path(project_path)
-                foundry_toml_path = os.path.join(resolved_project_path, "foundry.toml")
-                
-                analysis = {
-                    "status": "analyzed",
-                    "project_path": resolved_project_path,
-                    "foundry_toml_exists": os.path.exists(foundry_toml_path),
-                    "current_config": {},
-                    "issues_found": [],
-                    "recommendations": [],
-                    "ready_to_use_config": "",
-                    "immediate_commands": []
-                }
-                
-                # Read existing foundry.toml if it exists
-                if analysis["foundry_toml_exists"]:
-                    try:
-                        with open(foundry_toml_path, 'r') as f:
-                            import toml
-                            config = toml.load(f)
-                            analysis["current_config"] = config
-                    except Exception as e:
-                        analysis["issues_found"].append(f"Could not parse foundry.toml: {e}")
-                else:
-                    analysis["issues_found"].append("foundry.toml does not exist")
-                
-                # Check for stack-too-deep prevention requirements
-                if prevent_stack_errors:
-                    default_profile = analysis["current_config"].get("profile", {}).get("default", {})
-                    
-                    via_ir_enabled = default_profile.get("via_ir", False)
-                    optimizer_enabled = default_profile.get("optimizer", False)
-                    
-                    if not via_ir_enabled:
-                        analysis["issues_found"].append("via_ir not enabled - required for stack-too-deep prevention")
-                        analysis["recommendations"].append("Add 'via_ir = true' to [profile.default] section")
-                    
-                    if not optimizer_enabled:
-                        analysis["issues_found"].append("optimizer not enabled - recommended for complex contracts")
-                        analysis["recommendations"].append("Add 'optimizer = true' to [profile.default] section")
-                
-                # Generate ready-to-use configuration
-                if analysis["issues_found"] or not analysis["foundry_toml_exists"]:
-                    analysis["ready_to_use_config"] = """
-[profile.default]
-src = "src"
-out = "out"
-libs = ["lib"]
-via_ir = true
-optimizer = true
-optimizer_runs = 200
-solc_version = "0.8.20"
-
-[profile.default.fuzz]
-runs = 1000
-
-[profile.default.invariant]
-runs = 1000
-depth = 100
-                    """.strip()
-                    
-                    # Commands to test the configuration
-                    analysis["immediate_commands"] = [
-                        "forge build --via-ir",
-                        "forge test --via-ir",
-                        "forge coverage --via-ir"
-                    ]
-                
-                # Overall status
-                if not analysis["issues_found"]:
-                    analysis["status"] = "optimal"
-                    analysis["message"] = "✅ Foundry configuration is optimal for complex contracts"
-                elif analysis["foundry_toml_exists"]:
-                    analysis["status"] = "needs_update"
-                    analysis["message"] = f"⚠️ Found {len(analysis['issues_found'])} configuration issues"
-                else:
-                    analysis["status"] = "missing_config"
-                    analysis["message"] = "❌ foundry.toml missing - configuration required"
-                
-                # Specific stack-too-deep prevention guidance
-                if prevent_stack_errors:
-                    analysis["stack_too_deep_prevention"] = {
-                        "via_ir_enabled": analysis["current_config"].get("profile", {}).get("default", {}).get("via_ir", False),
-                        "optimizer_enabled": analysis["current_config"].get("profile", {}).get("default", {}).get("optimizer", False),
-                        "prevention_complete": len([r for r in analysis["recommendations"] if "via_ir" in r or "optimizer" in r]) == 0
-                    }
-                
-                return analysis
-                
-            except Exception as e:
-                return {
-                    "status": "error",
-                    "error": str(e),
-                    "message": "Error analyzing foundry configuration"
-                }
-
         # Simple project validation tool
         @mcp.tool(
             name="validate_current_directory",
@@ -2056,163 +1914,6 @@ test/
         """Generate coverage recommendations."""
         return [f"Add tests to improve coverage by {gap:.1f}%"] 
     
-
-    def _analyze_coverage_failure(self, coverage_result: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Analyze specific coverage failure types and provide targeted solutions.
-        
-        This method detects common compilation errors like "Stack too deep" and
-        provides specific solutions including foundry.toml configuration fixes.
-        
-        Args:
-            coverage_result: The failed coverage result from foundry_adapter
-            
-        Returns:
-            Detailed error analysis with specific solutions
-        """
-        stderr = coverage_result.get("stderr", "")
-        
-        # Stack too deep detection
-        if "Stack too deep" in stderr:
-            location = self._extract_error_location(stderr)
-            return {
-                "error_type": "stack_too_deep",
-                "severity": "critical", 
-                "description": "Solidity compilation failed due to too many local variables",
-                "specific_location": location,
-                "solutions": [
-                    "Add 'via_ir = true' to foundry.toml [profile.default] section",
-                    "Enable optimizer with 'optimizer = true' in foundry.toml",
-                    "Use 'forge coverage --ir-minimum' for minimal optimization",
-                    f"Refactor contract function at {location} to reduce local variables"
-                ],
-                "config_suggestions": {
-                    "foundry_toml": {
-                        "profile.default.via_ir": True,
-                        "profile.default.optimizer": True,
-                        "profile.default.optimizer_runs": 200
-                    }
-                },
-                "prevention_guidance": "Add foundry.toml optimization settings before contract development",
-                "immediate_fix": """
-Create or update foundry.toml with:
-
-[profile.default]
-via_ir = true
-optimizer = true
-optimizer_runs = 200
-
-Then run: forge coverage --via-ir
-                """.strip()
-            }
-        
-        # Compiler version issues  
-        elif "nightly build" in stderr:
-            return {
-                "error_type": "nightly_version_warning",
-                "severity": "medium",
-                "description": "Using Foundry nightly build instead of stable version",
-                "solutions": [
-                    "Set FOUNDRY_DISABLE_NIGHTLY_WARNING=true environment variable",
-                    "Switch to stable Foundry version: foundryup --version nightly",
-                    "Add environment variable to shell profile for permanent fix"
-                ],
-                "immediate_fix": "export FOUNDRY_DISABLE_NIGHTLY_WARNING=true"
-            }
-        
-        # Optimizer disabled warning
-        elif "optimizer settings" in stderr and "disabled for accurate coverage" in stderr:
-            return {
-                "error_type": "optimizer_disabled_for_coverage",
-                "severity": "low",
-                "description": "Foundry automatically disabled optimizer for coverage accuracy",
-                "solutions": [
-                    "This is normal behavior for coverage analysis",
-                    "Use --ir-minimum if encountering stack too deep errors",
-                    "Enable viaIR in foundry.toml for complex contracts"
-                ]
-            }
-            
-        # Generic compilation errors
-        elif "Compiler run failed" in stderr:
-            return {
-                "error_type": "compilation_error",
-                "severity": "high", 
-                "description": "General Solidity compilation failure",
-                "solutions": [
-                    "Check contract syntax and imports",
-                    "Verify Solidity version compatibility in foundry.toml",
-                    "Review compiler warnings in the error output",
-                    "Try compiling with 'forge build' first to isolate the issue"
-                ]
-            }
-        
-        # Default analysis for unknown errors
-        return {
-            "error_type": "unknown_coverage_error",
-            "severity": "medium",
-            "description": "Coverage analysis failed for unknown reasons",
-            "solutions": [
-                "Ensure tests exist in test/ directory",
-                "Run 'forge test' first to verify tests compile and pass",
-                "Check that contracts exist in src/ directory",
-                "Verify foundry.toml configuration is valid"
-            ]
-        }
-    
-    def _extract_error_location(self, stderr: str) -> str:
-        """Extract specific file and line location from compiler error."""
-        import re
-        
-        # Look for --> file:line:column pattern
-        location_match = re.search(r'-->s+([^:]+):(d+):(d+)', stderr)
-        if location_match:
-            file_path, line_num, col_num = location_match.groups()
-            return f"{file_path}:{line_num}:{col_num}"
-        
-        # Look for Error in contract pattern  
-        contract_match = re.search(r'Error.*?([A-Z][a-zA-Z0-9]+.sol)', stderr)
-        if contract_match:
-            return contract_match.group(1)
-            
-        return "Unknown location"
-    
-    def _get_stack_too_deep_solutions(self, location: str = "") -> Dict[str, Any]:
-        """Get specific solutions for stack too deep errors."""
-        base_location = location.split(":")[ 0] if location else "affected contract"
-        
-        return {
-            "immediate_fixes": [
-                {
-                    "method": "foundry_config",
-                    "description": "Add viaIR and optimizer to foundry.toml",
-                    "config": """
-[profile.default]
-via_ir = true
-optimizer = true
-optimizer_runs = 200
-solc_version = "0.8.20"
-                    """.strip(),
-                    "command": "forge coverage --via-ir"
-                },
-                {
-                    "method": "minimal_ir",
-                    "description": "Use minimal IR optimization",
-                    "command": "forge coverage --ir-minimum"
-                }
-            ],
-            "code_refactoring": [
-                f"Reduce local variables in {base_location}",
-                "Split complex functions into smaller ones",
-                "Use function parameters instead of local variables",
-                "Consider using structs to group related variables"
-            ],
-            "prevention": [
-                "Set up foundry.toml with viaIR from project start",
-                "Use --via-ir flag in development workflow",
-                "Monitor function complexity during development"
-            ]
-        }
     def _generate_contract_specific_guidance(self, contracts: List) -> Dict[str, Any]:
         """Generate specific testing guidance based on contract analysis."""
         guidance = {
@@ -2479,15 +2180,6 @@ solc_version = "0.8.20"
                         {
                             "phase": "Analysis & AI Failure Prevention",
                             "todos": [
-                                {
-                                    "id": 0,
-                                    "description": "**Call `validate_foundry_config` to prevent compilation errors**",
-                                    "tool_call": "validate_foundry_config(prevent_stack_errors=True)",
-                                    "expected_output": "Foundry configuration analysis with ready-to-use foundry.toml",
-                                    "success_criteria": "✅ Receive foundry.toml with via_ir=true and optimizer enabled",
-                                    "why_mandatory": "🛡️ PREVENTS: Stack too deep compilation errors before any testing",
-                                    "next_action": "Apply foundry.toml configuration to prevent compilation failures"
-                                },
                                 {
                                     "id": 1,
                                     "description": "**Call `analyze_project_context` for AI failure prevention**",

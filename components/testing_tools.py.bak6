@@ -2480,15 +2480,6 @@ solc_version = "0.8.20"
                             "phase": "Analysis & AI Failure Prevention",
                             "todos": [
                                 {
-                                    "id": 0,
-                                    "description": "**Call `validate_foundry_config` to prevent compilation errors**",
-                                    "tool_call": "validate_foundry_config(prevent_stack_errors=True)",
-                                    "expected_output": "Foundry configuration analysis with ready-to-use foundry.toml",
-                                    "success_criteria": "✅ Receive foundry.toml with via_ir=true and optimizer enabled",
-                                    "why_mandatory": "🛡️ PREVENTS: Stack too deep compilation errors before any testing",
-                                    "next_action": "Apply foundry.toml configuration to prevent compilation failures"
-                                },
-                                {
                                     "id": 1,
                                     "description": "**Call `analyze_project_context` for AI failure prevention**",
                                     "tool_call": "analyze_project_context(include_ai_failure_detection=True, generate_improvement_plan=True)",

@@ -723,16 +723,6 @@ Your goal is to ENFORCE comprehensive, secure, production-ready test suites by M
                         "phase": "Coverage Gap Analysis",
                         "todos": [
                             {
-                                "id": 0,
-                                "priority": "CRITICAL",
-                                "description": "**Call `validate_foundry_config` before coverage analysis**",
-                                "tool_call": "validate_foundry_config(prevent_stack_errors=True)",
-                                "expected_output": "Foundry configuration validation with compilation optimization",
-                                "success_criteria": "✅ Foundry.toml has via_ir and optimizer enabled for complex contracts",
-                                "time_estimate": "3 minutes",
-                                "why_mandatory": "🛡️ PREVENTS: Coverage analysis failures due to stack too deep compilation errors"
-                            },
-                            {
                                 "id": 1,
                                 "priority": "HIGH",
                                 "description": "**Call `analyze_current_test_coverage` for baseline assessment**",
