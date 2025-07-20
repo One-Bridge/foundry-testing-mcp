@@ -1101,6 +1101,144 @@ class TestingTools:
                     ]
                 }
         
+        # =================================================================
+        # IMMEDIATE MCP RESOURCE ACCESS TOOL (NEW)
+        # =================================================================
+        @mcp.tool(
+            name="get_mcp_resources_content",
+            description="""
+            📚 Get immediate access to all MCP resource content - DIRECT RESOURCE ACCESS
+            
+            WHEN TO USE:
+            - Need immediate access to actual MCP resource content
+            - Want concrete templates, patterns, and documentation
+            - Replacing abstract testing:// references with real content
+            - Quick resource lookup during development
+            
+            WHAT IT DOES:
+            - Provides immediate access to all MCP resource content
+            - Returns actual template code, testing patterns, security guidelines
+            - Eliminates need for abstract testing:// URI references
+            - Gives AI agents concrete, actionable content
+            
+            INPUTS:
+            - resource_type: "all" (default), "templates", "patterns", "security", "documentation"
+            
+            OUTPUTS:
+            - Complete MCP resource content with actual code and patterns
+            - Template content with usage instructions
+            - Security testing patterns and guidelines
+            - Testing documentation and best practices
+            
+            WORKFLOW: Use anytime you need actual MCP resource content instead of references.
+            """
+        )
+        async def get_mcp_resources_content(
+            resource_type: str = "all"
+        ) -> Dict[str, Any]:
+            """
+            Get immediate access to all MCP resource content.
+            
+            Args:
+                resource_type: Type of resources to retrieve ("all", "templates", "patterns", "security", "documentation")
+                
+            Returns:
+                Dictionary containing all requested MCP resource content
+            """
+            try:
+                logger.info(f"🔍 Retrieving MCP resource content: {resource_type}")
+                
+                resource_content = {
+                    "status": "success",
+                    "resource_type": resource_type,
+                    "usage_note": "✅ Use this actual content instead of abstract testing:// references",
+                    "content": {}
+                }
+                
+                if not self.testing_resources:
+                    return {
+                        "status": "error",
+                        "error": "TestingResources not initialized",
+                        "fallback_guidance": [
+                            "Testing resources are not available",
+                            "Use embedded_mcp_resources from workflow outputs instead",
+                            "Check server initialization logs for resource loading issues"
+                        ]
+                    }
+                
+                # Get templates content
+                if resource_type in ["all", "templates"]:
+                    try:
+                        templates_content = await self.testing_resources.get_available_templates()
+                        resource_content["content"]["templates"] = templates_content
+                        logger.info("✅ Templates content loaded successfully")
+                    except Exception as e:
+                        logger.warning(f"Could not load templates: {e}")
+                        resource_content["content"]["templates"] = {"error": str(e)}
+                
+                # Get foundry patterns content
+                if resource_type in ["all", "patterns"]:
+                    try:
+                        patterns_content = await self.testing_resources.get_foundry_testing_patterns()
+                        resource_content["content"]["foundry_patterns"] = patterns_content
+                        logger.info("✅ Foundry patterns content loaded successfully")
+                    except Exception as e:
+                        logger.warning(f"Could not load foundry patterns: {e}")
+                        resource_content["content"]["foundry_patterns"] = {"error": str(e)}
+                
+                # Get security patterns content
+                if resource_type in ["all", "security"]:
+                    try:
+                        security_content = await self.testing_resources.get_security_testing_patterns()
+                        resource_content["content"]["security_patterns"] = security_content
+                        logger.info("✅ Security patterns content loaded successfully")
+                    except Exception as e:
+                        logger.warning(f"Could not load security patterns: {e}")
+                        resource_content["content"]["security_patterns"] = {"error": str(e)}
+                
+                # Get documentation content
+                if resource_type in ["all", "documentation"]:
+                    try:
+                        documentation_content = await self.testing_resources.get_testing_documentation()
+                        resource_content["content"]["documentation"] = documentation_content
+                        logger.info("✅ Documentation content loaded successfully")
+                    except Exception as e:
+                        logger.warning(f"Could not load documentation: {e}")
+                        resource_content["content"]["documentation"] = {"error": str(e)}
+                
+                # Add usage instructions
+                resource_content["usage_instructions"] = {
+                    "templates": "Use content.templates.{template_name}.content for actual template code",
+                    "foundry_patterns": "Reference content.foundry_patterns.content.{pattern_category} for specific patterns",
+                    "security_patterns": "Use content.security_patterns.categories.{security_type} for security guidelines",
+                    "documentation": "Reference content.documentation.sections.{section_name} for testing guidance",
+                    "best_practice": "🎯 ALWAYS use this actual content instead of abstract testing:// URIs"
+                }
+                
+                # Add quick access examples
+                resource_content["quick_access_examples"] = [
+                    "📋 Template access: content.templates.test_contract.content",
+                    "🏗️ File structure: content.foundry_patterns.content.test_organization.file_structure_pattern",
+                    "🛡️ Security tests: content.security_patterns.categories.reentrancy.test_patterns",
+                    "📚 Best practices: content.documentation.sections.testing_best_practices"
+                ]
+                
+                logger.info(f"✅ Successfully loaded {resource_type} MCP resources")
+                return resource_content
+                
+            except Exception as e:
+                logger.error(f"Error retrieving MCP resources: {e}")
+                return {
+                    "status": "error",
+                    "error": str(e),
+                    "fallback_guidance": [
+                        "Check that TestingResources is properly initialized",
+                        "Verify that MCP resource files are accessible",
+                        "Use embedded_mcp_resources from workflow outputs as alternative",
+                        "Check server logs for resource loading errors"
+                    ]
+                }
+        
         logger.info("Testing tools registered successfully")
     
     # Template access helper methods
@@ -1302,6 +1440,74 @@ test/
             "success_criteria": []
         }
         
+        # =================================================================
+        # INJECT ACTUAL MCP RESOURCE CONTENT (NO MORE ABSTRACT REFERENCES)
+        # =================================================================
+        logger.info("📚 Injecting actual MCP resource content for immediate use...")
+        
+        try:
+            # Load all actual MCP resource content
+            embedded_resources = {}
+            
+            if self.testing_resources:
+                # Get actual foundry patterns content
+                try:
+                    foundry_patterns_content = await self.testing_resources.get_foundry_testing_patterns()
+                    embedded_resources["foundry_patterns"] = foundry_patterns_content
+                except Exception as e:
+                    logger.warning(f"Could not load foundry patterns: {e}")
+                    embedded_resources["foundry_patterns"] = {"error": str(e)}
+                
+                # Get actual security patterns content
+                try:
+                    security_patterns_content = await self.testing_resources.get_security_testing_patterns()
+                    embedded_resources["security_patterns"] = security_patterns_content
+                except Exception as e:
+                    logger.warning(f"Could not load security patterns: {e}")
+                    embedded_resources["security_patterns"] = {"error": str(e)}
+                
+                # Get actual available templates content
+                try:
+                    templates_content = await self.testing_resources.get_available_templates()
+                    embedded_resources["available_templates"] = templates_content
+                except Exception as e:
+                    logger.warning(f"Could not load templates: {e}")
+                    embedded_resources["available_templates"] = {"error": str(e)}
+                
+                # Get testing documentation content
+                try:
+                    documentation_content = await self.testing_resources.get_testing_documentation()
+                    embedded_resources["testing_documentation"] = documentation_content
+                except Exception as e:
+                    logger.warning(f"Could not load documentation: {e}")
+                    embedded_resources["testing_documentation"] = {"error": str(e)}
+            
+            # Add embedded resources to base plan
+            base_plan["embedded_mcp_resources"] = {
+                "usage_note": "🎯 CRITICAL: Use this actual content instead of abstract testing:// references",
+                "foundry_patterns_content": embedded_resources.get("foundry_patterns", {}),
+                "security_patterns_content": embedded_resources.get("security_patterns", {}),
+                "available_templates_content": embedded_resources.get("available_templates", {}),
+                "testing_documentation_content": embedded_resources.get("testing_documentation", {}),
+                "resource_access_instructions": [
+                    "✅ DO: Reference specific patterns from foundry_patterns_content.content",
+                    "✅ DO: Use actual template content from available_templates_content.templates",
+                    "✅ DO: Follow security patterns from security_patterns_content.categories",
+                    "❌ DON'T: Reference abstract testing://foundry-patterns URIs",
+                    "❌ DON'T: Use placeholder template references",
+                    "🎯 EXAMPLE: Use foundry_patterns_content.content.test_organization.file_structure_pattern"
+                ]
+            }
+            
+            logger.info("✅ MCP resource content successfully embedded in workflow plan")
+            
+        except Exception as e:
+            logger.error(f"Failed to inject MCP resource content: {e}")
+            base_plan["embedded_mcp_resources"] = {
+                "error": str(e),
+                "fallback_note": "Resource injection failed - using fallback guidance"
+            }
+        
         # Generate contextual phases based on workflow type and current state
         if workflow_type in ["create_new_suite", "from_scratch", "comprehensive"]:
             base_plan["execution_phases"] = await self._generate_create_new_suite_phases(current_context, project_path)
@@ -1461,13 +1667,91 @@ test/
         return base_plan
     
     async def _execute_workflow_phase(self, session: TestingSession, phase: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a specific workflow phase with enhanced context and automated analysis."""
+        """Execute a specific workflow phase with MANDATORY MCP tool integration and AI failure prevention."""
         phase_number = phase.get("phase", 0)
         phase_title = phase.get('title', 'Unknown')
-        logger.info(f"Executing phase {phase_number}: {phase_title}")
+        logger.info(f"🚀 Executing phase {phase_number}: {phase_title}")
         
-        # Execute validation steps if they exist
+        # Initialize enhanced validation results
         validation_results = {}
+        mandatory_tool_results = {}
+        ai_failure_guidance = {}
+        
+        # =================================================================
+        # PHASE 1: MANDATORY AI FAILURE PREVENTION INJECTION (BEGINNING)
+        # =================================================================
+        if phase_number == 1:
+            logger.info("🛡️ MANDATORY: Injecting AI failure prevention guidance...")
+            try:
+                # Get AI failure prevention strategies before any test writing
+                ai_prevention_analysis = await self.analyze_project_context(
+                    include_ai_failure_detection=True,
+                    generate_improvement_plan=False,  # Just need prevention guidance
+                    project_path=session.project_path
+                )
+                
+                # Extract prevention strategies
+                prevention_strategies = []
+                if "ai_failure_analysis" in ai_prevention_analysis:
+                    failure_report = ai_prevention_analysis["ai_failure_analysis"]
+                    if "no_tests_guidance" in failure_report:
+                        prevention_strategies = failure_report["no_tests_guidance"].get("prevention_strategies", [])
+                
+                ai_failure_guidance["prevention_injection"] = {
+                    "status": "mandatory_guidance_provided",
+                    "critical_prevention_strategies": prevention_strategies or [
+                        "Use templates provided by the workflow to avoid common AI failures",
+                        "Follow test structure patterns that prevent circular logic", 
+                        "Implement proper mock contracts with realistic behaviors",
+                        "Add comprehensive edge case and security scenario testing"
+                    ],
+                    "anti_patterns_to_avoid": [
+                        "❌ NEVER test contract methods against themselves (circular logic)",
+                        "❌ NEVER create mocks that always return expected values",
+                        "❌ NEVER skip error condition testing",
+                        "❌ NEVER use assertTrue(true) or similar always-passing assertions"
+                    ],
+                    "enforcement_note": "These guidelines MUST be followed during test creation"
+                }
+                mandatory_tool_results["ai_prevention_analysis"] = ai_prevention_analysis
+                
+            except Exception as e:
+                logger.warning(f"AI failure prevention injection failed: {e}")
+                ai_failure_guidance["prevention_injection"] = {"error": str(e)}
+        
+        # =================================================================
+        # PHASE 2: MANDATORY PRE-TEST AI FAILURE DETECTION
+        # =================================================================
+        if phase_number == 2:  # Core Unit Test Implementation
+            logger.info("🔍 MANDATORY: Running AI failure detection before test creation...")
+            try:
+                ai_analysis = await self.analyze_project_context(
+                    include_ai_failure_detection=True,
+                    generate_improvement_plan=True,
+                    project_path=session.project_path
+                )
+                
+                # Extract actionable guidance for test creation
+                ai_failure_guidance["pre_test_analysis"] = {
+                    "status": ai_analysis.get("ai_failure_analysis", {}).get("status", "unknown"),
+                    "critical_requirements": [
+                        "🎯 USE INDEPENDENT EXPECTED VALUES: Calculate expected results outside the contract",
+                        "🎯 CREATE REALISTIC MOCKS: Mocks must be configurable and can fail",
+                        "🎯 TEST ERROR CONDITIONS: Every function needs failure scenario tests",
+                        "🎯 AVOID CIRCULAR LOGIC: Never validate contract methods against themselves"
+                    ],
+                    "template_enforcement": "Use provided templates exactly - they prevent common AI failures",
+                    "quality_gate": "All tests will be reviewed for AI failure patterns at completion"
+                }
+                mandatory_tool_results["pre_test_ai_analysis"] = ai_analysis
+                
+            except Exception as e:
+                logger.error(f"CRITICAL: Pre-test AI analysis failed: {e}")
+                ai_failure_guidance["pre_test_analysis"] = {"error": str(e)}
+        
+        # =================================================================
+        # EXECUTE EXISTING VALIDATION STEPS
+        # =================================================================
         if "validation_steps" in phase:
             for step_name, step_config in phase["validation_steps"].items():
                 try:
@@ -1478,7 +1762,66 @@ test/
                     logger.warning(f"Validation step {step_name} failed: {e}")
                     validation_results[step_name] = {"error": str(e)}
         
-        # Baseline coverage check for Phase 1
+        # =================================================================
+        # MANDATORY COVERAGE VALIDATION AFTER TEST CREATION
+        # =================================================================
+        if phase_number in [2, 3, 4]:  # After any test creation phase
+            logger.info("📊 MANDATORY: Running coverage analysis...")
+            try:
+                coverage_analysis = await self.analyze_current_test_coverage(
+                    target_coverage=90,
+                    include_branches=True,
+                    project_path=session.project_path
+                )
+                
+                mandatory_tool_results["coverage_validation"] = coverage_analysis
+                
+                # Add coverage enforcement guidance
+                coverage_pct = coverage_analysis.get("coverage_data", {}).get("coverage_percentage", 0)
+                ai_failure_guidance["coverage_enforcement"] = {
+                    "current_coverage": f"{coverage_pct}%",
+                    "target_coverage": "90%",
+                    "status": "meets_target" if coverage_pct >= 90 else "needs_improvement",
+                    "next_action": "Continue to next phase" if coverage_pct >= 80 else "Add more tests before proceeding"
+                }
+                
+            except Exception as e:
+                logger.info(f"Coverage analysis not available yet: {e}")
+                ai_failure_guidance["coverage_enforcement"] = {"status": "not_available", "reason": str(e)}
+        
+        # =================================================================
+        # PHASE 4: COMPREHENSIVE AI FAILURE REVIEW (END-TO-END)
+        # =================================================================
+        if phase_number == 4:  # Coverage Validation & Quality Assurance
+            logger.info("🔬 MANDATORY: Comprehensive AI failure detection on completed test suite...")
+            try:
+                comprehensive_ai_review = await self.analyze_project_context(
+                    include_ai_failure_detection=True,
+                    generate_improvement_plan=True,
+                    project_path=session.project_path
+                )
+                
+                # Extract comprehensive failure analysis
+                failure_report = comprehensive_ai_review.get("ai_failure_analysis", {})
+                ai_failure_guidance["comprehensive_review"] = {
+                    "status": failure_report.get("status", "unknown"),
+                    "total_failures": failure_report.get("total_failures", 0),
+                    "critical_failures": failure_report.get("critical_count", 0),
+                    "high_priority_failures": failure_report.get("high_count", 0),
+                    "quality_verdict": self._determine_test_quality_verdict(failure_report),
+                    "improvement_requirements": failure_report.get("top_recommendations", []),
+                    "auto_fixable_count": failure_report.get("auto_fixable_count", 0)
+                }
+                
+                mandatory_tool_results["comprehensive_ai_review"] = comprehensive_ai_review
+                
+            except Exception as e:
+                logger.error(f"CRITICAL: Comprehensive AI review failed: {e}")
+                ai_failure_guidance["comprehensive_review"] = {"error": str(e)}
+        
+        # =================================================================
+        # BASELINE COVERAGE (EXISTING LOGIC)
+        # =================================================================
         if phase_number == 1:
             try:
                 baseline_coverage = await self._get_baseline_coverage(session.project_path)
@@ -1486,18 +1829,13 @@ test/
             except Exception as e:
                 logger.info(f"No baseline coverage available: {e}")
         
-        # Progress monitoring after phases 2 and 3 (when tests are being created)
-        if phase_number in [2, 3]:
-            try:
-                progress_coverage = await self.analyze_current_test_coverage(target_coverage=80, project_path=session.project_path)
-                validation_results["progress_coverage"] = progress_coverage
-            except Exception as e:
-                logger.info(f"Progress coverage check failed: {e}")
-
         # Enhanced phase execution with real deliverables
         session.completed_phases.append(phase_number)
         session.current_phase = phase_number + 1
         
+        # =================================================================
+        # ENHANCED RESULT WITH MANDATORY TOOL INTEGRATION
+        # =================================================================
         result = {
             "phase": phase_number,
             "title": phase_title,
@@ -1505,7 +1843,11 @@ test/
             "actions_completed": phase.get("actions", []),
             "deliverables_generated": phase.get("deliverables", []),
             "validation_results": validation_results,
-            "success": True
+            "mandatory_tool_results": mandatory_tool_results,
+            "ai_failure_guidance": ai_failure_guidance,
+            "success": True,
+            "tool_integration_note": "This phase executed mandatory MCP tool calls for enhanced quality assurance",
+            "next_phase_todo_list": self._generate_next_phase_todo_list(phase_number, session)
         }
         
         # Add template content if available
@@ -1513,6 +1855,21 @@ test/
             result["template_content"] = phase["template_content"]
         
         return result
+    
+    def _determine_test_quality_verdict(self, failure_report: Dict[str, Any]) -> str:
+        """Determine overall test quality verdict based on AI failure analysis."""
+        status = failure_report.get("status", "unknown")
+        critical_count = failure_report.get("critical_count", 0)
+        total_failures = failure_report.get("total_failures", 0)
+        
+        if status == "clean":
+            return "🟢 EXCELLENT: No AI failures detected"
+        elif critical_count == 0 and total_failures <= 3:
+            return "🟡 GOOD: Minor issues detected, easily fixable"
+        elif critical_count <= 2:
+            return "🟠 NEEDS IMPROVEMENT: Some critical issues require attention"
+        else:
+            return "🔴 POOR: Multiple critical failures require immediate fixes"
     
     async def _execute_validation_step(self, step_config: Dict[str, Any], project_path: str) -> Dict[str, Any]:
         """Execute a validation step using the specified tool."""
@@ -1742,81 +2099,403 @@ test/
         return workflows
     
     def _generate_intelligent_next_steps(self, project_state: ProjectState) -> Dict[str, Any]:
-        """Generate intelligent next steps based on project analysis."""
-        next_steps = {
+        """Generate intelligent next steps with MANDATORY tool sequences and enforcement."""
+        
+        # =================================================================
+        # MANDATORY TOOL SEQUENCE GENERATION (NEW APPROACH)
+        # =================================================================
+        base_next_steps = {
             "immediate_priority": "",
             "recommended_tool": "",
             "specific_actions": [],
-            "alternative_paths": []
+            "alternative_paths": [],
+            "mandatory_tool_sequence": [],
+            "enforcement_note": "🚨 CRITICAL: All tools in mandatory_tool_sequence MUST be called. Do not skip any step.",
+            "resource_enforcement": "Use embedded_mcp_resources content provided in workflow outputs instead of abstract testing:// references",
+            "cursor_ai_todo_list": {
+                "title": "🚨 MANDATORY TODO LIST - Smart Contract Testing Workflow",
+                "instructions": "✅ Complete each todo item sequentially. Each tool call provides data for subsequent steps.",
+                "phase_todos": []
+            }
         }
         
-        # Intelligent priority assessment
+        # =================================================================
+        # PHASE-BASED MANDATORY TOOL SEQUENCES
+        # =================================================================
+        
         if project_state.testing_phase == TestingPhase.NONE:
-            next_steps.update({
-                "immediate_priority": "Start with foundational test setup",
-                "recommended_tool": "execute_testing_workflow with 'from_scratch' workflow",
-                "specific_actions": [
-                    "Use templates from testing://templates/unit for basic structure",
-                    "Reference testing://foundry-patterns for best practices",
-                    "Start with critical function testing"
+            base_next_steps.update({
+                "immediate_priority": "Execute comprehensive testing initialization sequence",
+                "recommended_tool": "MANDATORY SEQUENCE: Follow all 3 steps below",
+                "mandatory_tool_sequence": [
+                    {
+                        "step": 1,
+                        "tool_name": "analyze_project_context",
+                        "parameters": {
+                            "include_ai_failure_detection": True,
+                            "generate_improvement_plan": True
+                        },
+                        "mandatory": True,
+                        "reason": "🛡️ CRITICAL: Get AI failure prevention guidance before any test creation",
+                        "expected_output": "AI failure analysis with prevention strategies",
+                        "success_criteria": "Must receive ai_failure_analysis section with prevention strategies"
+                    },
+                    {
+                        "step": 2,
+                        "tool_name": "execute_testing_workflow",
+                        "parameters": {
+                            "workflow_type": "from_scratch",
+                            "objectives": "Create comprehensive test suite with 90% coverage and AI failure prevention",
+                            "scope": "comprehensive"
+                        },
+                        "mandatory": True,
+                        "reason": "🎯 IMPLEMENTATION: Execute structured testing with embedded MCP resources",
+                        "expected_output": "4-phase workflow with embedded templates and patterns",
+                        "success_criteria": "Must receive embedded_mcp_resources content for immediate use"
+                    },
+                    {
+                        "step": 3,
+                        "tool_name": "analyze_current_test_coverage",
+                        "parameters": {
+                            "target_coverage": 90,
+                            "include_branches": True
+                        },
+                        "mandatory": True,
+                        "reason": "📊 VALIDATION: Ensure coverage targets are achieved",
+                        "expected_output": "Coverage report with gap analysis",
+                        "success_criteria": "Must validate coverage progress against 90% target"
+                    }
                 ],
-                "alternative_paths": ["analyze_project_context for deeper assessment first"]
+                "specific_actions": [
+                    "🚨 MUST FOLLOW: Execute all 3 mandatory tools in sequence",
+                    "🎯 USE ACTUAL CONTENT: Reference embedded_mcp_resources from workflow output",
+                    "🛡️ AI FAILURE PREVENTION: Follow prevention strategies from step 1 analysis",
+                    "📊 COVERAGE VALIDATION: Achieve 90% target with step 3 validation"
+                ],
+                "alternative_paths": ["❌ NO ALTERNATIVES: This sequence is mandatory for projects with no testing"],
+                "cursor_ai_todo_list": {
+                    "title": "🚨 MANDATORY TODO LIST - New Project Testing Setup",
+                    "instructions": "✅ Complete these todos sequentially. Each MCP tool call provides essential data for the next step.",
+                    "phase_todos": [
+                        {
+                            "phase": "Analysis & AI Failure Prevention",
+                            "todos": [
+                                {
+                                    "id": 1,
+                                    "description": "**Call `analyze_project_context` for AI failure prevention**",
+                                    "tool_call": "analyze_project_context(include_ai_failure_detection=True, generate_improvement_plan=True)",
+                                    "expected_output": "AI failure analysis with prevention strategies",
+                                    "success_criteria": "✅ Receive ai_failure_analysis section with prevention_strategies",
+                                    "why_mandatory": "🛡️ CRITICAL: Prevents common AI test generation failures before writing any tests",
+                                    "next_action": "Use prevention_strategies from output in subsequent test creation"
+                                }
+                            ]
+                        },
+                        {
+                            "phase": "Workflow Implementation", 
+                            "todos": [
+                                {
+                                    "id": 2,
+                                    "description": "**Call `execute_testing_workflow` with comprehensive scope**",
+                                    "tool_call": "execute_testing_workflow(workflow_type='from_scratch', objectives='Create comprehensive test suite with 90% coverage and AI failure prevention', scope='comprehensive')",
+                                    "expected_output": "4-phase workflow with embedded_mcp_resources containing actual template content",
+                                    "success_criteria": "✅ Receive embedded_mcp_resources with foundry_patterns_content and available_templates_content",
+                                    "why_mandatory": "🎯 IMPLEMENTATION: Provides structured testing workflow with concrete templates",
+                                    "next_action": "Use embedded_mcp_resources content for actual test implementation (no abstract testing:// references)"
+                                }
+                            ]
+                        },
+                        {
+                            "phase": "Coverage Validation",
+                            "todos": [
+                                {
+                                    "id": 3,
+                                    "description": "**Call `analyze_current_test_coverage` to validate progress**",
+                                    "tool_call": "analyze_current_test_coverage(target_coverage=90, include_branches=True)",
+                                    "expected_output": "Coverage analysis with gap identification and specific recommendations",
+                                    "success_criteria": "✅ Validate coverage progress toward 90% target",
+                                    "why_mandatory": "📊 VALIDATION: Ensures testing implementation meets quality targets",
+                                    "next_action": "Address any coverage gaps identified in the analysis"
+                                }
+                            ]
+                        },
+                        {
+                            "phase": "Resource Access (If Needed)",
+                            "todos": [
+                                {
+                                    "id": 4,
+                                    "description": "**Call `get_mcp_resources_content` for direct template access**",
+                                    "tool_call": "get_mcp_resources_content(resource_type='all')",
+                                    "expected_output": "Complete MCP resource content with actual template code",
+                                    "success_criteria": "✅ Receive concrete template content instead of abstract references",
+                                    "why_mandatory": "📚 RESOURCE ACCESS: Provides immediate access to actual template code",
+                                    "next_action": "Use content.templates.{template_name}.content for specific implementations"
+                                }
+                            ]
+                        }
+                    ],
+                    "completion_note": "🎯 **Workflow Complete**: All mandatory MCP tools called with prevention strategies applied",
+                    "success_indicators": [
+                        "✅ AI failure prevention strategies received and applied",
+                        "✅ Embedded MCP resources with actual template content available", 
+                        "✅ Coverage validation confirms progress toward targets",
+                        "✅ No abstract testing:// references used"
+                    ]
+                }
             })
         
         elif project_state.security_level == SecurityLevel.NONE and len(project_state.contracts) > 0:
-            next_steps.update({
-                "immediate_priority": "Critical: Add security testing immediately",
-                "recommended_tool": "execute_testing_workflow with 'security_focus' workflow",
-                "specific_actions": [
-                    "Use testing://security-patterns for vulnerability testing",
-                    "Focus on access control and reentrancy first",
-                    "Implement attack scenarios from testing://templates/security"
+            base_next_steps.update({
+                "immediate_priority": "CRITICAL: Execute mandatory security testing sequence",
+                "recommended_tool": "MANDATORY SEQUENCE: Security-first approach required",
+                "mandatory_tool_sequence": [
+                    {
+                        "step": 1,
+                        "tool_name": "analyze_project_context",
+                        "parameters": {
+                            "include_ai_failure_detection": True,
+                            "generate_improvement_plan": True
+                        },
+                        "mandatory": True,
+                        "reason": "🔍 SECURITY AUDIT: Identify security vulnerabilities and AI failure risks",
+                        "expected_output": "Contract risk analysis with security patterns",
+                        "success_criteria": "Must receive contract_analysis with risk_score > 0.5 flagged"
+                    },
+                    {
+                        "step": 2,
+                        "tool_name": "execute_testing_workflow", 
+                        "parameters": {
+                            "workflow_type": "security_focus",
+                            "objectives": "Implement comprehensive security testing for high-risk contracts",
+                            "scope": "security"
+                        },
+                        "mandatory": True,
+                        "reason": "🛡️ SECURITY IMPLEMENTATION: Deploy security-focused testing workflow",
+                        "expected_output": "Security testing phases with attack scenarios",
+                        "success_criteria": "Must include security test templates and attack simulations"
+                    },
+                    {
+                        "step": 3,
+                        "tool_name": "analyze_current_test_coverage",
+                        "parameters": {
+                            "target_coverage": 85,
+                            "include_branches": True
+                        },
+                        "mandatory": True,
+                        "reason": "🎯 SECURITY VALIDATION: Ensure security tests provide adequate coverage",
+                        "expected_output": "Coverage report focused on security test effectiveness",
+                        "success_criteria": "Must validate security test coverage for all high-risk functions"
+                    }
                 ],
-                "alternative_paths": ["Call analyze_project_context with include_ai_failure_detection=true"]
+                "specific_actions": [
+                    "🚨 SECURITY CRITICAL: All 3 tools MUST be executed for security compliance",
+                    "🔍 HIGH-RISK FOCUS: Prioritize contracts with risk_score > 0.7 from step 1",
+                    "🛡️ ATTACK SCENARIOS: Implement actual attack contracts from step 2 templates",
+                    "📊 SECURITY COVERAGE: Validate security function coverage in step 3"
+                ],
+                "alternative_paths": ["❌ NO ALTERNATIVES: Security testing is mandatory for contracts with security_level=NONE"],
+                "cursor_ai_todo_list": {
+                    "title": "🚨 MANDATORY TODO LIST - Critical Security Testing",
+                    "instructions": "⚠️ SECURITY CRITICAL: These todos are mandatory for contracts with no security testing",
+                    "phase_todos": [
+                        {
+                            "phase": "Security Risk Assessment",
+                            "todos": [
+                                {
+                                    "id": 1,
+                                    "description": "**Call `analyze_project_context` for security vulnerability analysis**",
+                                    "tool_call": "analyze_project_context(include_ai_failure_detection=True, generate_improvement_plan=True)",
+                                    "expected_output": "Contract analysis with risk_score and security_patterns identified",
+                                    "success_criteria": "✅ Receive contract_analysis with risk scores and security vulnerability patterns",
+                                    "why_mandatory": "🔍 SECURITY AUDIT: Identifies high-risk contracts requiring immediate security testing",
+                                    "next_action": "Prioritize contracts with risk_score > 0.7 for immediate security testing"
+                                }
+                            ]
+                        },
+                        {
+                            "phase": "Security Testing Implementation",
+                            "todos": [
+                                {
+                                    "id": 2,
+                                    "description": "**Call `execute_testing_workflow` with security focus**",
+                                    "tool_call": "execute_testing_workflow(workflow_type='security_focus', objectives='Implement comprehensive security testing for high-risk contracts', scope='security')",
+                                    "expected_output": "Security-focused workflow with attack scenario templates and security test patterns",
+                                    "success_criteria": "✅ Receive embedded_mcp_resources with security_patterns_content and attack scenario templates",
+                                    "why_mandatory": "🛡️ SECURITY IMPLEMENTATION: Provides concrete security test templates for identified vulnerabilities",
+                                    "next_action": "Use security_patterns_content for specific attack scenarios (reentrancy, access control, etc.)"
+                                }
+                            ]
+                        },
+                        {
+                            "phase": "Security Coverage Validation",
+                            "todos": [
+                                {
+                                    "id": 3,
+                                    "description": "**Call `analyze_current_test_coverage` for security test validation**",
+                                    "tool_call": "analyze_current_test_coverage(target_coverage=85, include_branches=True)",
+                                    "expected_output": "Coverage analysis focused on security test effectiveness for high-risk functions",
+                                    "success_criteria": "✅ Validate security test coverage for all high-risk functions identified in step 1",
+                                    "why_mandatory": "🎯 SECURITY VALIDATION: Ensures security tests provide adequate protection",
+                                    "next_action": "Address any security coverage gaps, especially for functions with risk_score > 0.7"
+                                }
+                            ]
+                        }
+                    ],
+                    "completion_note": "🛡️ **Security Testing Complete**: All high-risk contracts have comprehensive security testing",
+                    "success_indicators": [
+                        "✅ Security vulnerabilities identified and tested",
+                        "✅ Attack scenarios implemented for all high-risk functions",
+                        "✅ Security test coverage validated for critical functions",
+                        "✅ No contracts with security_level=NONE remaining"
+                    ]
+                }
             })
         
         elif project_state.testing_phase == TestingPhase.BASIC:
-            next_steps.update({
-                "immediate_priority": "Expand test coverage and add security testing",
-                "recommended_tool": "execute_testing_workflow with 'enhance_coverage' workflow",
-                "specific_actions": [
-                    "Run analyze_current_test_coverage to identify gaps",
-                    "Add missing edge cases and error conditions",
-                    "Implement security tests for identified vulnerabilities"
+            base_next_steps.update({
+                "immediate_priority": "Execute mandatory test enhancement sequence",
+                "recommended_tool": "MANDATORY SEQUENCE: Systematic test improvement required",
+                "mandatory_tool_sequence": [
+                    {
+                        "step": 1,
+                        "tool_name": "analyze_current_test_coverage",
+                        "parameters": {
+                            "target_coverage": 90,
+                            "include_branches": True
+                        },
+                        "mandatory": True,
+                        "reason": "📊 BASELINE ASSESSMENT: Identify current coverage gaps",
+                        "expected_output": "Detailed coverage analysis with specific gaps",
+                        "success_criteria": "Must identify specific functions/branches with low coverage"
+                    },
+                    {
+                        "step": 2,
+                        "tool_name": "analyze_project_context",
+                        "parameters": {
+                            "include_ai_failure_detection": True,
+                            "generate_improvement_plan": True
+                        },
+                        "mandatory": True,
+                        "reason": "🔍 QUALITY AUDIT: Assess existing test quality and identify AI failures",
+                        "expected_output": "AI failure analysis and improvement plan",
+                        "success_criteria": "Must receive specific improvement recommendations"
+                    },
+                    {
+                        "step": 3,
+                        "tool_name": "execute_testing_workflow",
+                        "parameters": {
+                            "workflow_type": "enhance_coverage",
+                            "objectives": "Fill coverage gaps and eliminate AI failure patterns",
+                            "scope": "comprehensive"
+                        },
+                        "mandatory": True,
+                        "reason": "⚡ ENHANCEMENT IMPLEMENTATION: Apply systematic improvements",
+                        "expected_output": "Enhanced testing workflow addressing identified gaps",
+                        "success_criteria": "Must target specific gaps from steps 1 & 2"
+                    }
                 ],
-                "alternative_paths": ["Focus on security_enhancement workflow if high-risk contracts detected"]
+                "specific_actions": [
+                    "📊 COVERAGE ANALYSIS: Start with step 1 to identify specific gaps",
+                    "🔍 QUALITY AUDIT: Use step 2 to find and fix AI failure patterns",
+                    "⚡ SYSTEMATIC IMPROVEMENT: Apply step 3 workflow to address all findings",
+                    "🎯 TARGET ACHIEVEMENT: Reach 90% coverage with high-quality tests"
+                ],
+                "alternative_paths": ["⚠️ LIMITED ALTERNATIVES: May focus on security_enhancement if high-risk contracts detected"]
             })
         
         elif project_state.testing_phase in [TestingPhase.INTERMEDIATE, TestingPhase.ADVANCED]:
             if len(project_state.identified_gaps) > 0:
-                next_steps.update({
-                    "immediate_priority": f"Address identified gaps: {', '.join(project_state.identified_gaps[:2])}",
-                    "recommended_tool": "execute_testing_workflow with targeted approach",
-                    "specific_actions": [
-                        "Focus on specific gaps identified in analysis",
-                        "Consider integration_testing workflow for multi-contract systems",
-                        "Add invariant testing for system properties"
+                base_next_steps.update({
+                    "immediate_priority": "Execute targeted improvement sequence for identified gaps",
+                    "recommended_tool": "MANDATORY SEQUENCE: Gap-focused enhancement",
+                    "mandatory_tool_sequence": [
+                        {
+                            "step": 1,
+                            "tool_name": "analyze_project_context",
+                            "parameters": {
+                                "include_ai_failure_detection": True,
+                                "generate_improvement_plan": True
+                            },
+                            "mandatory": True,
+                            "reason": "🎯 GAP ANALYSIS: Deep dive into specific identified gaps",
+                            "expected_output": "Detailed analysis of current gaps with prioritization",
+                            "success_criteria": "Must provide specific recommendations for each identified gap"
+                        },
+                        {
+                            "step": 2,
+                            "tool_name": "execute_testing_workflow",
+                            "parameters": {
+                                "workflow_type": "targeted_improvement",
+                                "objectives": f"Address identified gaps: {', '.join(project_state.identified_gaps[:3])}",
+                                "scope": "comprehensive"
+                            },
+                            "mandatory": True,
+                            "reason": "🔧 TARGETED FIXES: Implement specific improvements for identified gaps",
+                            "expected_output": "Targeted workflow addressing specific gaps",
+                            "success_criteria": "Must include specific actions for each gap"
+                        }
                     ],
-                    "alternative_paths": ["analyze_project_context for detailed improvement plan"]
+                    "specific_actions": [
+                        f"🎯 FOCUS AREAS: Address {', '.join(project_state.identified_gaps[:2])}",
+                        "🔍 DETAILED ANALYSIS: Use step 1 for comprehensive gap understanding",
+                        "🔧 TARGETED IMPLEMENTATION: Apply step 2 for specific gap resolution",
+                        "📊 VALIDATION: Ensure each gap is properly addressed"
+                    ],
+                    "alternative_paths": ["🔄 ITERATIVE: May repeat sequence if additional gaps are discovered"]
                 })
             else:
-                next_steps.update({
-                    "immediate_priority": "Consider advanced testing techniques",
-                    "recommended_tool": "execute_testing_workflow with 'security_enhancement'",
-                    "specific_actions": [
-                        "Add invariant testing for system properties",
-                        "Implement fork testing for realistic scenarios",
-                        "Consider formal verification for critical properties"
+                base_next_steps.update({
+                    "immediate_priority": "Execute advanced testing enhancement sequence",
+                    "recommended_tool": "MANDATORY SEQUENCE: Advanced testing techniques",
+                    "mandatory_tool_sequence": [
+                        {
+                            "step": 1,
+                            "tool_name": "analyze_current_test_coverage",
+                            "parameters": {
+                                "target_coverage": 95,
+                                "include_branches": True
+                            },
+                            "mandatory": True,
+                            "reason": "🎯 EXCELLENCE ASSESSMENT: Evaluate current testing against excellence standards",
+                            "expected_output": "Comprehensive coverage analysis for advanced project",
+                            "success_criteria": "Must achieve 95%+ coverage for advanced phase"
+                        },
+                        {
+                            "step": 2,
+                            "tool_name": "execute_testing_workflow",
+                            "parameters": {
+                                "workflow_type": "audit_prep",
+                                "objectives": "Prepare for professional security audit with advanced testing",
+                                "scope": "comprehensive"
+                            },
+                            "mandatory": True,
+                            "reason": "🏆 AUDIT PREPARATION: Implement audit-ready testing standards",
+                            "expected_output": "Audit-ready testing workflow with formal verification prep",
+                            "success_criteria": "Must meet professional audit standards"
+                        }
                     ],
-                    "alternative_paths": ["Prepare for security audit with audit_prep workflow"]
+                    "specific_actions": [
+                        "🏆 EXCELLENCE STANDARD: Target 95%+ coverage with step 1 validation",
+                        "🔍 AUDIT PREPARATION: Use step 2 for professional-grade testing",
+                        "📋 FORMAL STANDARDS: Implement audit-ready documentation and testing",
+                        "🎯 PROFESSIONAL QUALITY: Meet institutional testing standards"
+                    ],
+                    "alternative_paths": ["🎓 ADVANCED: Consider formal verification or research collaboration"]
                 })
         
-        # Add contract-specific guidance
+        # =================================================================
+        # ADD CONTRACT-SPECIFIC URGENT REQUIREMENTS
+        # =================================================================
         high_risk_contracts = [c for c in project_state.contracts if c.risk_score > 0.7]
         if high_risk_contracts:
-            next_steps["urgent_attention"] = f"High-risk contracts need immediate security testing: {', '.join(c.contract_name for c in high_risk_contracts[:2])}"
+            base_next_steps["urgent_attention"] = {
+                "status": "CRITICAL_SECURITY_REQUIRED",
+                "message": f"High-risk contracts detected: {', '.join(c.contract_name for c in high_risk_contracts[:3])}",
+                "mandatory_security_action": "Security testing is MANDATORY before any other testing activities",
+                "risk_mitigation": "Use security_focus workflow in mandatory_tool_sequence"
+            }
         
-        return next_steps
+        return base_next_steps
 
     async def _generate_contextual_workflows(self, project_info: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -2452,3 +3131,150 @@ test/
                 ]
             }
         ]
+    
+    def _generate_next_phase_todo_list(self, current_phase: int, session: TestingSession) -> Dict[str, Any]:
+        """Generate todo list for the next workflow phase with embedded MCP tool calls."""
+        next_phase = current_phase + 1
+        
+        # Define phase-specific todo lists
+        phase_todo_templates = {
+            2: {  # After Phase 1 (Setup) → Phase 2 (Core Unit Tests)
+                "title": "🚨 NEXT PHASE TODO - Core Unit Test Implementation",
+                "instructions": "✅ Implement core unit tests with AI failure prevention",
+                "phase_todos": [
+                    {
+                        "phase": "Pre-Implementation Analysis",
+                        "todos": [
+                            {
+                                "id": 1,
+                                "description": "**Call `analyze_project_context` for test quality assessment**",
+                                "tool_call": "analyze_project_context(include_ai_failure_detection=True, generate_improvement_plan=True)",
+                                "expected_output": "Current test quality analysis and AI failure patterns",
+                                "success_criteria": "✅ Receive specific guidance on avoiding AI test failures",
+                                "why_mandatory": "🛡️ Ensures test implementation follows best practices and avoids common AI failures"
+                            }
+                        ]
+                    },
+                    {
+                        "phase": "Test Implementation",
+                        "todos": [
+                            {
+                                "id": 2,
+                                "description": "**Use embedded_mcp_resources from previous workflow output**",
+                                "tool_call": "Use available_templates_content.templates.test_contract.content from previous execute_testing_workflow output",
+                                "expected_output": "Actual template code for unit test implementation",
+                                "success_criteria": "✅ Implement tests using concrete template content (no abstract testing:// references)",
+                                "why_mandatory": "📋 Provides concrete, tested template code that prevents common mistakes"
+                            }
+                        ]
+                    },
+                    {
+                        "phase": "Progress Validation",
+                        "todos": [
+                            {
+                                "id": 3,
+                                "description": "**Call `analyze_current_test_coverage` to track progress**",
+                                "tool_call": "analyze_current_test_coverage(target_coverage=70, include_branches=True)",
+                                "expected_output": "Current coverage analysis with gap identification",
+                                "success_criteria": "✅ Validate progress toward coverage targets",
+                                "why_mandatory": "📊 Ensures implementation is on track for coverage goals"
+                            }
+                        ]
+                    }
+                ]
+            },
+            3: {  # After Phase 2 (Unit Tests) → Phase 3 (Security Tests)
+                "title": "🚨 NEXT PHASE TODO - Security & Integration Testing",
+                "instructions": "🛡️ Implement comprehensive security testing for identified vulnerabilities",
+                "phase_todos": [
+                    {
+                        "phase": "Security Analysis",
+                        "todos": [
+                            {
+                                "id": 1,
+                                "description": "**Call `analyze_project_context` for security vulnerability assessment**",
+                                "tool_call": "analyze_project_context(include_ai_failure_detection=True, generate_improvement_plan=True)",
+                                "expected_output": "Security patterns and vulnerability analysis for current contracts",
+                                "success_criteria": "✅ Receive contract_analysis with security_patterns and risk_scores",
+                                "why_mandatory": "🔍 Identifies specific security vulnerabilities requiring testing"
+                            }
+                        ]
+                    },
+                    {
+                        "phase": "Security Test Implementation",
+                        "todos": [
+                            {
+                                "id": 2,
+                                "description": "**Use security_patterns_content from embedded MCP resources**",
+                                "tool_call": "Use security_patterns_content.categories.{vulnerability_type} from workflow output",
+                                "expected_output": "Specific security test patterns for identified vulnerabilities",
+                                "success_criteria": "✅ Implement security tests for reentrancy, access control, oracle manipulation",
+                                "why_mandatory": "🛡️ Provides concrete security test implementations for identified risks"
+                            },
+                            {
+                                "id": 3,
+                                "description": "**Call `analyze_current_test_coverage` for security coverage validation**",
+                                "tool_call": "analyze_current_test_coverage(target_coverage=85, include_branches=True)",
+                                "expected_output": "Coverage analysis including security test effectiveness",
+                                "success_criteria": "✅ Validate security test coverage for all high-risk functions",
+                                "why_mandatory": "📊 Ensures security tests provide adequate protection"
+                            }
+                        ]
+                    }
+                ]
+            },
+            4: {  # After Phase 3 (Security) → Phase 4 (Coverage Validation)
+                "title": "🚨 NEXT PHASE TODO - Final Coverage Validation & Quality Assurance",
+                "instructions": "📊 Validate final test suite quality and coverage targets",
+                "phase_todos": [
+                    {
+                        "phase": "Comprehensive Coverage Analysis",
+                        "todos": [
+                            {
+                                "id": 1,
+                                "description": "**Call `analyze_current_test_coverage` for final validation**",
+                                "tool_call": "analyze_current_test_coverage(target_coverage=90, include_branches=True)",
+                                "expected_output": "Final coverage report with comprehensive analysis",
+                                "success_criteria": "✅ Achieve 90%+ coverage with comprehensive branch analysis",
+                                "why_mandatory": "🎯 Final validation against production-ready coverage targets"
+                            }
+                        ]
+                    },
+                    {
+                        "phase": "AI Failure Quality Review",
+                        "todos": [
+                            {
+                                "id": 2,
+                                "description": "**Call `analyze_project_context` for final AI failure detection**",
+                                "tool_call": "analyze_project_context(include_ai_failure_detection=True, generate_improvement_plan=True)",
+                                "expected_output": "Comprehensive AI failure analysis of completed test suite",
+                                "success_criteria": "✅ Receive clean AI failure report or specific improvement guidance",
+                                "why_mandatory": "🔬 Final quality gate to ensure no AI-generated test failures remain"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+        
+        if next_phase in phase_todo_templates:
+            return {
+                "has_next_phase": True,
+                "next_phase_number": next_phase,
+                **phase_todo_templates[next_phase]
+            }
+        else:
+            return {
+                "has_next_phase": False,
+                "completion_message": "🎉 **Workflow Complete**: All phases completed with comprehensive MCP tool integration",
+                "final_validation": {
+                    "todos": [
+                        {
+                            "id": "final",
+                            "description": "**Call `analyze_current_test_coverage` for final validation**",
+                            "tool_call": "analyze_current_test_coverage(target_coverage=90, include_branches=True)",
+                            "success_criteria": "✅ Confirm 90%+ coverage achieved"
+                        }
+                    ]
+                }
+            }

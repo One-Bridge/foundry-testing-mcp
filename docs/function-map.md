@@ -104,15 +104,15 @@ These functions provide intelligent analysis of project state and testing qualit
 
 ### analyze_project()
 **Purpose**: Main entry point for comprehensive project analysis.
-**Operation**: Coordinates all analysis components to produce complete ProjectState with testing phase, security level, contracts, and tests analysis.
-**Logic Flow**: Central analysis function used by MCP tools.
-**Current State**: ✅ Implemented with AST integration and comprehensive analysis
+**Operation**: Coordinates all analysis components to produce complete ProjectState with testing phase, security level, contracts, and tests analysis using regex-first approach.
+**Logic Flow**: Central analysis function used by MCP tools, now using reliable regex-based contract detection.
+**Current State**: ✅ Implemented with regex-first analysis and optional AST enhancement
 
 ### _analyze_contract_file()
-**Purpose**: Analyzes individual contract files using AST-based semantic analysis.
-**Operation**: Uses ASTAnalyzer for semantic understanding, identifies functions, state variables, security patterns, and calculates risk scores.
-**Logic Flow**: Contract-level analysis with fallback to regex patterns when AST fails.
-**Current State**: ✅ Implemented with AST-first approach and regex fallback
+**Purpose**: Analyzes individual contract files using regex-first approach with optional AST enhancement.
+**Operation**: Uses comprehensive regex patterns for contract classification, function extraction, and security pattern detection. Optionally enhances results with AST analysis when Solidity compiler is available.
+**Logic Flow**: Primary regex-based analysis with optional AST enhancement for additional insights.
+**Current State**: ✅ Implemented with regex-first approach and optional AST enhancement
 
 ### _analyze_test_file()
 **Purpose**: Analyzes individual test files using AST-based semantic analysis.
@@ -132,11 +132,23 @@ These functions provide intelligent analysis of project state and testing qualit
 **Logic Flow**: Security-specific assessment that influences workflow priorities and recommendations.
 **Current State**: ✅ Implemented with security pattern detection
 
+### _comprehensive_regex_analysis()
+**Purpose**: Primary contract analysis method using comprehensive regex pattern matching.
+**Operation**: Extracts contract names, functions, state variables, and dependencies using enhanced regex patterns. Determines contract types through scoring-based classification and calculates risk scores with contract-type awareness.
+**Logic Flow**: Core analysis engine providing reliable results without external dependencies.
+**Current State**: ✅ Implemented with enhanced pattern detection and scoring-based classification
+
+### _calculate_comprehensive_risk_score()
+**Purpose**: Assigns risk scores to contracts using contract-type-aware assessment.
+**Operation**: Calculates base complexity score, applies contract type risk multipliers (DeFi=0.4, governance=0.3, etc.), analyzes security patterns with proper risk weights, and considers financial operation indicators.
+**Logic Flow**: Enhanced risk assessment providing realistic scores for different contract types.
+**Current State**: ✅ Implemented with contract-type awareness and enhanced security pattern analysis
+
 ### _calculate_risk_score()
-**Purpose**: Assigns risk scores to individual contracts based on complexity and security patterns.
-**Operation**: Analyzes contract code for complexity indicators, identifies security-sensitive patterns, evaluates external dependencies, and calculates numerical risk scores.
-**Logic Flow**: Risk assessment used to prioritize testing efforts and identify high-priority contracts.
-**Current State**: ✅ Implemented with both AST and regex-based scoring
+**Purpose**: Legacy risk scoring method redirecting to comprehensive version.
+**Operation**: Provides backward compatibility by calling comprehensive risk calculation with default utility contract type.
+**Logic Flow**: Compatibility wrapper for existing code.
+**Current State**: ✅ Implemented as wrapper for enhanced risk calculation
 
 ### _generate_recommendations()
 **Purpose**: Creates actionable improvement plans based on project analysis results.
@@ -174,13 +186,13 @@ These functions identify and prevent common issues with AI-generated test code.
 
 ## AST Analysis Engine (ASTAnalyzer)
 
-These functions provide semantic code analysis using Abstract Syntax Trees.
+These functions provide optional semantic code analysis enhancement using Abstract Syntax Trees.
 
 ### analyze_solidity_file()
-**Purpose**: Performs semantic analysis of Solidity contract files using AST.
-**Operation**: Uses solc compiler to generate AST, parses semantic structure, identifies security patterns, and calculates complexity metrics.
-**Logic Flow**: Core semantic analysis with fallback handling when AST generation fails.
-**Current State**: ✅ Implemented with solc integration and comprehensive semantic analysis
+**Purpose**: Provides optional semantic analysis enhancement when Solidity compiler is available.
+**Operation**: Uses solc compiler to generate AST, parses semantic structure, identifies additional security patterns, and provides enhanced complexity metrics.
+**Logic Flow**: Optional enhancement that adds insights to regex-based analysis when solc is installed.
+**Current State**: ✅ Implemented as optional enhancement (requires solc installation)
 
 ### analyze_test_file()
 **Purpose**: Performs semantic analysis of Solidity test files.
@@ -300,27 +312,28 @@ The system operates through coordinated interactions between these functional la
 ## Current Implementation Status
 
 ### Fully Implemented Components ✅
-- **All 7 Core MCP Tools**: Complete with parameter validation and error handling
-- **AI Failure Detection**: 8 failure types with AST and regex-based analysis
-- **Project Analysis**: Multi-tier maturity assessment with risk scoring
-- **AST Analysis**: Semantic code analysis with fallback to regex patterns
-- **Foundry Integration**: Real tool integration with output parsing
-- **Resource System**: 5 MCP resources with templates and dynamic documentation
-- **Prompt System**: 5 structured prompts with professional methodologies
-- **Server Infrastructure**: FastMCP-based with robust communication
+- **Core MCP Tools**: 7 tools with parameter validation and error handling
+- **Regex-First Analysis**: Reliable contract classification and risk scoring without external dependencies
+- **AI Failure Detection**: 8 failure pattern types with both AST and regex detection methods
+- **Template System**: 6 template types with dynamic placeholder substitution
+- **Foundry Integration**: CLI tool execution with coverage output parsing (environment-dependent)
+- **Resource System**: 5 MCP resources providing patterns, templates, and documentation
+- **Server Infrastructure**: FastMCP-based protocol communication with stdio/http modes
 
-### Known Issues and Limitations ⚠️
-- **Directory Detection**: May fail in some MCP client configurations
-- **Coverage Integration**: Subprocess execution issues in some environments
-- **Context Detection**: Occasional null pointer exceptions in project analysis
-- **Tool Routing**: Some naming convention issues with MCP clients
+### Optional/Conditional Components 🔶
+- **AST Enhancement**: Provides additional insights when Solidity compiler (solc) is installed
+- **Coverage Analysis**: Functions in most environments but may fail in restricted execution contexts
+- **Project Discovery**: Works with manual path specification when auto-detection fails
 
-### Key Capabilities Verified ✅
-- **Context Awareness**: Adapts to current project state rather than generic advice
-- **Real Tool Integration**: Parses actual `forge coverage` and `forge test` output
-- **AI Quality Assurance**: Detects and prevents common AI-generated test failures
-- **Template System**: Comprehensive templates with placeholder substitution
-- **AST Analysis**: Semantic understanding with regex fallback
-- **Comprehensive Troubleshooting**: Directory detection and project validation
+### Current Limitations ⚠️
+- **Directory Resolution**: MCP client-server directory misalignment requires environment variable configuration in some setups
+- **Subprocess Execution**: Coverage analysis dependent on execution environment permissions
+- **MCP Client Compatibility**: Some clients require specific configuration for proper tool discovery
+
+### Architecture Benefits ✅
+- **Reliability**: Regex-first approach provides consistent results across environments
+- **No External Dependencies**: Core functionality works without Solidity compiler installation
+- **Graceful Degradation**: AST enhancement available when possible, regex fallback ensures basic functionality
+- **Real Tool Integration**: Actual Foundry command execution and output parsing when environment permits
 
 This functional architecture provides smart contract testing assistance through the MCP protocol, with documented limitations and ongoing development to address real-world usage issues. The modular design allows for targeted improvements while maintaining core functionality. 

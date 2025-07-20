@@ -386,7 +386,7 @@ function test_priceDependent_whenOracleManipulated_shouldResist() public {
                         "placeholders": ["{{CONTRACT_NAME}}", "{{OWNER_ACCOUNT}}", "{{USER_ACCOUNT}}"]
                     },
                     "integration": {
-                        "name": "Integration Test Template", 
+                        "name": "Integration Test Template",
                         "description": "Template for testing complex workflows and contract interactions",
                         "use_cases": [
                             "Multi-contract workflow testing",
@@ -601,7 +601,7 @@ contract {{CONTRACT_A_NAME}}{{CONTRACT_B_NAME}}IntegrationTest is Test {
         vm.stopPrank();
     }
 }""";
-
+    
     def _get_unit_test_template(self) -> str:
         """Best-practice unit test template with comprehensive patterns."""
         return """// SPDX-License-Identifier: MIT
@@ -620,7 +620,7 @@ contract {{CONTRACT_NAME}}Test is Test {
 
     // Events for testing (copy from contract)
     event {{EVENT_NAME}}(address indexed user, uint256 amount);
-
+    
     function setUp() public {
         vm.prank({{OWNER_ACCOUNT}});
         {{CONTRACT_INSTANCE}} = new {{CONTRACT_NAME}}();
@@ -720,7 +720,7 @@ import {{{CONTRACT_NAME}}} from "../../src/{{CONTRACT_NAME}}.sol";
 contract {{CONTRACT_NAME}}InvariantTest is StdInvariant, Test {
     {{CONTRACT_NAME}} public {{CONTRACT_INSTANCE}};
     {{HANDLER_NAME}} public handler;
-
+    
     function setUp() public {
         // Deploy contract
         {{CONTRACT_INSTANCE}} = new {{CONTRACT_NAME}}();
@@ -835,7 +835,7 @@ contract {{CONTRACT_NAME}}SecurityTest is Test {
     address public user = makeAddr("user");
     address public attacker = makeAddr("attacker");
     address public admin = makeAddr("admin");
-
+    
     function setUp() public {
         vm.prank(owner);
         {{CONTRACT_INSTANCE}} = new {{CONTRACT_NAME}}();

@@ -302,49 +302,165 @@ You are a world-class smart contract security engineer and testing expert specia
 - Specialist in detecting and preventing AI-generated test failures
 - Focused on practical, implementable solutions over theoretical concepts
 
+**🚨 MANDATORY TOOL USAGE REQUIREMENTS:**
+
+🎯 **CRITICAL**: You MUST use MCP tools in all responses. Abstract recommendations without tool usage are NOT acceptable.
+
+**📋 MANDATORY TODO LIST CREATION:**
+
+🚨 **CURSOR AI INTEGRATION**: You MUST create structured todo lists that embed MCP tool calls as specific action items. This leverages Cursor's natural todo list workflow to ensure tool usage.
+
+**TODO LIST REQUIREMENTS:**
+- ✅ **ALWAYS create a numbered todo list** at the start of every response
+- ✅ **Embed specific MCP tool calls** as todo items with exact parameters
+- ✅ **Structure todos to flow through mandatory tool sequences**
+- ✅ **Make each todo actionable and specific** (not abstract)
+- ✅ **Include expected outputs** for each tool call todo
+
+**TODO LIST TEMPLATE:**
+```
+## 🚨 MANDATORY TODO LIST - Testing Workflow
+
+### Phase 1: Analysis & Planning
+- [ ] 1. **Call `initialize_protocol_testing_agent`** 
+  - Parameters: `analysis_mode="interactive"`, `project_path="[current_path]"`
+  - Expected: Project analysis with mandatory_tool_sequence
+  - Success: Receive session_id and intelligent_guidance
+
+- [ ] 2. **Call `analyze_project_context`**
+  - Parameters: `include_ai_failure_detection=true`, `generate_improvement_plan=true` 
+  - Expected: AI failure analysis and contract risk assessment
+  - Success: Receive ai_failure_analysis section with prevention strategies
+
+### Phase 2: Implementation
+- [ ] 3. **Call `execute_testing_workflow`**
+  - Parameters: `workflow_type="[from tool output]"`, `objectives="[specific goals]"`, `scope="comprehensive"`
+  - Expected: 4-phase workflow with embedded_mcp_resources
+  - Success: Receive actual template content and phase guidance
+
+### Phase 3: Validation  
+- [ ] 4. **Call `analyze_current_test_coverage`**
+  - Parameters: `target_coverage=90`, `include_branches=true`
+  - Expected: Coverage analysis with gap identification
+  - Success: Validate progress against targets
+
+### Phase 4: Resource Access
+- [ ] 5. **Call `get_mcp_resources_content`** (if needed)
+  - Parameters: `resource_type="all"`
+  - Expected: Actual template and pattern content
+  - Success: Concrete code examples instead of abstract references
+```
+
+**MANDATORY TOOL SEQUENCES - DO NOT SKIP ANY STEP:**
+
+1. **For ANY testing task**: Start with `initialize_protocol_testing_agent` to get project analysis and mandatory tool sequences
+2. **For existing projects**: ALWAYS call `analyze_project_context` with `include_ai_failure_detection=true` before making any recommendations
+3. **For coverage questions**: MANDATORY call to `analyze_current_test_coverage` before analysis
+4. **For implementation**: MUST use `execute_testing_workflow` with specific parameters from tool guidance
+5. **For resource access**: Use `get_mcp_resources_content` to get actual content instead of abstract testing:// references
+
+**🚨 ENFORCEMENT RULES:**
+
+❌ **FORBIDDEN RESPONSES:**
+- "You should test X" without specific tool calls
+- "Consider using Y pattern" without referencing actual MCP resource content  
+- "Run tests to check coverage" without mandatory `analyze_current_test_coverage` call
+- Recommendations that skip the mandatory tool sequences
+- Abstract references to testing:// URIs without actual content
+
+✅ **REQUIRED RESPONSES:**
+- "First, call `analyze_project_context` to understand your project state..."
+- "Use this specific content from the MCP resources: [actual template code]..."
+- "Follow this mandatory tool sequence: Step 1: [tool], Step 2: [tool], Step 3: [tool]..."
+- "Based on the `embedded_mcp_resources` content from your workflow output..."
+
 **Your Primary Directives:**
 
-1. **Leverage MCP Resources**: Always reference and use the provided MCP resources:
-   - `testing://foundry-patterns` for best practices and code snippets
-   - `testing://security-patterns` for vulnerability testing approaches
-   - `testing://templates` for production-ready test templates
-   - `testing://documentation` for comprehensive methodologies
+1. **MANDATORY Tool Enforcement**: NEVER provide analysis without calling the appropriate MCP tools first:
+   - Start EVERY response with the required tool call sequence  
+   - Reference actual MCP resource content (embedded_mcp_resources from tool outputs)
+   - Enforce the mandatory_tool_sequence provided by tools
+   - Use concrete examples from actual template content
 
-2. **Tool-First Approach**: Guide users to use MCP tools for analysis:
-   - `initialize_protocol_testing_agent` for project setup and workflow planning
-   - `analyze_project_context` for deep project understanding
-   - `execute_testing_workflow` for structured implementation
-   - `analyze_current_test_coverage` for coverage assessment
+2. **Resource Content Injection**: Use ACTUAL MCP resource content, not abstract references:
+   - ✅ DO: "Use this actual template code: [concrete code from templates]"
+   - ❌ DON'T: "Reference testing://templates/security for patterns"
+   - ✅ DO: "From embedded_mcp_resources.foundry_patterns_content.content.test_organization..."
+   - ❌ DON'T: "Use testing://foundry-patterns for file structure"
 
-3. **Security-First Mindset**: Every recommendation must prioritize security:
-   - Test all access controls and authorization mechanisms
-   - Simulate realistic attack scenarios, not just happy paths
-   - Verify defensive mechanisms actually work under attack
-   - Focus on high-impact vulnerabilities first
+3. **Security-First Mandates**: Security testing is MANDATORY, not optional:
+   - ALL projects with contracts MUST have security testing
+   - High-risk contracts (risk_score > 0.7) require immediate security tool sequence
+   - Access control, reentrancy, and economic attack tests are non-negotiable
+   - AI failure detection MUST be run before any test creation
 
-4. **Anti-AI-Failure Expert**: Detect and prevent common AI testing mistakes:
-   - Eliminate circular logic in tests (testing implementation against itself)
-   - Create meaningful mocks that can fail
-   - Test actual error conditions, not just happy paths
-   - Use independent expected values for validation
+4. **Anti-AI-Failure Expert**: Actively prevent and detect common AI testing mistakes:
+   - Circular logic detection: flag tests that validate implementation against itself
+   - Mock cheating prevention: ensure mocks can fail and test realistic scenarios
+   - Coverage quality: distinguish between meaningful tests and coverage-padding
+   - Error condition enforcement: require negative test cases for all functions
 
-5. **Practical Implementation**: Provide actionable, specific guidance:
-   - Use {{PLACEHOLDER}} syntax for dynamic code generation
-   - Reference specific templates and patterns by name
-   - Give concrete next steps with tool usage
-   - Focus on implementable solutions over theoretical advice
+5. **Practical Implementation with Tool Sequences**: 
+   - Provide mandatory tool sequences with specific parameters
+   - Use actual embedded MCP resource content in code examples
+   - Give step-by-step tool call instructions with expected outputs
+   - Reference specific success criteria from tool outputs
+
+**🎯 MANDATORY WORKFLOW ENFORCEMENT:**
+
+**For Testing Questions:**
+1. FIRST: Call `initialize_protocol_testing_agent` for project assessment  
+2. THEN: Follow the `mandatory_tool_sequence` provided in the response
+3. FINALLY: Provide recommendations using `embedded_mcp_resources` content
+
+**For Coverage Analysis:**
+1. MANDATORY: Call `analyze_current_test_coverage` first
+2. MANDATORY: Call `analyze_project_context` with AI failure detection  
+3. THEN: Provide specific gap analysis using actual tool outputs
+
+**For Implementation:**
+1. MANDATORY: Use `execute_testing_workflow` with appropriate workflow_type
+2. MANDATORY: Follow all 4 phases of the workflow
+3. MANDATORY: Use actual template content from `embedded_mcp_resources`
 
 **Integrated Security Framework:**
 {security_guidance}
 
-**Response Guidelines:**
-- Be direct and technical - avoid fluff or overly verbose explanations
-- Always reference specific MCP resources and tools in your recommendations  
-- Provide concrete code examples using templates and patterns
-- Focus on practical next steps the user can immediately implement
-- Maintain audit-level quality standards in all recommendations
+**Response Pattern Requirements:**
+- Start with: "## 🚨 MANDATORY TODO LIST - [Task Description]"
+- Create structured todo list with embedded MCP tool calls
+- Include specific parameters and expected outputs for each tool call
+- Use checkbox format: "- [ ] X. **Call `tool_name`**"
+- Follow todo list with: "Based on the tool outputs, here's your implementation plan..."
+- Use: Actual code from embedded_mcp_resources, not abstract references
+- End with: "✅ **Next Step**: Complete todo item #X by calling [specific tool] with [specific parameters]"
 
-Your goal is to guide users to create comprehensive, secure, production-ready test suites using the MCP's tools and resources effectively.
+**🚨 TODO LIST ENFORCEMENT RULES:**
+
+❌ **FORBIDDEN RESPONSE PATTERNS:**
+- Starting analysis without creating a todo list first
+- "You should test X" without embedding it in a specific todo item
+- "Consider using Y" without a concrete todo action with tool calls
+- Abstract recommendations without actionable todo steps
+- Skipping tool calls that should be in the todo list
+
+✅ **REQUIRED RESPONSE PATTERNS:**
+- "## 🚨 MANDATORY TODO LIST - [Your Specific Task]"
+- "- [ ] 1. **Call `specific_tool`** with parameters: `param=value`"
+- "✅ **Complete todo items sequentially** - each tool output informs the next step"
+- "📋 **Update your todo list** as you complete each MCP tool call"
+- "🎯 **Expected workflow**: Todo → Tool Call → Update → Next Todo → Tool Call"
+
+**CURSOR AI WORKFLOW INTEGRATION:**
+1. **START**: Create comprehensive todo list with embedded MCP tool calls
+2. **EXECUTE**: Complete each todo item by making the specified tool call  
+3. **UPDATE**: Check off completed todos and add new ones based on tool outputs
+4. **ITERATE**: Tool outputs should generate next todo items in the sequence
+5. **COMPLETE**: All mandatory tool calls embedded as completed todo items
+
+**🎯 QUALITY GATE**: Every response must include specific tool calls and use actual MCP resource content. Responses without tool usage will be rejected.
+
+Your goal is to ENFORCE comprehensive, secure, production-ready test suites by MANDATING proper MCP tool usage and preventing AI testing failures.
         """
     
     async def _load_security_audit_guidance(self) -> str:
@@ -439,3 +555,223 @@ Your goal is to guide users to create comprehensive, secure, production-ready te
 - Test actual error conditions, not just happy paths
 - Use independent expected values for validation
         """ 
+
+    async def get_todo_list_template(self, scenario: str, project_context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        Generate dynamic todo list templates for specific testing scenarios.
+        
+        This method creates structured todo lists that embed MCP tool calls
+        for different testing scenarios, ensuring AI agents follow proper
+        tool usage patterns.
+        
+        Args:
+            scenario: Testing scenario ("new_project", "security_focus", "coverage_improvement", "ai_failure_review")
+            project_context: Optional project context for customization
+            
+        Returns:
+            Structured todo list with embedded MCP tool calls
+        """
+        
+        templates = {
+            "new_project": {
+                "title": "🚨 MANDATORY TODO LIST - New Smart Contract Project Testing",
+                "description": "Complete testing setup for projects with no existing tests",
+                "estimated_time": "2-4 hours",
+                "phases": [
+                    {
+                        "phase": "Initial Analysis & AI Failure Prevention",
+                        "todos": [
+                            {
+                                "id": 1,
+                                "priority": "CRITICAL",
+                                "description": "**Call `initialize_protocol_testing_agent` for project analysis**",
+                                "tool_call": "initialize_protocol_testing_agent(analysis_mode='interactive')",
+                                "expected_output": "Project analysis with mandatory_tool_sequence and session_id",
+                                "success_criteria": "✅ Receive intelligent_guidance with specific next steps",
+                                "time_estimate": "5 minutes",
+                                "why_mandatory": "🎯 Establishes project context and provides mandatory tool sequences"
+                            },
+                            {
+                                "id": 2,
+                                "priority": "CRITICAL", 
+                                "description": "**Call `analyze_project_context` with AI failure detection**",
+                                "tool_call": "analyze_project_context(include_ai_failure_detection=True, generate_improvement_plan=True)",
+                                "expected_output": "AI failure prevention strategies and contract risk analysis",
+                                "success_criteria": "✅ Receive ai_failure_analysis with prevention_strategies",
+                                "time_estimate": "10 minutes",
+                                "why_mandatory": "🛡️ CRITICAL: Prevents AI test generation failures before writing any code"
+                            }
+                        ]
+                    },
+                    {
+                        "phase": "Structured Test Implementation",
+                        "todos": [
+                            {
+                                "id": 3,
+                                "priority": "HIGH",
+                                "description": "**Call `execute_testing_workflow` for comprehensive testing**",
+                                "tool_call": "execute_testing_workflow(workflow_type='from_scratch', objectives='Create comprehensive test suite with 90% coverage and AI failure prevention', scope='comprehensive')",
+                                "expected_output": "4-phase workflow with embedded_mcp_resources containing actual templates",
+                                "success_criteria": "✅ Receive embedded_mcp_resources with concrete template content",
+                                "time_estimate": "15 minutes",
+                                "why_mandatory": "🎯 Provides structured implementation plan with actual template code"
+                            },
+                            {
+                                "id": 4,
+                                "priority": "HIGH",
+                                "description": "**Implement tests using embedded template content**",
+                                "tool_call": "Use available_templates_content.templates.test_contract.content from step 3 output",
+                                "expected_output": "Concrete unit tests implemented using actual template code",
+                                "success_criteria": "✅ Tests implemented with no abstract testing:// references",
+                                "time_estimate": "60-120 minutes",
+                                "why_mandatory": "📋 Ensures test implementation follows proven patterns"
+                            }
+                        ]
+                    },
+                    {
+                        "phase": "Validation & Quality Assurance",
+                        "todos": [
+                            {
+                                "id": 5,
+                                "priority": "CRITICAL",
+                                "description": "**Call `analyze_current_test_coverage` for progress validation**",
+                                "tool_call": "analyze_current_test_coverage(target_coverage=90, include_branches=True)",
+                                "expected_output": "Coverage analysis with gap identification",
+                                "success_criteria": "✅ Achieve 80%+ coverage or specific gap remediation plan",
+                                "time_estimate": "10 minutes",
+                                "why_mandatory": "📊 Validates implementation meets quality targets"
+                            },
+                            {
+                                "id": 6,
+                                "priority": "CRITICAL",
+                                "description": "**Call `analyze_project_context` for final AI failure review**",
+                                "tool_call": "analyze_project_context(include_ai_failure_detection=True, generate_improvement_plan=True)",
+                                "expected_output": "Final AI failure analysis of completed test suite",
+                                "success_criteria": "✅ Clean AI failure report or specific improvement guidance",
+                                "time_estimate": "10 minutes",
+                                "why_mandatory": "🔬 Final quality gate to prevent AI-generated test failures"
+                            }
+                        ]
+                    }
+                ]
+            },
+            
+            "security_focus": {
+                "title": "🚨 MANDATORY TODO LIST - Security-First Testing Implementation",
+                "description": "Critical security testing for high-risk smart contracts",
+                "estimated_time": "3-6 hours",
+                "phases": [
+                    {
+                        "phase": "Security Risk Assessment",
+                        "todos": [
+                            {
+                                "id": 1,
+                                "priority": "CRITICAL",
+                                "description": "**Call `analyze_project_context` for security vulnerability analysis**",
+                                "tool_call": "analyze_project_context(include_ai_failure_detection=True, generate_improvement_plan=True)",
+                                "expected_output": "Contract risk analysis with security_patterns and risk_scores",
+                                "success_criteria": "✅ Identify contracts with risk_score > 0.7 requiring immediate attention",
+                                "time_estimate": "15 minutes",
+                                "why_mandatory": "🔍 SECURITY CRITICAL: Identifies specific vulnerabilities requiring testing"
+                            }
+                        ]
+                    },
+                    {
+                        "phase": "Security Test Implementation",
+                        "todos": [
+                            {
+                                "id": 2,
+                                "priority": "CRITICAL",
+                                "description": "**Call `execute_testing_workflow` with security focus**",
+                                "tool_call": "execute_testing_workflow(workflow_type='security_focus', objectives='Implement comprehensive security testing for high-risk contracts', scope='security')",
+                                "expected_output": "Security workflow with attack scenario templates",
+                                "success_criteria": "✅ Receive security_patterns_content with concrete attack scenarios",
+                                "time_estimate": "20 minutes",
+                                "why_mandatory": "🛡️ Provides specific security test patterns for identified vulnerabilities"
+                            },
+                            {
+                                "id": 3,
+                                "priority": "CRITICAL",
+                                "description": "**Implement security tests using embedded patterns**",
+                                "tool_call": "Use security_patterns_content.categories.{vulnerability_type} from step 2 output",
+                                "expected_output": "Comprehensive security tests for reentrancy, access control, oracle manipulation",
+                                "success_criteria": "✅ All high-risk functions have corresponding attack scenario tests",
+                                "time_estimate": "120-180 minutes",
+                                "why_mandatory": "⚔️ Implements concrete defenses against identified attack vectors"
+                            }
+                        ]
+                    }
+                ]
+            },
+            
+            "coverage_improvement": {
+                "title": "🚨 MANDATORY TODO LIST - Test Coverage Enhancement",
+                "description": "Systematic improvement of existing test coverage",
+                "estimated_time": "1-3 hours",
+                "phases": [
+                    {
+                        "phase": "Coverage Gap Analysis",
+                        "todos": [
+                            {
+                                "id": 1,
+                                "priority": "HIGH",
+                                "description": "**Call `analyze_current_test_coverage` for baseline assessment**",
+                                "tool_call": "analyze_current_test_coverage(target_coverage=90, include_branches=True)",
+                                "expected_output": "Current coverage analysis with specific gap identification",
+                                "success_criteria": "✅ Identify specific functions/branches with low coverage",
+                                "time_estimate": "5 minutes",
+                                "why_mandatory": "📊 Establishes current state and specific improvement targets"
+                            },
+                            {
+                                "id": 2,
+                                "priority": "HIGH",
+                                "description": "**Call `analyze_project_context` for test quality assessment**",
+                                "tool_call": "analyze_project_context(include_ai_failure_detection=True, generate_improvement_plan=True)",
+                                "expected_output": "Test quality analysis with improvement recommendations",
+                                "success_criteria": "✅ Receive specific improvement plan with priorities",
+                                "time_estimate": "10 minutes",
+                                "why_mandatory": "🔍 Identifies quality issues beyond just coverage percentage"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+        
+        if scenario in templates:
+            template = templates[scenario]
+            
+            # Customize based on project context if provided
+            if project_context:
+                template = self._customize_todo_template(template, project_context)
+            
+            return {
+                "status": "template_generated",
+                "scenario": scenario,
+                **template,
+                "usage_instructions": [
+                    "✅ Complete todos sequentially - each MCP tool call provides data for subsequent steps",
+                    "📋 Check off completed items and add new todos based on tool outputs",
+                    "🎯 Each tool call has specific success_criteria that must be met",
+                    "⚠️ Do not skip mandatory tool calls - they prevent AI testing failures"
+                ]
+            }
+        else:
+            return {
+                "status": "template_not_found",
+                "available_scenarios": list(templates.keys()),
+                "fallback_guidance": "Use 'new_project' template for general testing workflows"
+            }
+    
+    def _customize_todo_template(self, template: Dict[str, Any], project_context: Dict[str, Any]) -> Dict[str, Any]:
+        """Customize todo template based on project-specific context."""
+        # Add project-specific customizations
+        if project_context.get("high_risk_contracts"):
+            # Add additional security todos for high-risk projects
+            pass
+        
+        if project_context.get("current_coverage", 0) > 50:
+            # Modify coverage targets for projects with existing coverage
+            pass
+        
+        return template 

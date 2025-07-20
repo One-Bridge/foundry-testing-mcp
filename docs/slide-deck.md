@@ -7,21 +7,21 @@
 ## Slide 1: Problem & Solution
 
 ### The Challenge
-Smart contract testing requires specialized knowledge that's distributed across multiple domains:
-- **Foundry toolchain complexity**: forge coverage, fuzz testing, invariant patterns
-- **Security testing patterns**: reentrancy, access control, economic attacks
-- **Quality assurance gaps**: AI-generated tests often contain circular logic, mock cheating
-- **Workflow fragmentation**: No systematic approach from contract analysis to production-ready test suites
+Smart contract testing faces technical and methodological obstacles:
+- **Toolchain Integration**: Complex Foundry command execution and output parsing across different environments
+- **Contract Analysis**: Reliable identification of DeFi, governance, and token contracts for appropriate testing strategies
+- **Quality Assurance**: AI-generated tests frequently contain logical flaws and insufficient coverage patterns
+- **Systematic Workflow**: Gap between individual contract analysis and comprehensive test suite development
 
-### Our Solution
-**Foundry Testing MCP**: A protocol server that provides intelligent testing assistance through:
-- **Automated project analysis** with 5-tier maturity classification
-- **AI failure detection** identifying 8 types of problematic test patterns  
-- **Structured workflows** building on existing work rather than generic advice
-- **Real Foundry integration** parsing actual `forge coverage` output
+### Technical Solution
+**Foundry Testing MCP**: Protocol server providing automated testing assistance through:
+- **Regex-first analysis** ensuring reliable contract classification without external compiler dependencies
+- **AI failure detection** identifying 8 categories of problematic test patterns in generated code
+- **Structured implementation** providing phase-based workflows adapted to current project state
+- **Direct Foundry integration** executing and parsing actual `forge test` and `forge coverage` output
 
-### Core Value Proposition
-Transform ad-hoc testing approaches into systematic, quality-assured development workflows that scale from individual developers to audit-ready production systems.
+### Technical Value
+Provides deterministic, environment-independent contract analysis with optional semantic enhancement, enabling systematic testing workflow implementation regardless of development environment constraints.
 
 ---
 
@@ -29,91 +29,93 @@ Transform ad-hoc testing approaches into systematic, quality-assured development
 
 ### System Components
 ```
-MCP Client (Cursor/Claude) → FastMCP Server → Foundry Toolchain
+MCP Client (Cursor/Claude) → FastMCP Server → Foundry CLI Tools
                                     ↓
         ┌─────────────────────────────────────────────────┐
-        │  • ProjectAnalyzer (AST + pattern detection)    │
-        │  • AIFailureDetector (8 failure types)          │ 
-        │  • FoundryAdapter (real tool integration)       │
+        │  • ProjectAnalyzer (regex-first + AST optional) │
+        │  • AIFailureDetector (8 failure patterns)       │ 
+        │  • FoundryAdapter (CLI integration)             │
         │  • TestingTools (7 MCP tools)                   │
-        │  • Resource System (templates + docs)           │
+        │  • ResourceSystem (6 templates + docs)          │
         └─────────────────────────────────────────────────┘
 ```
 
-### Key Technical Capabilities
-- **AST-powered analysis**: Semantic understanding of Solidity contracts
-- **Context-aware workflows**: 6 adaptive workflow types based on project maturity
-- **Quality assurance**: Detects circular logic, mock cheating, insufficient edge cases
-- **Template system**: 6 template types with dynamic placeholder substitution
-- **Directory intelligence**: Priority-based resolution eliminating configuration friction
+### Architecture Principles
+- **Regex-first analysis**: Reliable contract classification without external dependencies
+- **Optional AST enhancement**: Additional semantic insights when Solidity compiler available
+- **Graceful degradation**: Core functionality independent of execution environment constraints
+- **Direct CLI integration**: Actual Foundry command execution and output parsing
+- **Template-driven generation**: 6 template types with context-aware placeholder substitution
 
 ### Integration Points
-- **Protocol**: Model Context Protocol for AI assistant integration
-- **Toolchain**: Direct `forge test`, `forge coverage`, `forge build` execution
-- **Clients**: Cursor, Claude Desktop, any MCP-compatible environment
-- **Output formats**: LCOV, JSON, summary coverage parsing
+- **Protocol**: Model Context Protocol enabling AI assistant integration
+- **CLI Tools**: `forge test`, `forge coverage` execution with multi-format output parsing
+- **Client Support**: Cursor, Claude Desktop, any MCP-compatible development environment
+- **Environment Flexibility**: stdio/http transport with configurable directory resolution
 
 ---
 
-## Slide 3: Implementation Status & Features
+## Slide 3: Implementation Status & Technical Capabilities
 
-### ✅ Fully Implemented
-| Component | Status | Capability |
-|-----------|--------|------------|
-| **Core MCP Tools** | 7/7 complete | Project analysis, workflow execution, coverage analysis |
-| **AI Failure Detection** | 8 patterns | Circular logic, mock cheating, edge case gaps |
-| **Template System** | 6 types | Unit, integration, invariant, security, fork, helper |
-| **Foundry Integration** | Production ready | Real coverage parsing, multi-format support |
-| **Project Analysis** | 5-tier classification | None → Basic → Intermediate → Advanced → Production |
+### ✅ Core Functionality (Environment Independent)
+| Component | Implementation | Reliability |
+|-----------|----------------|-------------|
+| **MCP Tools** | 7 tools complete | High - parameter validation and error handling |
+| **Contract Analysis** | Regex-first approach | High - no external dependencies |
+| **AI Failure Detection** | 8 pattern types | High - AST + regex detection methods |
+| **Template System** | 6 template types | High - dynamic placeholder substitution |
+| **Resource System** | 5 MCP resources | High - documentation and pattern library |
 
-### ⚠️ Known Limitations
-- **Directory detection**: May fail in some MCP client configurations (recently improved)
-- **Coverage analysis**: Subprocess execution issues in containerized environments
-- **AST parsing**: Falls back to regex patterns when Solidity parsing fails
-- **Tool routing**: Occasional discovery problems with certain MCP clients
+### 🔶 Environment-Dependent Features
+| Component | Dependency | Limitation |
+|-----------|------------|------------|
+| **Coverage Analysis** | Foundry CLI + subprocess execution | May fail in restricted environments |
+| **AST Enhancement** | Solidity compiler (solc) installation | Optional - regex fallback available |
+| **Directory Resolution** | MCP client configuration | Manual path specification when auto-detection fails |
 
-### Measured Performance
-- Project analysis: ~1-3 seconds for typical projects (50+ contracts)
-- Coverage analysis: Dependent on `forge coverage` execution time
-- Memory footprint: Minimal overhead for session management
-- Scalability: Handles 100+ contract projects with graceful degradation
+### Technical Performance
+- **Analysis Speed**: 1-3 seconds for projects with 50+ contracts
+- **Memory Usage**: Minimal session overhead, scales to 100+ contract projects
+- **Reliability**: Regex-first architecture provides consistent results across environments
+- **Degradation**: Graceful fallback when optional components unavailable
 
 ---
 
-## Slide 4: Developer Experience & Strategic Direction
+## Slide 4: Current Capabilities & Technical Implementation
 
-### Current Workflow
+### Standard Operation
 ```
-1. Open Solidity project in editor
-2. Call: initialize_protocol_testing_agent()
-3. Tools automatically detect project state
-4. Get structured workflow with specific phases
-5. Monitor progress with real coverage analysis
+1. Project directory analysis via initialize_protocol_testing_agent()
+2. Contract classification and risk assessment using regex-first approach
+3. AI failure detection on existing test code (when present)
+4. Structured workflow generation adapted to current project state
+5. Progress monitoring through actual Foundry coverage parsing
 ```
 
-### User Experience Wins
-- **Zero configuration**: Tools work on current directory automatically
-- **Intelligent guidance**: "No Foundry project? Let me help set one up"
-- **Building vs. restarting**: Workflows enhance existing tests rather than starting over
-- **Quality assurance**: Prevents false confidence from flawed tests
+### Technical Implementation
+- **Contract Analysis**: Regex-based pattern matching provides reliable classification of DeFi, governance, NFT, and token contracts
+- **Risk Assessment**: Contract-type-aware scoring with security pattern detection
+- **Template Generation**: Six template types with dynamic placeholder substitution for different testing scenarios
+- **Environment Independence**: Core functionality operates without external compiler dependencies
 
-### Development Roadmap
-**Near-term** (addressing current limitations):
-- Enhanced AST analysis with better Solidity parsing
-- Improved subprocess execution reliability
-- Better MCP client compatibility testing
+### Current Deployment Considerations
+**Reliable Components**:
+- Project analysis and contract classification
+- AI failure pattern detection
+- Template system and resource access
+- MCP protocol communication
 
-**Medium-term** (expanding capabilities):
-- Integration with security analysis tools (Slither, Mythril)
-- Advanced DeFi testing patterns (flash loan simulations, oracle manipulation)
-- Formal verification integration pathways
+**Environment-Dependent Components**:
+- Foundry CLI integration (requires proper subprocess execution permissions)
+- AST enhancement (requires Solidity compiler installation)
+- Directory auto-detection (may require manual configuration in some MCP client setups)
 
-### Business Impact Metrics
-- **Time to 90% coverage**: Reduced from weeks to days for systematic approach
-- **Test quality**: Elimination of AI failure patterns in assisted development
-- **Audit preparation**: Faster security audit onboarding with comprehensive test suites
-- **Team onboarding**: Standardized testing patterns enable faster developer ramp-up
+### Technical Impact
+- **Analysis Consistency**: Regex-first approach eliminates dependency-related analysis failures
+- **Quality Validation**: AI failure detection prevents false confidence from flawed test implementations  
+- **Implementation Guidance**: Template system provides structured starting points for comprehensive test development
+- **Integration Reality**: Direct CLI tool execution when environment permits, with clear fallback behavior when constraints exist
 
 ---
 
-*This MCP server bridges the gap between smart contract development complexity and systematic testing excellence, providing production-grade assistance through intelligent automation.* 
+*Technical implementation providing smart contract testing assistance through MCP protocol integration, with architecture designed for reliability across different development environments.* 

@@ -2,26 +2,30 @@
 
 ## Overview
 
-This document walks through the practical process of using the Foundry Testing MCP to build comprehensive testing suites for Solidity protocols. It covers two main scenarios: starting from scratch with raw contracts that have no tests, and improving existing projects that already have some testing but need enhancement for production deployment.
+This document provides a practical guide for using the Foundry Testing MCP to build comprehensive testing suites for Solidity protocols. The system uses regex-first analysis to provide reliable contract classification and testing guidance without external dependencies, with optional AST enhancement when available.
 
-The goal is to help developers systematically build testing infrastructure that provides confidence in their smart contracts through proper coverage, security testing, and quality assurance.
+This guide covers two scenarios: starting from scratch with contracts that have no tests, and improving existing projects for production deployment.
 
 ## Prerequisites
 
-Before starting, ensure you have:
-
 ### Required Setup
-- **Foundry installed**: `forge --version` should work
-- **Valid Foundry project**: foundry.toml exists in your project root
+- **Foundry installed**: `forge --version` should work in your terminal
+- **Valid Foundry project**: foundry.toml exists in your project root  
 - **MCP client configured**: Cursor, Claude Desktop, or compatible MCP client
 - **Project structure**: Contracts in `src/` directory following Foundry conventions
 
-### Project Examples
-This guide assumes you're working with one of these project types:
-- **DeFi Protocol**: Token contracts, liquidity pools, staking mechanisms
-- **NFT Project**: ERC721/ERC1155 contracts with minting and marketplace features  
-- **DAO Contract**: Governance contracts with voting and proposal mechanisms
-- **General Protocol**: Any smart contract system requiring comprehensive testing
+### Optional Components (Environment-Dependent)
+- **Solidity compiler (solc)**: Enables enhanced AST analysis (regex fallback available)
+- **Subprocess execution permissions**: Required for coverage analysis integration
+- **Proper directory configuration**: Auto-detection works in most setups, manual configuration available
+
+### Supported Project Types
+The system provides specialized analysis and guidance for:
+- **DeFi Protocols**: Portfolio management, trading, lending, staking mechanisms
+- **Governance Systems**: Voting mechanisms, proposal systems, timelock controls
+- **Token Contracts**: ERC20, ERC721, ERC1155 implementations
+- **Bridge Contracts**: Cross-chain functionality and asset bridging
+- **Utility Contracts**: General-purpose smart contract logic
 
 ## Scenario 1: Starting from Scratch (No Existing Tests)
 
@@ -50,21 +54,24 @@ initialize_protocol_testing_agent(
 ```
 
 **What This Does**:
-- Scans your `src/` directory to identify contracts
-- Determines project complexity (number of contracts, inheritance patterns)
-- Detects contract types (tokens, governance, access control patterns)
-- Recommends appropriate testing approach based on your specific contracts
+- Uses regex-based analysis to scan contracts in your `src/` directory
+- Classifies contract types using scoring-based detection (DeFi, governance, token, etc.)
+- Calculates contract-type-aware risk scores for prioritization
+- Detects security patterns like access control, reentrancy protection
+- Recommends testing approach based on contract analysis
 
 **Expected Output**:
-- Project analysis showing "None" testing phase (no existing tests)
-- Workflow recommendation for "create_foundational_suite"
-- Contract-specific insights (e.g., "Detected ERC20 token with admin functions")
-- Session ID for continuing the workflow
+- Project analysis showing "None" testing phase (no existing tests found)
+- Contract classification results (e.g., "Portfolio.sol: DeFi contract, risk score 0.7")
+- Contract-specific testing guidance based on detected patterns
+- Session ID for workflow continuity
+- Workflow recommendation adapted to your contract types
 
 **What You Learn**:
-- Which contracts are most complex and need priority testing
-- Estimated timeline for comprehensive testing
-- Specific security concerns based on your contract patterns
+- Reliable contract classification without requiring solc installation
+- Risk-based prioritization (DeFi contracts get higher priority than utility contracts)
+- Security patterns present in your contracts
+- Specific testing strategies recommended for your contract types
 
 ### Step 2: Create Testing Infrastructure
 
@@ -138,53 +145,74 @@ Access: testing://templates/helper
 
 ### Step 4: Template-Based Test Creation
 
-**Action**: Use templates to create structured tests for each contract type.
+**Action**: Use the 6 available templates to create structured tests for each contract type.
 
 **Available Templates**:
 
 **Unit Tests** (`testing://templates/unit`):
+- Comprehensive function-level testing with edge cases
+- State variable validation and access control verification
+- Error condition testing with specific error types
 ```solidity
-// Example for MyToken.sol
-contract MyTokenTest is Test, TestHelper {
-    MyToken public token;
-    
-    function setUp() public {
-        setupAccounts();  // From TestHelper
-        token = new MyToken();
+// Example structure from template
+contract MyTokenTest is Test {
+    function test_transfer_whenValidAmount_shouldTransferTokens() public {
+        // Structured test with arrange/act/assert pattern
     }
     
-    function test_transfer_whenValidAmount_shouldTransferTokens() public {
-        // Test implementation
+    function test_transfer_whenInsufficientBalance_shouldRevert() public {
+        // Error condition testing
     }
 }
 ```
 
 **Integration Tests** (`testing://templates/integration`):
+- Multi-contract workflow testing and cross-contract interactions
+- End-to-end scenario validation
 ```solidity
-// Example for MyVault + MyToken interaction
-contract VaultIntegrationTest is Test, TestHelper {
-    MyToken public token;
-    MyVault public vault;
-    
-    function test_deposit_workflow() public {
-        // Multi-contract interaction testing
+// Example for complex workflows
+contract VaultIntegrationTest is Test {
+    function test_depositWithdrawWorkflow() public {
+        // Complete user journey testing
     }
 }
 ```
 
 **Security Tests** (`testing://templates/security`):
+- Access control and privilege escalation testing
+- Attack scenario simulation and defense validation
 ```solidity
-// Example for access control testing
-contract MyTokenSecurityTest is Test, TestHelper {
-    function test_onlyOwner_functions_revertForNonOwner() public {
-        // Access control validation
+// Security-focused testing patterns
+contract SecurityTest is Test {
+    function test_accessControl_preventUnauthorizedAccess() public {
+        // Security validation
     }
 }
 ```
 
+**Invariant Tests** (`testing://templates/invariant`):
+- Property-based testing using Handler pattern
+- System-wide invariant verification
+```solidity
+// Stateful fuzzing for system properties
+contract InvariantTest is StdInvariant, Test {
+    function invariant_systemProperty() public view {
+        // Properties that should always hold
+    }
+}
+```
+
+**Fork Tests** (`testing://templates/fork`):
+- Real network integration testing
+- Mainnet state interaction validation
+
+**Helper Utilities** (`testing://templates/helper`):
+- Shared testing utilities and common patterns
+- Account setup and standardized test data generation
+
 ### Step 5: Monitor Progress and Quality
 
-**Action**: Regularly check coverage and identify gaps.
+**Action**: Check coverage and identify gaps (environment-dependent).
 
 **MCP Tool Call**:
 ```
@@ -194,17 +222,24 @@ analyze_current_test_coverage(
 )
 ```
 
-**What This Provides**:
-- Current coverage percentages (line, branch, function)
-- Specific uncovered code sections
+**What This Provides** (when environment permits):
+- Current coverage percentages from actual `forge coverage` output
+- Specific uncovered code sections and gap analysis
 - Recommendations for reaching target coverage
-- Quality assessment of existing tests
+- Contextual coverage assessment based on project type
+
+**Alternative Approach** (if coverage analysis fails):
+- Manually run `forge coverage --report summary` in terminal
+- Use `forge test -vvv` to identify uncovered functions
+- Focus on systematic test creation using templates
+- Validate test completeness through manual review
 
 **Iteration Process**:
-1. Run coverage analysis
-2. Identify gaps in coverage
-3. Add tests for uncovered areas
-4. Repeat until target coverage achieved
+1. Attempt automated coverage analysis 
+2. If unavailable, use manual forge commands
+3. Identify critical gaps in high-risk contracts first
+4. Add tests using appropriate templates
+5. Focus on security-critical functions and DeFi-specific patterns
 
 ### Step 6: Quality Assurance
 
@@ -218,11 +253,22 @@ analyze_project_context(
 )
 ```
 
-**What This Catches**:
-- Tests that always pass (no real validation)
-- Mock objects that don't represent real behavior
-- Missing edge cases and error scenarios
+**What This Provides**:
+- **For projects with tests**: Detection of 8 AI failure patterns including circular logic, mock cheating, insufficient edge cases
+- **For projects without tests**: Prevention guidance and strategies to avoid common AI failures during test creation
+- Contract-specific testing guidance based on regex analysis results
+- Security testing priorities based on detected contract types and risk scores
+- Prioritized improvement roadmap with specific implementation steps
+
+**AI Failure Patterns Detected**:
 - Circular logic in test validation
+- Mock objects that always return expected values  
+- Tests with insufficient edge case coverage
+- Missing security scenarios and attack vectors
+- Always-passing tests with no real validation
+- Inadequate fuzz test randomization
+- Missing negative test cases for error conditions
+- Implementation-dependent validation
 
 ## Scenario 2: Improving Existing Tests (Mature Projects)
 
@@ -255,10 +301,11 @@ initialize_protocol_testing_agent(
 ```
 
 **What This Reveals**:
-- Current testing phase (likely "Intermediate" with some basic tests)
-- Coverage gaps in existing test suite
-- Quality issues with current tests
-- Security testing gaps
+- Current testing phase classification using 5-tier assessment
+- Contract classification results using regex-based analysis  
+- Risk scores for existing contracts based on type and complexity
+- Security patterns detected in current codebase
+- Testing workflow recommendations adapted to current state
 
 **Followed by**:
 ```
@@ -269,13 +316,16 @@ analyze_project_context(
 ```
 
 **Deep Analysis Results**:
-- **Testing Maturity**: "Intermediate" - 23 tests, ~65% coverage, some mocks
-- **AI Failure Detection**: May identify issues like:
-  - Mocks that always return success
-  - Tests that don't validate actual state changes
-  - Missing negative test cases
-- **Security Assessment**: Identifies missing security scenarios
-- **Improvement Plan**: Prioritized list of enhancements
+- **Contract Analysis**: "ComplexProtocol.sol: DeFi contract, risk score 0.8" (high priority)
+- **Testing Maturity**: "Intermediate" - 23 tests, basic functionality covered
+- **AI Failure Detection**: Identifies specific issues in existing tests like:
+  - Mock objects that always return success without failure scenarios
+  - Tests validating implementation against itself (circular logic)
+  - Missing negative test cases for error conditions
+  - Insufficient edge case coverage for financial calculations
+- **Security Assessment**: Missing security scenarios for DeFi-specific risks
+- **Contract-Specific Guidance**: DeFi testing strategies, security priorities
+- **Improvement Plan**: Prioritized roadmap with phases and specific actions
 
 ### Step 2: Address Quality Issues First
 
@@ -518,86 +568,128 @@ function test_withdraw_whenPaused_shouldRevert() public
 
 ### Coverage Analysis Problems
 
-**Symptom**: `analyze_current_test_coverage` fails or returns incorrect results
+**Symptom**: `analyze_current_test_coverage` fails or returns subprocess errors
+
+**Root Cause**: Coverage analysis requires Foundry CLI integration and subprocess execution permissions
 
 **Solutions**:
-1. Verify `forge coverage` works manually: `forge coverage --report summary`
-2. Check project compilation: `forge build`
-3. Ensure tests pass: `forge test`
-4. Use `validate_current_directory()` to check project setup
+1. **Manual Verification**: Run `forge coverage --report summary` directly in terminal
+2. **Project Validation**: Use `validate_current_directory()` to check Foundry setup
+3. **Environment Check**: Ensure subprocess execution is permitted in your environment
+4. **Alternative Approach**: Use manual forge commands and focus on systematic template-based test creation
+5. **Fallback Strategy**: Prioritize high-risk contracts identified through regex analysis
 
 ### Directory Detection Issues
 
-**Symptom**: Tools report wrong directory or can't find contracts
+**Symptom**: Tools report wrong directory (e.g., home directory instead of project directory)
+
+**Root Cause**: MCP client-server directory misalignment
 
 **Solutions**:
-1. Run `debug_directory_detection()` for detailed diagnosis
-2. Ensure you're in the project root directory (where foundry.toml exists)
-3. Configure MCP client working directory if needed
-4. Set `MCP_CLIENT_CWD` environment variable if required
+1. **Diagnostic Tool**: Run `debug_directory_detection()` for detailed analysis
+2. **Manual Path**: Specify project path explicitly in tool calls: `project_path="/path/to/project"`
+3. **Environment Variables**: Set `MCP_CLIENT_CWD` to your project directory
+4. **Client Configuration**: Configure MCP client working directory
+5. **Project Discovery**: Use `discover_foundry_projects()` to find available projects
 
-### Tool Routing Problems
+### AST Enhancement Unavailable
 
-**Symptom**: MCP tools not found or not responding
+**Symptom**: Enhanced analysis not working, basic results only
 
-**Solutions**:
-1. Check MCP client configuration
-2. Verify server is running properly
-3. Review server logs for errors
-4. Restart MCP client and server if needed
+**Root Cause**: Solidity compiler (solc) not installed or accessible
 
-### Test Quality Issues
-
-**Symptom**: High coverage but tests aren't catching bugs
+**Impact**: **Not Critical** - Core regex analysis provides reliable contract classification
 
 **Solutions**:
-1. Run `analyze_project_context` with AI failure detection
-2. Review identified quality issues
-3. Focus on realistic failure scenarios
-4. Ensure tests validate actual state changes, not just execution
+1. **Continue with Regex**: Core functionality works without AST enhancement
+2. **Install solc**: `curl -L https://github.com/ethereum/solidity/releases/download/v0.8.21/solc-static-linux -o solc && chmod +x solc && sudo mv solc /usr/local/bin/`
+3. **Accept Limitations**: Regex analysis provides sufficient contract classification for most use cases
+
+### MCP Client Integration Issues
+
+**Symptom**: Tools not discovered or not responding in MCP client
+
+**Root Cause**: MCP client configuration or tool routing issues
+
+**Solutions**:
+1. **Server Status**: Verify MCP server is running and accessible
+2. **Client Restart**: Restart both MCP client and server
+3. **Configuration Check**: Review MCP client configuration for server connection
+4. **Manual Verification**: Test tools work via direct server access
+5. **Alternative Access**: Use http mode for development and debugging
+
+### Project Analysis Returns Generic Results
+
+**Symptom**: All contracts classified as "utility" with low risk scores
+
+**Root Cause**: Contracts may use non-standard patterns or very minimal code
+
+**Solutions**:
+1. **Pattern Review**: Check if your contracts use standard DeFi/governance/token patterns
+2. **Manual Classification**: Proceed with manual contract type identification
+3. **Template Selection**: Choose templates based on your intended contract functionality
+4. **Custom Guidance**: Apply general testing principles from documentation
 
 ## Expected Outcomes
 
 ### For New Projects (Starting from Scratch)
-**After 2-3 weeks of systematic testing development**:
-- 90%+ test coverage across all contracts
-- Comprehensive security testing for all access-controlled functions
-- Integration tests covering main user workflows
-- Helper utilities reducing test code duplication by 50%+
-- Clear testing patterns that new team members can follow
-- Production-ready test suite suitable for audit preparation
+**After 2-4 weeks of systematic testing development**:
+- **Reliable Contract Analysis**: Accurate contract classification and risk assessment without external dependencies
+- **Structured Test Creation**: Comprehensive test suites using 6 template types with proper patterns
+- **Quality Assurance**: AI failure detection prevents common testing mistakes
+- **Security Focus**: Contract-type-specific security testing priorities
+- **Maintainable Code**: Helper utilities and standardized patterns reducing duplication
+- **Coverage Goals**: Target 85-90% coverage (exact measurement depends on environment)
 
 ### For Existing Projects (Enhancement)
-**After 2-3 weeks of targeted improvements**:
-- Improved coverage from ~65% to 90%+
-- Elimination of test quality issues (circular logic, mock cheating)
-- Addition of missing security scenarios
-- Enhanced edge case coverage
-- Refactored tests using helper utilities for maintainability
-- Audit-ready test suite with comprehensive attack scenario coverage
+**After 2-4 weeks of targeted improvements**:
+- **Improved Classification**: Better understanding of contract types and risk priorities
+- **Quality Improvement**: Elimination of AI failure patterns (circular logic, mock cheating)
+- **Security Enhancement**: Addition of contract-type-specific security scenarios
+- **Systematic Structure**: Refactored tests using templates and helper utilities
+- **Coverage Expansion**: Improved test coverage through systematic gap identification
+- **Production Readiness**: Enhanced test suite quality suitable for audit preparation
+
+### Realistic Expectations
+- **Environment-Independent**: Core analysis and template generation work reliably across all environments
+- **Coverage Analysis**: May require manual forge commands in restricted environments
+- **AST Enhancement**: Optional feature that provides additional insights when available
+- **Directory Configuration**: May require manual setup in some MCP client configurations
+- **Template Customization**: Requires developer effort to adapt templates to specific contracts
 
 ### Long-term Benefits
-- **Faster Development**: Well-structured tests enable confident refactoring
-- **Better Security**: Systematic security testing catches vulnerabilities early
-- **Audit Preparation**: Comprehensive test suites speed up security audits
-- **Team Efficiency**: Standardized patterns enable faster onboarding
-- **Maintenance**: Helper utilities and clear patterns reduce technical debt
+- **Development Confidence**: Well-structured tests enable confident code changes
+- **Security Awareness**: Contract-type-specific testing catches vulnerabilities early
+- **Audit Preparation**: Systematic testing approach speeds security audit onboarding
+- **Team Standardization**: Clear patterns enable consistent testing practices
+- **Maintenance Efficiency**: Template-based approach reduces technical debt
 
 ## Next Steps After Implementation
 
-### Continuous Integration
-- Integrate coverage analysis into CI/CD pipelines
-- Set minimum coverage thresholds for pull requests
-- Automate security test execution
+### Development Workflow Integration
+- **Manual Coverage Monitoring**: Use `forge coverage` directly in development workflow
+- **Template Standardization**: Establish team conventions for template usage and customization
+- **Quality Reviews**: Regular use of AI failure detection to maintain test quality
+- **Security Focus**: Prioritize security testing for high-risk contracts identified through analysis
 
 ### Ongoing Maintenance
-- Regular review of test quality using AI failure detection
-- Update tests when contracts change
-- Add new test scenarios based on user feedback and bug reports
+- **Systematic Updates**: Update tests using templates when contracts change
+- **Pattern Evolution**: Evolve testing patterns based on project needs and learned experiences
+- **Regular Assessment**: Periodic project analysis to identify new testing needs
+- **Team Knowledge**: Document contract-specific testing decisions and rationale
 
-### Documentation
-- Document testing patterns and rationale for future team members
-- Maintain testing runbooks for complex scenarios
-- Share lessons learned and best practices
+### Production Readiness Validation
+- **Manual Verification**: Validate coverage meets requirements using direct forge commands
+- **Security Review**: Ensure all contract-type-specific security scenarios are covered
+- **Test Quality**: Verify no AI failure patterns remain in production test suite
+- **Documentation**: Maintain clear testing documentation for audit and team reference
 
-This systematic approach to testing development ensures that your Solidity protocols have robust, production-ready test suites that provide confidence in contract behavior and security. 
+### Advanced Integration (Optional)
+- **CI/CD Integration**: Include forge test and coverage in automated pipelines
+- **Environment Optimization**: Configure development environments for full MCP functionality
+- **Tool Enhancement**: Consider additional security analysis tool integration
+- **Team Training**: Establish training on testing patterns and quality assurance practices
+
+## Summary
+
+This systematic approach provides reliable smart contract testing assistance through regex-based analysis, comprehensive templates, and quality assurance. The system works consistently across different environments while providing optional enhancements when available, ensuring teams can build robust test suites regardless of development constraints. 
