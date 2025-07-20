@@ -280,7 +280,7 @@ class ProjectAnalyzer:
             
             if not analysis:
                 return None
-            
+        
             # ENHANCEMENT: Add AST insights if available (optional)
             if hasattr(self, 'ast_analyzer') and self.ast_analyzer and self.ast_analyzer.solc_path:
                 try:
