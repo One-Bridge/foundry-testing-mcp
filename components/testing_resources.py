@@ -545,6 +545,63 @@ function test_priceDependent_whenOracleManipulated_shouldResist() public {
         
         return templates.get(template_type, (self._get_default_test_template(), ["{{CONTRACT_NAME}}"]))
     
+    def _get_integration_test_template(self) -> str:
+        """Integration test template for cross-contract workflows."""
+        return """// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {Test, console} from "forge-std/Test.sol";
+import "../src/{{CONTRACT_A_NAME}}.sol";
+import "../src/{{CONTRACT_B_NAME}}.sol";
+
+contract {{CONTRACT_A_NAME}}{{CONTRACT_B_NAME}}IntegrationTest is Test {
+    {{CONTRACT_A_NAME}} public {{CONTRACT_A_INSTANCE}};
+    {{CONTRACT_B_NAME}} public {{CONTRACT_B_INSTANCE}};
+
+    // Test accounts
+    address public owner = makeAddr("owner");
+    address public user = makeAddr("user");
+    address public integrator = makeAddr("integrator");
+
+    function setUp() public {
+        vm.startPrank(owner);
+        {{CONTRACT_A_INSTANCE}} = new {{CONTRACT_A_NAME}}();
+        {{CONTRACT_B_INSTANCE}} = new {{CONTRACT_B_NAME}}();
+        
+        // Configure integration points
+        {{CONTRACT_A_INSTANCE}}.setIntegrationTarget(address({{CONTRACT_B_INSTANCE}}));
+        vm.stopPrank();
+    }
+
+    /// @notice Test {{WORKFLOW_NAME}} integration workflow
+    function test_{{WORKFLOW_NAME}}_Integration() public {
+        vm.startPrank(user);
+        
+        // Execute {{INTERACTION_FUNCTION}} workflow
+        uint256 initialState = {{CONTRACT_A_INSTANCE}}.getState();
+        {{CONTRACT_A_INSTANCE}}.{{INTERACTION_FUNCTION}}();
+        
+        // Verify {{EXPECTED_STATE}}
+        assertEq({{CONTRACT_A_INSTANCE}}.getState(), {{EXPECTED_STATE}});
+        assertTrue({{CONTRACT_B_INSTANCE}}.hasProcessed(user));
+        
+        vm.stopPrank();
+    }
+
+    /// @notice Test error conditions in integration
+    function testRevert_IntegrationFailure() public {
+        vm.startPrank(user);
+        
+        // Simulate failure condition
+        {{CONTRACT_B_INSTANCE}}.setFailureMode(true);
+        
+        vm.expectRevert("Integration failed");
+        {{CONTRACT_A_INSTANCE}}.{{INTERACTION_FUNCTION}}();
+        
+        vm.stopPrank();
+    }
+}""";
+
     def _get_unit_test_template(self) -> str:
         """Best-practice unit test template with comprehensive patterns."""
         return """// SPDX-License-Identifier: MIT

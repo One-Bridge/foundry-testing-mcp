@@ -1436,21 +1436,92 @@ test/
         return base_plan
     
     async def _execute_workflow_phase(self, session: TestingSession, phase: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a specific workflow phase."""
-        phase_number = phase["phase"]
-        session.current_phase = phase_number
+        """Execute a specific workflow phase with enhanced context and automated analysis."""
+        phase_number = phase.get("phase", 0)
+        phase_title = phase.get('title', 'Unknown')
+        logger.info(f"Executing phase {phase_number}: {phase_title}")
+        
+        # Execute validation steps if they exist
+        validation_results = {}
+        if "validation_steps" in phase:
+            for step_name, step_config in phase["validation_steps"].items():
+                try:
+                    validation_results[step_name] = await self._execute_validation_step(
+                        step_config, session.project_path
+                    )
+                except Exception as e:
+                    logger.warning(f"Validation step {step_name} failed: {e}")
+                    validation_results[step_name] = {"error": str(e)}
+        
+        # Baseline coverage check for Phase 1
+        if phase_number == 1:
+            try:
+                baseline_coverage = await self._get_baseline_coverage(session.project_path)
+                validation_results["baseline_coverage"] = baseline_coverage
+            except Exception as e:
+                logger.info(f"No baseline coverage available: {e}")
+        
+        # Progress monitoring after phases 2 and 3 (when tests are being created)
+        if phase_number in [2, 3]:
+            try:
+                progress_coverage = await self.analyze_current_test_coverage(target_coverage=80)
+                validation_results["progress_coverage"] = progress_coverage
+            except Exception as e:
+                logger.info(f"Progress coverage check failed: {e}")
+
+        # Enhanced phase execution with real deliverables
+        session.completed_phases.append(phase_number)
+        session.current_phase = phase_number + 1
         
         result = {
             "phase": phase_number,
-            "title": phase["title"],
+            "title": phase_title,
             "status": "completed",
-            "actions_completed": phase["actions"],
-            "deliverables_generated": phase["deliverables"],
+            "actions_completed": phase.get("actions", []),
+            "deliverables_generated": phase.get("deliverables", []),
+            "validation_results": validation_results,
             "success": True
         }
         
+        # Add template content if available
+        if "template_content" in phase:
+            result["template_content"] = phase["template_content"]
+        
         return result
     
+    async def _execute_validation_step(self, step_config: Dict[str, Any], project_path: str) -> Dict[str, Any]:
+        """Execute a validation step using the specified tool."""
+        tool_name = step_config.get("tool")
+        parameters = step_config.get("parameters", {})
+        
+        if tool_name == "analyze_current_test_coverage":
+            # Call the coverage analysis tool
+            return await self.analyze_current_test_coverage(
+                target_coverage=parameters.get("target_coverage", 90),
+                include_branches=parameters.get("include_branches", True)
+            )
+        elif tool_name == "analyze_project_context":
+            # Call the project context analysis tool  
+            return await self.analyze_project_context(
+                include_ai_failure_detection=parameters.get("include_ai_failure_detection", True),
+                generate_improvement_plan=parameters.get("generate_improvement_plan", True),
+                project_path=project_path
+            )
+        else:
+            return {"error": f"Unknown validation tool: {tool_name}"}
+    
+    async def _get_baseline_coverage(self, project_path: str) -> Dict[str, Any]:
+        """Get baseline coverage if tests exist."""
+        try:
+            # Check if tests exist first
+            validation = self._validate_foundry_project(project_path)
+            if validation.get("has_tests", False):
+                return await self.analyze_current_test_coverage(target_coverage=80)
+            else:
+                return {"message": "No tests found - starting from 0% coverage", "baseline_coverage": 0}
+        except Exception as e:
+            return {"message": f"Could not establish baseline: {e}", "baseline_coverage": 0}
+
     # Placeholder helper methods
     async def _identify_coverage_gaps(self, coverage_data: Dict[str, Any]) -> List[str]:
         """Identify coverage gaps."""
@@ -1868,7 +1939,8 @@ test/
                 "title": "Test Infrastructure Setup",
                 "description": f"Establish comprehensive testing infrastructure for {primary_contract} contract",
                 "actions": [
-                    "Set up test directory structure following Foundry best practices",
+                    "Establish baseline with analyze_current_test_coverage tool (if tests exist)",
+                    "Set up test directory structure following Foundry best practices", 
                     "Create helper utilities and common test setup",
                     "Establish testing conventions and patterns",
                     "Configure coverage monitoring"
@@ -1880,10 +1952,24 @@ test/
                     "Coverage configuration"
                 ],
                 "template_content": {
-                    "file_structure": foundry_patterns["content"]["test_organization"]["file_structure_pattern"],
+                    "file_structure": f"""
+test/
+├── {primary_contract}.t.sol                    # Core unit and integration tests
+├── {primary_contract}.invariant.t.sol          # Invariant/property-based tests
+├── {primary_contract}.security.t.sol           # Security-focused tests
+├── {primary_contract}.fork.t.sol               # Mainnet fork tests
+├── handlers/
+│   └── {primary_contract}Handler.sol           # Handler for invariant testing
+├── mocks/
+│   ├── MockERC20.sol
+│   └── MockOracle.sol
+└── utils/
+    ├── TestHelper.sol
+    └── TestConstants.sol
+                    """,
                     "helper_template": {
                         "filename": "test/utils/TestHelper.sol",
-                        "content": helper_template["content"],
+                        "content": helper_template["content"].replace("{{CONTRACT_NAME}}", primary_contract),
                         "placeholders": helper_template["placeholders"],
                         "usage": helper_template["usage_instructions"]
                     }
@@ -1944,17 +2030,31 @@ test/
                 "title": "Coverage Validation & Quality Assurance",
                 "description": "Validate coverage targets and ensure test quality standards",
                 "actions": [
-                    "Run comprehensive coverage analysis",
-                    "Validate 80%+ line and branch coverage",
+                    "Run analyze_current_test_coverage tool to get detailed coverage analysis",
+                    "Use analyze_project_context tool for AI failure detection and quality assessment",
+                    "Validate 80%+ line and branch coverage against targets",
                     "Review test quality and eliminate AI failure patterns",
                     "Document testing approach and results"
                 ],
                 "deliverables": [
                     "Coverage validation report",
+                    "AI failure detection report",
                     "Test quality assessment",
                     "Documentation and README updates",
                     "CI/CD integration recommendations"
-                ]
+                ],
+                "validation_steps": {
+                    "coverage_analysis": {
+                        "tool": "analyze_current_test_coverage",
+                        "parameters": {"target_coverage": 90, "include_branches": True},
+                        "success_criteria": "Coverage >= 80% for production readiness"
+                    },
+                    "quality_analysis": {
+                        "tool": "analyze_project_context", 
+                        "parameters": {"include_ai_failure_detection": True, "generate_improvement_plan": True},
+                        "success_criteria": "No critical AI failures, security level >= basic"
+                    }
+                }
             }
         ]
     
