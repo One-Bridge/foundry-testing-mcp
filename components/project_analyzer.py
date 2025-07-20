@@ -11,7 +11,7 @@ import os
 import re
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from .ast_analyzer import ASTAnalyzer, SemanticAnalysis, SecurityPattern, NodeType
@@ -58,6 +58,7 @@ class ContractAnalysis:
     security_patterns: List[str]
     risk_score: float
     dependencies: List[str]
+    mock_requirements: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class ProjectState:
@@ -333,7 +334,8 @@ class ProjectAnalyzer:
                 state_variables=regex_analysis.state_variables,
                 security_patterns=combined_patterns,
                 risk_score=regex_analysis.risk_score,  # Keep regex risk score
-                dependencies=regex_analysis.dependencies
+                dependencies=regex_analysis.dependencies,
+                mock_requirements=regex_analysis.mock_requirements  # Preserve mock requirements
             )
             
         except Exception as e:
@@ -964,6 +966,145 @@ class ProjectAnalyzer:
         
         return "utility"
     
+    def _extract_mock_requirements(self, content: str, contract_name: str, 
+                                  functions: List[str], dependencies: List[str]) -> Dict[str, Any]:
+        """
+        Extract specific requirements for generating working mocks.
+        
+        This provides context to templates so they can generate compatible mocks
+        that won't fail on first test execution.
+        """
+        mock_requirements = {
+            "erc_interface_type": self._detect_erc_interface_type(content, functions),
+            "access_control_variant": self._detect_access_control_variant(content, dependencies),
+            "upgradeable_pattern": self._detect_upgradeable_pattern(content, dependencies),
+            "required_mock_functions": self._extract_required_mock_functions(content, functions),
+            "interface_compatibility": self._check_interface_compatibility(content, dependencies),
+            "circular_dependency_risks": self._detect_circular_dependency_risks(content, contract_name)
+        }
+        
+        return mock_requirements
+
+    def _detect_erc_interface_type(self, content: str, functions: List[str]) -> Dict[str, Any]:
+        """Detect specific ERC interface requirements for mock generation."""
+        
+        # ERC20 detection with exact function signature requirements
+        erc20_functions = {"transfer", "transferFrom", "approve", "balanceOf", "totalSupply", "allowance"}
+        has_erc20_core = len(erc20_functions.intersection(set(functions))) >= 4
+        
+        # ERC721 detection
+        erc721_functions = {"ownerOf", "approve", "transferFrom", "safeTransferFrom"}
+        has_erc721_core = len(erc721_functions.intersection(set(functions))) >= 3
+        
+        # Detect upgradeable variants
+        is_upgradeable = "upgradeable" in content.lower()
+        
+        return {
+            "type": "erc721" if has_erc721_core else "erc20" if has_erc20_core else "custom",
+            "is_upgradeable": is_upgradeable,
+            "required_functions": list(erc20_functions if has_erc20_core else erc721_functions if has_erc721_core else []),
+            "exact_signatures_needed": has_erc20_core or has_erc721_core
+        }
+
+    def _detect_access_control_variant(self, content: str, dependencies: List[str]) -> Dict[str, Any]:
+        """Detect AccessControl variant to avoid function signature mismatches."""
+        
+        # Check imports for specific AccessControl variants
+        has_upgradeable_ac = any("AccessControlUpgradeable" in dep for dep in dependencies)
+        has_standard_ac = any("AccessControl" in dep and "Upgradeable" not in dep for dep in dependencies)
+        
+        # Check content patterns
+        content_lower = content.lower()
+        has_role_member_count = "getrolemembercount" in content_lower
+        
+        return {
+            "variant": "upgradeable" if has_upgradeable_ac else "standard" if has_standard_ac else "none",
+            "avoid_functions": ["getRoleMemberCount"] if has_upgradeable_ac else [],
+            "safe_functions": ["hasRole", "grantRole", "revokeRole"],
+            "uses_role_member_count": has_role_member_count
+        }
+
+    def _detect_upgradeable_pattern(self, content: str, dependencies: List[str]) -> Dict[str, Any]:
+        """Detect upgrade patterns to avoid direct upgradeTo calls."""
+        
+        # Check for UUPS pattern
+        has_uups = any("UUPSUpgradeable" in dep for dep in dependencies) or "uups" in content.lower()
+        
+        # Check for Transparent proxy pattern  
+        has_transparent = "TransparentUpgradeableProxy" in content or "transparent" in content.lower()
+        
+        # Check for direct upgradeTo usage
+        has_upgrade_to = "upgradeto" in content.lower()
+        
+        return {
+            "pattern": "uups" if has_uups else "transparent" if has_transparent else "none",
+            "avoid_direct_upgrade": has_uups,  # UUPS doesn't expose upgradeTo directly
+            "safe_upgrade_testing": not has_upgrade_to or not has_uups
+        }
+
+    def _extract_required_mock_functions(self, content: str, functions: List[str]) -> List[Dict[str, Any]]:
+        """Extract function signatures that mocks actually need to implement."""
+        
+        required_functions = []
+        
+        # Find function calls that would need mocking
+        # Look for external calls that would require mocks
+        external_call_pattern = r'(\w+)\.(\w+)\s*\('
+        external_calls = re.findall(external_call_pattern, content)
+        
+        # Group by contract interface
+        interface_calls = {}
+        for contract_var, function_name in external_calls:
+            if contract_var not in interface_calls:
+                interface_calls[contract_var] = set()
+            interface_calls[contract_var].add(function_name)
+        
+        # Convert to required mock functions with context
+        for interface, function_set in interface_calls.items():
+            required_functions.append({
+                "interface_name": interface,
+                "required_functions": list(function_set),
+                "is_erc_standard": self._is_standard_erc_interface(function_set)
+            })
+        
+        return required_functions
+
+    def _check_interface_compatibility(self, content: str, dependencies: List[str]) -> Dict[str, Any]:
+        """Check interface compatibility requirements for mocks."""
+        
+        # Check for interface imports that mocks need to implement
+        interface_imports = [dep for dep in dependencies if "IERC" in dep or "interface" in dep.lower()]
+        
+        return {
+            "required_interfaces": interface_imports,
+            "strict_compliance_needed": len(interface_imports) > 0,
+            "custom_interface_detected": "interface" in content.lower() and not interface_imports
+        }
+
+    def _detect_circular_dependency_risks(self, content: str, contract_name: str) -> Dict[str, Any]:
+        """Detect patterns that could cause circular dependencies in mocks."""
+        
+        # Check if contract has helper functions that might be copied to mocks
+        has_internal_helpers = "internal" in content and "function" in content
+        
+        # Check for self-referential patterns
+        self_references = content.count(contract_name)
+        
+        return {
+            "has_internal_helpers": has_internal_helpers,
+            "self_reference_count": self_references,
+            "risk_level": "high" if self_references > 5 else "medium" if self_references > 2 else "low",
+            "avoid_helper_duplication": has_internal_helpers
+        }
+
+    def _is_standard_erc_interface(self, function_set: set) -> bool:
+        """Check if function set matches standard ERC interfaces."""
+        erc20_functions = {"transfer", "transferFrom", "approve", "balanceOf", "totalSupply", "allowance"}
+        erc721_functions = {"ownerOf", "approve", "transferFrom", "safeTransferFrom", "tokenURI"}
+        
+        return (len(erc20_functions.intersection(function_set)) >= 3 or 
+                len(erc721_functions.intersection(function_set)) >= 3)
+
     async def _comprehensive_regex_analysis(self, file_path: Path) -> Optional[ContractAnalysis]:
         """
         Comprehensive regex-based contract analysis.
@@ -1032,6 +1173,11 @@ class ProjectAnalyzer:
             matches = re.findall(pattern, content)
             dependencies.extend(matches)
         
+        # Extract mock requirements for better test generation
+        mock_requirements = self._extract_mock_requirements(
+            content, contract_name, functions, list(set(dependencies))
+        )
+        
         return ContractAnalysis(
             path=str(file_path),
             contract_name=contract_name,
@@ -1040,7 +1186,8 @@ class ProjectAnalyzer:
             state_variables=list(set(state_vars)),  # Remove duplicates
             security_patterns=security_patterns,
             risk_score=risk_score,
-            dependencies=list(set(dependencies))  # Remove duplicates
+            dependencies=list(set(dependencies)),  # Remove duplicates
+            mock_requirements=mock_requirements
         )
     
     def _determine_contract_type_comprehensive(self, content: str) -> str:
