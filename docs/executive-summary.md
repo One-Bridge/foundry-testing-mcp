@@ -1,151 +1,52 @@
-# Foundry Testing MCP - Executive Summary
+# Foundry Testing MCP – Executive Summary
 
-## Overview
+## Purpose
 
-The Foundry Testing MCP is a Model Context Protocol server that provides automated smart contract testing assistance for Solidity projects. The system analyzes existing code, identifies testing gaps, and provides structured implementation guidance through integration with the Foundry development toolchain.
+Smart-contract protocols are complex and time-sensitive.  Thorough testing is essential yet often under-resourced.  The **Foundry Testing MCP** (Model-Context-Protocol) server turns ad-hoc test writing into a structured, repeatable process that an AI coding assistant can drive.
 
-## Current Implementation
+## How It Works 
 
-### Core Components
+1. **Connect an AI client** (Cursor, Claude Desktop, etc.) to the MCP server running on the developer’s machine.
+2. **Analyse the project** – The server inspects contracts, current tests, coverage and configuration.  No source code leaves the developer’s laptop.
+3. **Detect weaknesses** – Eight common failure patterns (e.g. circular logic, insufficient edge cases) are flagged early.
+4. **Generate a plan** – The server proposes a multi-phase workflow that can add or improve unit, integration, fuzz, invariant and security tests.
+5. **Run Foundry commands** – Every step leans on standard `forge` tooling; results are parsed and fed back into the workflow.
 
-The system consists of seven main components:
+## Business Value
 
-- **TestingMCPServer**: FastMCP protocol server handling client communication
-- **TestingTools**: Seven MCP tools providing workflow management and analysis
-- **ProjectAnalyzer**: Regex-based project analysis with contract type detection and risk assessment
-- **AIFailureDetector**: Pattern detection for common AI-generated test failures
-- **ASTAnalyzer**: Optional semantic analysis enhancement (requires solc installation)
-- **FoundryAdapter**: Direct integration with forge CLI tools for coverage and test execution
-- **TestingResources**: Template and documentation system with six test template types
+• **Quality Assurance** – Raises confidence before audits and main-net deployment.  
+• **Developer Efficiency** – Automates boilerplate and highlights gaps instead of relying on manual checks.  
+• **Risk Reduction** – Early detection of insecure test patterns limits false positives and missed vulnerabilities.  
+• **Process Visibility** – Executives receive clear, reproducible metrics (coverage %, maturity levels, risk scores) rather than anecdotal status updates.
 
-### Available MCP Tools
+## Key Capabilities
 
-1. **initialize_protocol_testing_agent**: Project analysis and workflow recommendations
-2. **analyze_project_context**: Detailed project assessment with AI failure detection
-3. **execute_testing_workflow**: Structured testing implementation guidance
-4. **analyze_current_test_coverage**: Coverage analysis using Foundry tools
-5. **validate_current_directory**: Project setup validation
-6. **debug_directory_detection**: Directory and path troubleshooting
-7. **discover_foundry_projects**: Find Foundry projects in directory structure
+| Capability | What It Delivers |
+|------------|-----------------|
+| Project analysis | Contract inventory, test counts, maturity classification, coverage snapshot |
+| AI-failure detection | Eight static patterns plus AST-based semantic checks |
+| Workflow engine | Create or enhance test suites with phase tracking and progress metrics |
+| Foundry integration | Executes `forge test`, `forge coverage`, gas reporting, invariant runs |
+| Template library | Ready-made Solidity test templates (unit, integration, invariant, security, helper) |
+| Reporting APIs | JSON output consumable by dashboards or CI pipelines |
 
-### Analysis Capabilities
+## Deployment Footprint
 
-**Project Analysis**: Uses regex-based pattern matching to identify contract types (DeFi, governance, NFT, token, utility) and calculate risk scores. This approach provides reliable results without requiring external Solidity compiler dependencies.
+• **Language / Runtime**  Python 3.8+  
+• **Dependency**  Foundry tool-chain (local)  
+• **External Services**  None – all analysis is local.  
 
-**Contract Classification**: Scoring-based detection identifies:
-- DeFi contracts (portfolio management, trading, lending protocols)
-- Governance systems (voting mechanisms, timelock controls)
-- Token contracts (ERC20, ERC721, custom implementations)
-- Bridge contracts (cross-chain functionality)
-- Utility contracts (general-purpose logic)
+## Typical First Day of Use
 
-**Testing Maturity Assessment**: Five-tier classification from none/basic/intermediate/advanced/production based on test count, coverage metrics, and security test presence.
+1. **Clone and start** the MCP server (see README).  
+2. **Run** `initialize_protocol_testing_agent()` – get an objective status of the current test landscape.  
+3. **Approve** the proposed workflow – the AI begins adding or refactoring tests.  
+4. **Review metrics** – coverage climbs, risk scores fall, and a repeatable process is in place.
 
-**AI Failure Detection**: Identifies eight patterns in test code that indicate AI-generated testing failures, including circular logic, mock cheating, insufficient edge cases, and missing security scenarios.
+## Current Status & Roadmap
 
-### Foundry Integration
+The core feature set is production-ready and MIT-licensed.  Planned work focuses on deeper static-analysis integrations (Slither, Mythril) and optional visual reporting.
 
-Direct CLI integration provides:
-- Execution of `forge test` and `forge coverage` commands with output parsing
-- Support for multiple coverage output formats (lcov, summary, json)
-- Project structure validation (foundry.toml, src/, test/ directories)
-- Directory resolution and environment troubleshooting
+---
 
-### Template and Resource System
-
-Five MCP resources provide implementation support:
-- `testing://foundry-patterns`: Testing patterns and file organization
-- `testing://security-patterns`: Security vulnerability test cases
-- `testing://templates/{type}`: Six template types (unit, integration, invariant, security, fork, helper)
-- `testing://templates`: Template catalog and descriptions
-- `testing://documentation`: Testing methodologies and implementation guides
-
-## Architecture
-
-### Component Design
-
-The system uses a layered architecture:
-- **MCP Protocol Layer**: FastMCP server handling client communication (stdio/http modes)
-- **Tool Layer**: Seven MCP tools providing user-facing functionality
-- **Analysis Layer**: ProjectAnalyzer (regex-first) with optional ASTAnalyzer enhancement
-- **Integration Layer**: FoundryAdapter for CLI tool execution and output parsing
-- **Resource Layer**: Template system and documentation resources
-
-### Analysis Architecture Change
-
-**Current Implementation**: Regex-first analysis with optional AST enhancement
-- Primary analysis uses comprehensive regex patterns for reliability
-- AST analysis provides additional insights when Solidity compiler is available
-- Fallback ensures functionality without external dependencies
-
-**Rationale**: Previous AST-first approach failed when `solc` was unavailable, causing shallow analysis. Regex-first provides consistent, reliable results for contract classification and risk assessment.
-
-### Communication Modes
-
-- **stdio**: MCP client integration (Cursor, Claude Desktop)
-- **http**: Development and debugging access
-- **Execution runners**: `run_clean.py` (silent) and `run.py` (verbose logging)
-
-## Implementation Status
-
-### Operational Components
-
-**Fully Functional**:
-- Seven MCP tools with parameter validation and error handling
-- Regex-based project analysis providing consistent contract classification
-- AI failure detection system identifying eight failure pattern types
-- Template system with six template types and dynamic placeholder substitution
-- Foundry CLI integration with coverage output parsing
-- Directory resolution and project structure validation
-
-**Conditionally Functional**:
-- AST analysis enhancement (requires `solc` installation)
-- Coverage analysis (dependent on subprocess execution environment)
-- Project discovery (may require manual path specification in some MCP clients)
-
-### Current Limitations
-
-**Directory Detection**: MCP client-server directory misalignment can require manual project path specification or environment variable configuration.
-
-**Subprocess Execution**: Coverage analysis may fail in containerized or restricted execution environments due to subprocess limitations.
-
-**AST Dependencies**: Enhanced semantic analysis requires Solidity compiler installation, though regex fallback ensures basic functionality.
-
-### Production Readiness
-
-The system provides functional testing assistance with documented workarounds for known limitations. Core analysis and template generation work reliably across environments. Integration issues are primarily related to MCP client configuration rather than core functionality.
-
-## Usage Patterns
-
-### Standard Workflow
-
-1. **Project Analysis**: `initialize_protocol_testing_agent` identifies current state and recommends workflow
-2. **Detailed Assessment**: `analyze_project_context` provides comprehensive analysis including AI failure detection
-3. **Implementation**: `execute_testing_workflow` provides structured, phase-based testing implementation guidance
-4. **Progress Monitoring**: `analyze_current_test_coverage` tracks progress using actual Foundry coverage output
-
-### Troubleshooting Tools
-
-- `validate_current_directory`: Project setup validation
-- `debug_directory_detection`: Directory resolution troubleshooting
-- `discover_foundry_projects`: Project discovery when auto-detection fails
-
-## Technical Requirements
-
-### Core Dependencies
-
-- **Python 3.8+**: Server runtime environment
-- **Foundry toolchain**: Required for coverage analysis and test execution
-- **MCP client**: Cursor, Claude Desktop, or compatible MCP client
-
-### Optional Dependencies
-
-- **Solidity compiler (solc)**: Enables enhanced AST analysis (regex fallback available)
-
-### Environment Configuration
-
-The system operates through MCP protocol integration requiring client configuration to connect via stdio or http transport. Directory resolution uses environment variables (`MCP_CLIENT_CWD`, `MCP_PROJECT_PATH`) when automatic detection fails.
-
-## Summary
-
-This MCP server provides structured smart contract testing assistance through automated project analysis, AI failure detection, and integration with Foundry tooling. The regex-first analysis architecture ensures reliable operation without external compiler dependencies, while optional AST enhancement provides additional insights when available. 
+For a detailed technical view see `docs/technical-architecture-guide.md`.  A complete list of public tools and functions lives in `docs/function-map.md`. 

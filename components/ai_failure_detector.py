@@ -1,8 +1,8 @@
 """
 AI Failure Detection System for Smart Contract Testing
 
-This module implements detection systems for common AI coding agent failures
-that compromise test suite quality and security.
+Enhanced with contextual analysis to reduce false positives and understand
+sophisticated testing architectures. Addresses critical gaps identified in expert feedback.
 """
 
 import logging
@@ -26,6 +26,11 @@ class FailureType(Enum):
     INADEQUATE_RANDOMIZATION = "inadequate_randomization"
     MISSING_NEGATIVE_TESTS = "missing_negative_tests"
     IMPLEMENTATION_DEPENDENCY = "implementation_dependency"
+    # New enhanced failure types
+    FALSE_POSITIVE_RISK = "false_positive_risk"
+    MISUNDERSTOOD_ARCHITECTURE = "misunderstood_architecture"
+    CONTEXT_IGNORANCE = "context_ignorance"
+    SOPHISTICATED_MOCK_MISCLASSIFICATION = "sophisticated_mock_misclassification"
 
 @dataclass
 class FailureDetection:
@@ -133,17 +138,17 @@ class AIFailureDetector:
     
     async def analyze_test_file(self, file_path: str, content: str = None) -> List[FailureDetection]:
         """
-        Analyze a test file for AI failures using AST-based semantic analysis.
+        Analyze a test file for AI failures using enhanced context-aware analysis.
         
-        This provides more accurate detection by understanding actual code structure
-        and behavior rather than relying solely on regex pattern matching.
+        Enhanced to reduce false positives by understanding sophisticated test architectures
+        and domain-specific patterns as identified in expert feedback.
         
         Args:
             file_path: Path to the test file
             content: Optional content of the test file (will read if not provided)
             
         Returns:
-            List of detected failures with enhanced accuracy
+            List of detected failures with reduced false positives
         """
         failures = []
         
@@ -151,10 +156,7 @@ class AIFailureDetector:
             # Get AST-based semantic analysis
             semantic_analysis = await self.ast_analyzer.analyze_test_file(file_path)
             
-            # AST-based failure detection (primary method)
-            failures.extend(await self._detect_ast_based_failures(semantic_analysis, file_path))
-            
-            # Enhanced pattern matching with AST context
+            # Read content if not provided
             if content is None:
                 try:
                     with open(file_path, 'r', encoding='utf-8') as f:
@@ -163,35 +165,48 @@ class AIFailureDetector:
                     logger.warning(f"Could not read {file_path}: {e}")
                     content = ""
             
+            # NEW: Detect sophisticated test architecture to reduce false positives
+            architecture_assessment = await self._assess_test_architecture_sophistication(
+                semantic_analysis, file_path, content
+            )
+            
+            # AST-based failure detection with architecture context
+            failures.extend(await self._detect_ast_based_failures_enhanced(
+                semantic_analysis, file_path, architecture_assessment
+            ))
+            
+            # Enhanced pattern matching with reduced false positives
             if content:
-                failures.extend(await self._detect_enhanced_pattern_failures(
-                    semantic_analysis, file_path, content
+                failures.extend(await self._detect_contextual_pattern_failures_enhanced(
+                    semantic_analysis, file_path, content, architecture_assessment
                 ))
             
-            # Semantic test structure analysis
-            failures.extend(await self._analyze_ast_test_structure(semantic_analysis, file_path))
+            # Cross-file aware analysis for test relationships
+            failures.extend(await self._analyze_test_relationships_across_files(
+                semantic_analysis, file_path, content
+            ))
             
-            # Semantic mock analysis
-            failures.extend(await self._analyze_ast_mock_patterns(semantic_analysis, file_path))
+            # Enhanced mock analysis with sophistication detection
+            failures.extend(await self._analyze_mock_sophistication(
+                semantic_analysis, file_path, content
+            ))
             
-            # Semantic assertion analysis
-            failures.extend(await self._analyze_ast_assertion_patterns(semantic_analysis, file_path))
+            # Domain-aware test pattern analysis
+            failures.extend(await self._analyze_domain_specific_patterns(
+                semantic_analysis, file_path, content
+            ))
             
         except Exception as e:
-            logger.warning(f"AST-based analysis failed for {file_path}, falling back to regex: {e}")
+            logger.warning(f"Enhanced analysis failed for {file_path}, falling back to regex: {e}")
             
             # Fallback to original regex-based analysis
-            if content is None:
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                except:
-                    content = ""
-            
             if content:
                 failures.extend(await self._fallback_regex_analysis(file_path, content))
         
-        return failures
+        # NEW: Filter out likely false positives based on architecture sophistication
+        filtered_failures = await self._filter_false_positives(failures, file_path, content)
+        
+        return filtered_failures
     
     def _detect_pattern_failures(self, failure_type: FailureType, config: Dict[str, Any], 
                                 file_path: str, content: str) -> List[FailureDetection]:
@@ -758,3 +773,460 @@ class AIFailureDetector:
         failures.extend(await self._analyze_assertion_patterns(file_path, content))
         
         return failures
+
+    # =================================================================
+    # NEW ENHANCED METHODS TO REDUCE FALSE POSITIVES
+    # =================================================================
+    
+    async def _assess_test_architecture_sophistication(self, semantic_analysis: SemanticAnalysis,
+                                                      file_path: str, content: str) -> Dict[str, Any]:
+        """
+        Assess the sophistication of the test architecture to reduce false positives.
+        
+        Addresses expert feedback about sophisticated test suites being flagged as poor quality.
+        """
+        sophistication_indicators = {
+            "has_modular_architecture": False,
+            "has_separate_security_tests": False,
+            "has_invariant_testing": False,
+            "has_advanced_mocking": False,
+            "has_domain_specific_patterns": False,
+            "cross_file_organization": False,
+            "sophisticated_test_naming": False,
+            "comprehensive_coverage_strategy": False
+        }
+        
+        # Check for modular architecture
+        if "setUp" in content and "helper" in content.lower():
+            sophistication_indicators["has_modular_architecture"] = True
+        
+        # Check for separate security test organization
+        if any(keyword in file_path.lower() for keyword in ["security", "attack", "exploit"]):
+            sophistication_indicators["has_separate_security_tests"] = True
+        
+        # Check for invariant testing
+        if "invariant_" in content or "StdInvariant" in content:
+            sophistication_indicators["has_invariant_testing"] = True
+        
+        # Check for advanced mocking patterns
+        mock_sophistication = self._assess_mock_sophistication_in_content(content)
+        if mock_sophistication > 0.6:
+            sophistication_indicators["has_advanced_mocking"] = True
+        
+        # Check for domain-specific patterns
+        domain_patterns = self._detect_domain_specific_test_patterns(content)
+        if len(domain_patterns) > 2:
+            sophistication_indicators["has_domain_specific_patterns"] = True
+        
+        # Check test naming sophistication
+        test_functions = re.findall(r'function\s+(test\w*)\s*\(', content)
+        if len(test_functions) > 0:
+            descriptive_names = [t for t in test_functions if len(t) > 15 and '_' in t]
+            if len(descriptive_names) > len(test_functions) * 0.7:
+                sophistication_indicators["sophisticated_test_naming"] = True
+        
+        sophistication_score = sum(sophistication_indicators.values()) / len(sophistication_indicators)
+        
+        return {
+            "sophistication_score": sophistication_score,
+            "indicators": sophistication_indicators,
+            "is_sophisticated_architecture": sophistication_score > 0.6,
+            "false_positive_risk": "high" if sophistication_score > 0.7 else "medium" if sophistication_score > 0.4 else "low"
+        }
+    
+    def _assess_mock_sophistication_in_content(self, content: str) -> float:
+        """Quick assessment of mock sophistication in content."""
+        sophistication_features = [
+            "setTransferBlocked" in content,
+            "setShouldRevert" in content,
+            "configurable" in content.lower(),
+            "mapping" in content and "mock" in content.lower(),
+            "state" in content and "mock" in content.lower(),
+            "realistic" in content.lower(),
+            "failure" in content.lower() and "mode" in content.lower()
+        ]
+        return sum(sophistication_features) / len(sophistication_features)
+    
+    def _detect_domain_specific_test_patterns(self, content: str) -> List[str]:
+        """Detect domain-specific test patterns in content."""
+        patterns = []
+        content_lower = content.lower()
+        
+        # DeFi patterns
+        if any(keyword in content_lower for keyword in ["liquidity", "flash", "oracle", "price", "defi"]):
+            patterns.append("defi_patterns")
+        
+        # NFT patterns  
+        if any(keyword in content_lower for keyword in ["nft", "erc721", "metadata", "royalty"]):
+            patterns.append("nft_patterns")
+        
+        # Governance patterns
+        if any(keyword in content_lower for keyword in ["governance", "vote", "proposal", "delegate"]):
+            patterns.append("governance_patterns")
+        
+        return patterns
+    
+    async def _detect_ast_based_failures_enhanced(self, semantic_analysis: SemanticAnalysis,
+                                                 file_path: str, architecture_assessment: Dict[str, Any]) -> List[FailureDetection]:
+        """Enhanced AST-based failure detection with architecture context."""
+        failures = []
+        
+        # Only run original AST analysis if architecture is not sophisticated
+        if not architecture_assessment["is_sophisticated_architecture"]:
+            failures.extend(await self._detect_ast_based_failures(semantic_analysis, file_path))
+        else:
+            # For sophisticated architectures, be more conservative
+            failures.extend(await self._detect_critical_failures_only(semantic_analysis, file_path))
+        
+        return failures
+    
+    async def _detect_critical_failures_only(self, semantic_analysis: SemanticAnalysis, 
+                                           file_path: str) -> List[FailureDetection]:
+        """Detect only critical failures for sophisticated architectures."""
+        failures = []
+        
+        test_functions = [node for node in semantic_analysis.ast_nodes 
+                         if node.node_type == NodeType.FUNCTION and 
+                         (node.name.startswith('test') or node.attributes.get('is_test', False))]
+        
+        # Only flag obvious always-passing tests
+        for test_func in test_functions:
+            if "assertTrue(true)" in test_func.name or "assertEq(0, 0)" in test_func.name:
+                failures.append(FailureDetection(
+                    failure_type=FailureType.ALWAYS_PASSING_TESTS,
+                    severity="critical",
+                    description="Test contains obvious always-passing assertion",
+                    location=f"{file_path}:{test_func.source_location[0]}",
+                    evidence=f"Function: {test_func.name}",
+                    recommendation="Replace trivial assertion with meaningful validation",
+                    auto_fixable=True
+                ))
+        
+        return failures
+    
+    async def _detect_contextual_pattern_failures_enhanced(self, semantic_analysis: SemanticAnalysis,
+                                                          file_path: str, content: str, 
+                                                          architecture_assessment: Dict[str, Any]) -> List[FailureDetection]:
+        """Enhanced pattern detection with context awareness."""
+        failures = []
+        
+        # Adjust severity based on architecture sophistication
+        severity_modifier = "medium" if architecture_assessment["is_sophisticated_architecture"] else "high"
+        
+        # Only run basic pattern checks for sophisticated architectures
+        if architecture_assessment["sophistication_score"] < 0.6:
+            failures.extend(await self._detect_enhanced_pattern_failures(semantic_analysis, file_path, content))
+        
+        return failures
+    
+    async def _analyze_test_relationships_across_files(self, semantic_analysis: SemanticAnalysis,
+                                                      file_path: str, content: str) -> List[FailureDetection]:
+        """
+        Analyze test relationships across files to understand test suite architecture.
+        
+        Addresses expert feedback about missing negative tests that exist in separate files.
+        """
+        failures = []
+        
+        # Extract test function names and analyze patterns
+        test_functions = re.findall(r'function\s+(test\w*)\s*\(', content)
+        
+        # Group tests by target function
+        function_groups = {}
+        for test_func in test_functions:
+            target = self._extract_target_function_from_test_name(test_func)
+            if target not in function_groups:
+                function_groups[target] = {"positive": [], "negative": [], "edge": []}
+            
+            if self._is_negative_test_name(test_func):
+                function_groups[target]["negative"].append(test_func)
+            elif self._is_edge_case_test_name(test_func):
+                function_groups[target]["edge"].append(test_func)
+            else:
+                function_groups[target]["positive"].append(test_func)
+        
+        # Only flag missing negative tests if this appears to be a comprehensive test file
+        # (not a specialized file like security tests)
+        if not any(keyword in file_path.lower() for keyword in ["security", "attack", "exploit", "invariant"]):
+            for target_func, groups in function_groups.items():
+                if len(groups["positive"]) > 0 and len(groups["negative"]) == 0 and target_func != "unknown":
+                    failures.append(FailureDetection(
+                        failure_type=FailureType.MISSING_NEGATIVE_TESTS,
+                        severity="medium",  # Reduced severity for single-file analysis
+                        description=f"Function {target_func} has positive tests but no negative tests in this file",
+                        location=file_path,
+                        evidence=f"Positive tests: {groups['positive'][:3]}, No negative tests found",
+                        recommendation=f"Add negative test cases for {target_func} or verify they exist in other test files",
+                        auto_fixable=False
+                    ))
+        
+        return failures
+    
+    def _extract_target_function_from_test_name(self, test_name: str) -> str:
+        """Extract target function name from test name."""
+        # Pattern: test_functionName_when... or test_functionName_should...
+        match = re.match(r'test_(\w+)_(?:when|should)', test_name)
+        if match:
+            return match.group(1)
+        
+        # Pattern: testFunctionName or test_functionName  
+        if test_name.startswith('test'):
+            remaining = test_name[4:]
+            if remaining.startswith('_'):
+                remaining = remaining[1:]
+            
+            # Find first underscore or camelCase boundary
+            match = re.match(r'(\w+?)(?:_|[A-Z])', remaining)
+            if match:
+                return match.group(1)
+            else:
+                return remaining.split('_')[0] if '_' in remaining else remaining
+        
+        return 'unknown'
+    
+    def _is_negative_test_name(self, test_name: str) -> bool:
+        """Check if test name indicates a negative test."""
+        negative_indicators = [
+            'shouldrevert', 'shouldfail', 'revert', 'fail', 'error',
+            'unauthorized', 'forbidden', 'invalid', 'zero', 'empty',
+            'insufficient', 'exceeded', 'paused', 'disabled'
+        ]
+        return any(indicator in test_name.lower() for indicator in negative_indicators)
+    
+    def _is_edge_case_test_name(self, test_name: str) -> bool:
+        """Check if test name indicates an edge case test."""
+        edge_indicators = [
+            'edge', 'boundary', 'extreme', 'max', 'min', 'limit',
+            'overflow', 'underflow', 'large', 'huge', 'tiny'
+        ]
+        return any(indicator in test_name.lower() for indicator in edge_indicators)
+    
+    async def _analyze_mock_sophistication(self, semantic_analysis: SemanticAnalysis,
+                                         file_path: str, content: str) -> List[FailureDetection]:
+        """
+        Analyze mock sophistication to distinguish between sophisticated mocks and cheating.
+        
+        Addresses expert feedback about flagging sophisticated mocks as cheating.
+        """
+        failures = []
+        
+        # Extract mock contracts
+        mock_pattern = r'contract\s+(Mock\w+|.*Mock)\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}'
+        mock_matches = re.findall(mock_pattern, content, re.DOTALL)
+        
+        for mock_name, mock_body in mock_matches:
+            sophistication_score = self._calculate_mock_sophistication_score(mock_body)
+            
+            # Only flag as cheating if sophistication is very low
+            if sophistication_score < 0.3:
+                cheating_indicators = self._detect_mock_cheating_indicators(mock_body)
+                if len(cheating_indicators) > 0:
+                    failures.append(FailureDetection(
+                        failure_type=FailureType.MOCK_CHEATING,
+                        severity="medium",  # Reduced severity 
+                        description=f"Mock contract {mock_name} shows potential cheating patterns",
+                        location=file_path,
+                        evidence=f"Cheating indicators: {', '.join(cheating_indicators[:2])}",
+                        recommendation="Consider adding more realistic mock behavior and state tracking",
+                        auto_fixable=False
+                    ))
+            elif sophistication_score > 0.7:
+                # Flag false positive risk for sophisticated mocks
+                failures.append(FailureDetection(
+                    failure_type=FailureType.SOPHISTICATED_MOCK_MISCLASSIFICATION,
+                    severity="low",
+                    description=f"Mock contract {mock_name} appears sophisticated - previous cheating flags may be false positives",
+                    location=file_path,
+                    evidence=f"Sophistication score: {sophistication_score:.2f}",
+                    recommendation="This mock shows advanced patterns - review any cheating flags carefully",
+                    auto_fixable=False
+                ))
+        
+        return failures
+    
+    def _calculate_mock_sophistication_score(self, mock_body: str) -> float:
+        """Calculate sophistication score for a mock contract."""
+        sophistication_features = [
+            "mapping" in mock_body,  # State tracking
+            "require(" in mock_body,  # Input validation
+            "modifier" in mock_body,  # Access control
+            "emit " in mock_body,  # Event emission
+            len(re.findall(r'function\s+set\w+', mock_body)) > 1,  # Configurability
+            "if (" in mock_body,  # Conditional logic
+            "revert(" in mock_body,  # Error handling
+            bool(re.search(r'balance|allowance|state', mock_body, re.IGNORECASE))  # Realistic state
+        ]
+        
+        return sum(sophistication_features) / len(sophistication_features)
+    
+    def _detect_mock_cheating_indicators(self, mock_body: str) -> List[str]:
+        """Detect specific cheating indicators in mock."""
+        indicators = []
+        
+        if mock_body.count("return true;") > 2:
+            indicators.append("always_returns_true")
+        
+        if mock_body.count("return 0;") > 3:
+            indicators.append("always_returns_zero")
+        
+        if "// TODO" in mock_body or "// ignore" in mock_body.lower():
+            indicators.append("unimplemented_functions")
+        
+        return indicators
+    
+    async def _analyze_domain_specific_patterns(self, semantic_analysis: SemanticAnalysis,
+                                               file_path: str, content: str) -> List[FailureDetection]:
+        """
+        Analyze tests against domain-specific requirements.
+        
+        Addresses expert feedback about applying generic patterns without understanding
+        DeFi-specific or other domain requirements.
+        """
+        failures = []
+        
+        # Detect project domain
+        domain = self._detect_project_domain(content, file_path)
+        
+        if domain == "DeFi":
+            failures.extend(await self._analyze_defi_specific_patterns(content, file_path))
+        elif domain == "NFT":
+            failures.extend(await self._analyze_nft_specific_patterns(content, file_path))
+        elif domain == "Governance":
+            failures.extend(await self._analyze_governance_specific_patterns(content, file_path))
+        
+        return failures
+    
+    def _detect_project_domain(self, content: str, file_path: str) -> str:
+        """Detect project domain from content."""
+        content_lower = content.lower()
+        
+        defi_keywords = ["swap", "liquidity", "vault", "yield", "oracle", "price", "defi"]
+        nft_keywords = ["nft", "erc721", "erc1155", "metadata", "royalty", "tokenuri"]
+        governance_keywords = ["governance", "vote", "proposal", "delegate", "timelock"]
+        
+        defi_score = sum(1 for keyword in defi_keywords if keyword in content_lower)
+        nft_score = sum(1 for keyword in nft_keywords if keyword in content_lower)
+        governance_score = sum(1 for keyword in governance_keywords if keyword in content_lower)
+        
+        if defi_score > max(nft_score, governance_score):
+            return "DeFi"
+        elif nft_score > governance_score:
+            return "NFT"
+        elif governance_score > 0:
+            return "Governance"
+        else:
+            return "General"
+    
+    async def _analyze_defi_specific_patterns(self, content: str, file_path: str) -> List[FailureDetection]:
+        """Analyze DeFi-specific test patterns."""
+        failures = []
+        
+        # Check for DeFi-specific security tests
+        required_patterns = ["flash", "oracle", "liquidity", "slippage"]
+        missing_patterns = [p for p in required_patterns if p not in content.lower()]
+        
+        if len(missing_patterns) > 2 and "test" in content.lower():
+            failures.append(FailureDetection(
+                failure_type=FailureType.MISSING_SECURITY_SCENARIOS,
+                severity="medium",
+                description="DeFi project missing critical security test patterns",
+                location=file_path,
+                evidence=f"Missing patterns: {', '.join(missing_patterns)}",
+                recommendation="Add DeFi-specific security tests: flash loan attacks, oracle manipulation, liquidity attacks",
+                auto_fixable=False
+            ))
+        
+        return failures
+    
+    async def _analyze_nft_specific_patterns(self, content: str, file_path: str) -> List[FailureDetection]:
+        """Analyze NFT-specific test patterns."""
+        failures = []
+        
+        required_patterns = ["metadata", "royalty", "transfer", "approve"]
+        missing_patterns = [p for p in required_patterns if p not in content.lower()]
+        
+        if len(missing_patterns) > 1 and "test" in content.lower():
+            failures.append(FailureDetection(
+                failure_type=FailureType.CONTEXT_IGNORANCE,
+                severity="medium",
+                description="NFT project missing domain-specific test patterns",
+                location=file_path,
+                evidence=f"Missing patterns: {', '.join(missing_patterns)}",
+                recommendation="Add NFT-specific tests: metadata validation, royalty calculation, transfer security",
+                auto_fixable=False
+            ))
+        
+        return failures
+    
+    async def _analyze_governance_specific_patterns(self, content: str, file_path: str) -> List[FailureDetection]:
+        """Analyze governance-specific test patterns."""
+        failures = []
+        
+        required_patterns = ["vote", "proposal", "delegate", "timelock"]
+        missing_patterns = [p for p in required_patterns if p not in content.lower()]
+        
+        if len(missing_patterns) > 2 and "test" in content.lower():
+            failures.append(FailureDetection(
+                failure_type=FailureType.CONTEXT_IGNORANCE,
+                severity="medium", 
+                description="Governance project missing domain-specific test patterns",
+                location=file_path,
+                evidence=f"Missing patterns: {', '.join(missing_patterns)}",
+                recommendation="Add governance-specific tests: voting integrity, proposal lifecycle, delegation security",
+                auto_fixable=False
+            ))
+        
+        return failures
+    
+    async def _filter_false_positives(self, failures: List[FailureDetection], 
+                                     file_path: str, content: str) -> List[FailureDetection]:
+        """
+        Filter out likely false positives based on context analysis.
+        
+        This is the key method that reduces false positive rates for sophisticated test suites.
+        """
+        filtered_failures = []
+        
+        # Assess overall sophistication
+        sophistication_indicators = [
+            "invariant_" in content,
+            "StdInvariant" in content,
+            len(re.findall(r'function\s+test\w+', content)) > 10,
+            "security" in file_path.lower(),
+            "setUp" in content,
+            bool(re.search(r'Mock\w+.*\{.*mapping.*\}', content, re.DOTALL)),
+            len(re.findall(r'expect.*[Rr]evert', content)) > 3
+        ]
+        
+        sophistication_score = sum(sophistication_indicators) / len(sophistication_indicators)
+        
+        for failure in failures:
+            # Keep critical failures always
+            if failure.severity == "critical":
+                filtered_failures.append(failure)
+                continue
+            
+            # For sophisticated test suites, be more lenient
+            if sophistication_score > 0.6:
+                # Skip common false positives for sophisticated suites
+                if failure.failure_type in [
+                    FailureType.MISSING_NEGATIVE_TESTS,
+                    FailureType.INSUFFICIENT_EDGE_CASES,
+                    FailureType.MOCK_CHEATING
+                ] and failure.severity in ["medium", "low"]:
+                    # Add false positive warning instead
+                    filtered_failures.append(FailureDetection(
+                        failure_type=FailureType.FALSE_POSITIVE_RISK,
+                        severity="low",
+                        description=f"Potential false positive: {failure.description}",
+                        location=failure.location,
+                        evidence=f"Sophisticated test architecture detected (score: {sophistication_score:.2f})",
+                        recommendation="Review this flag carefully - may be false positive for sophisticated test suite",
+                        auto_fixable=False
+                    ))
+                    continue
+            
+            # Keep the failure
+            filtered_failures.append(failure)
+        
+        return filtered_failures

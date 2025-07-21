@@ -585,3 +585,105 @@
 2025-07-20 09:17:10,011 - components.testing_server - INFO -    AST-based semantic analysis: ENABLED
 2025-07-20 09:17:10,011 - components.testing_server - INFO -    AI failure detection: ENABLED
 2025-07-20 09:17:10,022 - FastMCP.fastmcp.server.server - INFO - Starting MCP server 'foundry-testing-agent' with transport 'stdio'
+2025-07-20 09:19:09,859 - components.testing_server - INFO - 🧹 Cleaning up server resources...
+2025-07-20 09:19:09,926 - components.foundry_adapter - INFO - Foundry adapter cleanup completed
+2025-07-20 09:19:09,946 - components.testing_server - INFO - ✅ Server cleanup completed successfully
+2025-07-20 09:21:31,440 - components.testing_server - INFO - 🚀 Initializing Enhanced Smart Contract Testing MCP Server...
+2025-07-20 09:21:31,444 - components.testing_server - INFO - Initializing server components...
+2025-07-20 09:21:31,444 - components.foundry_adapter - INFO - Foundry adapter initialized with forge at: /Users/shaunmartinak/.foundry/bin/forge
+2025-07-20 09:21:31,444 - components.ast_analyzer - INFO - AST analyzer initialized
+2025-07-20 09:21:31,445 - components.ast_analyzer - INFO - AST analyzer initialized
+2025-07-20 09:21:31,445 - components.project_analyzer - INFO - Project analyzer initialized
+2025-07-20 09:21:31,445 - components.ast_analyzer - INFO - AST analyzer initialized
+2025-07-20 09:21:31,445 - components.ai_failure_detector - INFO - AI failure detector initialized with AST support
+2025-07-20 09:21:31,445 - components.testing_resources - INFO - Testing resources initialized - Server root: /Users/shaunmartinak/ProjectDiamond/foundry-testing-mcp
+2025-07-20 09:21:31,445 - components.testing_tools - INFO - Intelligent testing tools initialized with enhanced capabilities
+2025-07-20 09:21:31,445 - components.testing_tools - INFO - -> AST-based semantic analysis: ENABLED
+2025-07-20 09:21:31,445 - components.testing_tools - INFO - -> AI failure detection with context awareness: ENABLED
+2025-07-20 09:21:31,446 - components.testing_tools - INFO - -> Contextual workflow generation: ENABLED
+2025-07-20 09:21:31,446 - components.testing_prompts - INFO - Testing prompts initialized
+2025-07-20 09:21:31,446 - components.testing_server - INFO - All components initialized successfully
+2025-07-20 09:21:31,446 - components.testing_server - INFO - Registering MCP components...
+2025-07-20 09:21:31,446 - components.testing_tools - INFO - Registering testing tools...
+2025-07-20 09:21:31,452 - components.testing_tools - INFO - Testing tools registered successfully
+2025-07-20 09:21:31,452 - components.testing_server - INFO - ✅ Testing Tools registered (AST-enhanced analysis)
+2025-07-20 09:21:31,454 - components.testing_resources - INFO - Testing resources registered successfully
+2025-07-20 09:21:31,454 - components.testing_server - INFO - ✅ Testing Resources registered (templates, guides)
+2025-07-20 09:21:31,457 - components.testing_prompts - INFO - Testing prompts registered successfully
+2025-07-20 09:21:31,457 - components.testing_server - INFO - ✅ Testing Prompts registered (workflow guidance)
+2025-07-20 09:21:31,457 - components.testing_server - INFO - ✅ Enhanced Server Info tool registered
+2025-07-20 09:21:31,457 - components.testing_server - INFO - ✅ Smart Contract Testing MCP Server initialized successfully
+2025-07-20 09:21:31,458 - components.testing_server - INFO - Enhanced with AST-based semantic analysis and AI failure detection
+2025-07-20 09:21:31,458 - components.testing_server - INFO - 🚀 Starting Enhanced MCP server in STDIO mode
+2025-07-20 09:21:31,458 - components.testing_server - INFO -    AST-based semantic analysis: ENABLED
+2025-07-20 09:21:31,458 - components.testing_server - INFO -    AI failure detection: ENABLED
+2025-07-20 09:21:31,470 - FastMCP.fastmcp.server.server - INFO - Starting MCP server 'foundry-testing-agent' with transport 'stdio'
+2025-07-20 12:10:17,166 - components.testing_server - INFO - 🧹 Cleaning up server resources...
+2025-07-20 12:10:17,269 - components.foundry_adapter - INFO - Foundry adapter cleanup completed
+2025-07-20 12:10:17,332 - components.testing_server - INFO - ✅ Server cleanup completed successfully
+2025-07-20 12:14:45,683 - components.testing_server - INFO - 🚀 Initializing Enhanced Smart Contract Testing MCP Server...
+2025-07-20 12:14:45,691 - components.testing_server - INFO - Initializing server components...
+2025-07-20 12:14:45,692 - components.foundry_adapter - INFO - Foundry adapter initialized with forge at: /Users/shaunmartinak/.foundry/bin/forge
+2025-07-20 12:14:45,692 - components.ast_analyzer - INFO - AST analyzer initialized
+2025-07-20 12:14:45,692 - components.ast_analyzer - INFO - AST analyzer initialized
+2025-07-20 12:14:45,692 - components.project_analyzer - INFO - Project analyzer initialized
+2025-07-20 12:14:45,692 - components.ast_analyzer - INFO - AST analyzer initialized
+2025-07-20 12:14:45,692 - components.ai_failure_detector - INFO - AI failure detector initialized with AST support
+2025-07-20 12:14:45,692 - components.testing_resources - INFO - Testing resources initialized - Server root: /Users/shaunmartinak/ProjectDiamond/foundry-testing-mcp
+2025-07-20 12:14:45,692 - components.testing_tools - INFO - Intelligent testing tools initialized with enhanced capabilities
+2025-07-20 12:14:45,692 - components.testing_tools - INFO - -> AST-based semantic analysis: ENABLED
+2025-07-20 12:14:45,699 - components.testing_tools - INFO - -> AI failure detection with context awareness: ENABLED
+2025-07-20 12:14:45,699 - components.testing_tools - INFO - -> Contextual workflow generation: ENABLED
+2025-07-20 12:14:45,699 - components.testing_prompts - INFO - Testing prompts initialized
+2025-07-20 12:14:45,699 - components.testing_server - INFO - All components initialized successfully
+2025-07-20 12:14:45,699 - components.testing_server - INFO - Registering MCP components...
+2025-07-20 12:14:45,699 - components.testing_tools - INFO - Registering testing tools...
+2025-07-20 12:14:45,707 - components.testing_tools - INFO - Testing tools registered successfully
+2025-07-20 12:14:45,707 - components.testing_server - INFO - ✅ Testing Tools registered (AST-enhanced analysis)
+2025-07-20 12:14:45,718 - components.testing_resources - INFO - Testing resources registered successfully
+2025-07-20 12:14:45,718 - components.testing_server - INFO - ✅ Testing Resources registered (templates, guides)
+2025-07-20 12:14:45,720 - components.testing_prompts - INFO - Testing prompts registered successfully
+2025-07-20 12:14:45,720 - components.testing_server - INFO - ✅ Testing Prompts registered (workflow guidance)
+2025-07-20 12:14:45,720 - components.testing_server - INFO - ✅ Enhanced Server Info tool registered
+2025-07-20 12:14:45,720 - components.testing_server - INFO - ✅ Smart Contract Testing MCP Server initialized successfully
+2025-07-20 12:14:45,720 - components.testing_server - INFO - Enhanced with AST-based semantic analysis and AI failure detection
+2025-07-20 12:14:45,720 - components.testing_server - INFO - 🚀 Starting Enhanced MCP server in STDIO mode
+2025-07-20 12:14:45,720 - components.testing_server - INFO -    AST-based semantic analysis: ENABLED
+2025-07-20 12:14:45,720 - components.testing_server - INFO -    AI failure detection: ENABLED
+2025-07-20 12:14:45,730 - FastMCP.fastmcp.server.server - INFO - Starting MCP server 'foundry-testing-agent' with transport 'stdio'
+2025-07-20 21:30:26,014 - components.testing_server - INFO - 🧹 Cleaning up server resources...
+2025-07-20 21:30:26,116 - components.foundry_adapter - INFO - Foundry adapter cleanup completed
+2025-07-20 21:30:26,134 - components.testing_server - INFO - ✅ Server cleanup completed successfully
+2025-07-20 21:30:34,360 - components.testing_server - INFO - 🚀 Initializing Enhanced Smart Contract Testing MCP Server...
+2025-07-20 21:30:34,363 - components.testing_server - INFO - Initializing server components...
+2025-07-20 21:30:34,365 - components.foundry_adapter - INFO - Foundry adapter initialized with forge at: /Users/shaunmartinak/.foundry/bin/forge
+2025-07-20 21:30:34,365 - components.ast_analyzer - INFO - AST analyzer initialized
+2025-07-20 21:30:34,365 - components.ast_analyzer - INFO - AST analyzer initialized
+2025-07-20 21:30:34,366 - components.project_analyzer - INFO - Project analyzer initialized
+2025-07-20 21:30:34,366 - components.ast_analyzer - INFO - AST analyzer initialized
+2025-07-20 21:30:34,366 - components.ai_failure_detector - INFO - AI failure detector initialized with AST support
+2025-07-20 21:30:34,366 - components.testing_resources - INFO - Testing resources initialized - Server root: /Users/shaunmartinak/ProjectDiamond/foundry-testing-mcp
+2025-07-20 21:30:34,366 - components.testing_tools - INFO - Intelligent testing tools initialized with enhanced capabilities
+2025-07-20 21:30:34,366 - components.testing_tools - INFO - -> AST-based semantic analysis: ENABLED
+2025-07-20 21:30:34,366 - components.testing_tools - INFO - -> AI failure detection with context awareness: ENABLED
+2025-07-20 21:30:34,366 - components.testing_tools - INFO - -> Contextual workflow generation: ENABLED
+2025-07-20 21:30:34,366 - components.testing_prompts - INFO - Testing prompts initialized
+2025-07-20 21:30:34,366 - components.testing_server - INFO - All components initialized successfully
+2025-07-20 21:30:34,366 - components.testing_server - INFO - Registering MCP components...
+2025-07-20 21:30:34,368 - components.testing_tools - INFO - Registering testing tools...
+2025-07-20 21:30:34,374 - components.testing_tools - INFO - Testing tools registered successfully
+2025-07-20 21:30:34,374 - components.testing_server - INFO - ✅ Testing Tools registered (AST-enhanced analysis)
+2025-07-20 21:30:34,376 - components.testing_resources - INFO - Testing resources registered successfully
+2025-07-20 21:30:34,376 - components.testing_server - INFO - ✅ Testing Resources registered (templates, guides)
+2025-07-20 21:30:34,377 - components.testing_prompts - INFO - Testing prompts registered successfully
+2025-07-20 21:30:34,377 - components.testing_server - INFO - ✅ Testing Prompts registered (workflow guidance)
+2025-07-20 21:30:34,377 - components.testing_server - INFO - ✅ Enhanced Server Info tool registered
+2025-07-20 21:30:34,377 - components.testing_server - INFO - ✅ Smart Contract Testing MCP Server initialized successfully
+2025-07-20 21:30:34,377 - components.testing_server - INFO - Enhanced with AST-based semantic analysis and AI failure detection
+2025-07-20 21:30:34,377 - components.testing_server - INFO - 🚀 Starting Enhanced MCP server in STDIO mode
+2025-07-20 21:30:34,377 - components.testing_server - INFO -    AST-based semantic analysis: ENABLED
+2025-07-20 21:30:34,377 - components.testing_server - INFO -    AI failure detection: ENABLED
+2025-07-20 21:30:34,393 - FastMCP.fastmcp.server.server - INFO - Starting MCP server 'foundry-testing-agent' with transport 'stdio'
+2025-07-21 06:59:55,633 - components.testing_server - INFO - 🧹 Cleaning up server resources...
+2025-07-21 06:59:55,760 - components.foundry_adapter - INFO - Foundry adapter cleanup completed
+2025-07-21 06:59:55,773 - components.testing_server - INFO - ✅ Server cleanup completed successfully
