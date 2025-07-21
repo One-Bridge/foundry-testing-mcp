@@ -287,6 +287,240 @@ Provide specific, actionable optimizations that improve speed while maintaining 
                 }
             ]
         
+        @mcp.prompt(
+            name="analyze-project-domain",
+            description="Analyze project domain and test suite quality using LLM context assessment"
+        )
+        async def analyze_project_domain(
+            project_sources: str = "",
+            test_sources: str = ""
+        ) -> List[Dict[str, Any]]:
+            """Generates LLM prompt for domain classification and test quality assessment."""
+            return [
+                {
+                    "role": "system", 
+                    "content": await self._get_master_system_prompt()
+                },
+                {
+                    "role": "user",
+                    "content": f"""
+You are an expert smart-contract auditor and testing architect. Analyze the following Solidity project and test suite.
+
+**PROJECT SOURCES:**
+{project_sources}
+
+**TEST SOURCES:**
+{test_sources}
+
+**ANALYSIS REQUIRED:**
+1. **Primary Domain** - Choose ONE: DeFi, NFT, Governance, Gaming, Bridge, Utility, General
+2. **Secondary Domains** - Any additional relevant domains  
+3. **Test Quality Score** - 0-1 scale where 1 = production-ready tests
+4. **Missing Patterns** - Critical domain-specific test patterns absent
+5. **Recommendations** - Up to 5 concrete actions to improve test suite
+
+**RESPOND WITH JSON ONLY:**
+{{
+  "primary_domain": "string",
+  "secondary_domains": ["string"],
+  "contextual_quality_score": 0.0,
+  "missing_patterns": ["string"], 
+  "recommendations": ["string"]
+}}
+                    """
+                }
+            ]
+
+        @mcp.prompt(
+            name="analyze-mock-sophistication",
+            description="Comprehensive mock contract analysis for elite test suite quality - critical quality gate"
+        )
+        async def analyze_mock_sophistication(
+            mock_contracts: str = "",
+            target_contracts: str = "",
+            test_context: str = ""
+        ) -> List[Dict[str, Any]]:
+            """Elite mock analysis prompt for preventing common mock failures and ensuring production-grade test quality."""
+            return [
+                {
+                    "role": "system",
+                    "content": await self._get_master_system_prompt()
+                },
+                {
+                    "role": "user", 
+                    "content": f"""
+You are an ELITE SOLIDITY AUDITOR AND TEST SUITE ARCHITECT. Perform comprehensive mock contract analysis to prevent test failures and ensure production-grade quality.
+
+**MOCK CONTRACTS TO ANALYZE:**
+{mock_contracts}
+
+**TARGET CONTRACTS BEING TESTED:**
+{target_contracts}
+
+**TEST CONTEXT:**
+{test_context}
+
+**CRITICAL ANALYSIS FRAMEWORK:**
+
+## 1. SOPHISTICATION LEVEL ASSESSMENT
+
+**MINIMAL LEVEL** (Avoid - High Risk):
+- Always returns fixed values (return 1000e18;)
+- No state tracking or configurability
+- Single-function mocks with hardcoded responses
+- No failure simulation capabilities
+
+**BASIC LEVEL** (Acceptable for Simple Tests):
+- Basic state variables (balances, allowances)
+- Simple getter/setter patterns
+- Fixed but configurable return values
+- Basic success/failure toggling
+
+**INTERMEDIATE LEVEL** (Good for Most Testing):
+- Comprehensive state tracking with mappings
+- Configurable behavior patterns (transfer blocking, revert modes)
+- Event emission matching real contracts
+- Multiple failure mode simulation
+- Input validation and realistic constraints
+
+**ADVANCED LEVEL** (Excellent for Complex Testing):
+- Sophisticated state management with complex business logic
+- Dynamic behavior based on call history
+- Realistic edge case simulation (overflow, underflow, precision)
+- Advanced access control patterns
+- Cross-contract interaction simulation
+
+**SOPHISTICATED LEVEL** (Elite Production-Grade):
+- Full protocol behavior simulation
+- Complex state transitions and dependencies
+- Realistic economic incentives and constraints
+- Advanced security pattern implementation
+- Protocol-specific edge cases and attack vectors
+
+## 2. CHEATING PATTERN DETECTION
+
+**CRITICAL RED FLAGS:**
+- Always returns true/success regardless of input
+- No validation of transfer amounts or recipient addresses
+- Hardcoded oracle prices without market simulation
+- Missing state updates after operations
+- No revert conditions for invalid operations
+- Balance updates without conservation principles
+- Missing access control in administrative functions
+
+**LEGITIMATE PATTERNS:**
+- Configurable failure modes for testing edge cases
+- State tracking that reflects real contract behavior
+- Realistic constraints and validation logic
+- Proper event emission matching target contracts
+- Conservation of value in balance calculations
+
+## 3. CONFIGURABILITY AND REALISM ANALYSIS
+
+**ESSENTIAL CONFIGURABILITY:**
+- Transfer blocking/failure simulation
+- Custom revert messages and conditions
+- Dynamic balance manipulation for testing scenarios
+- Oracle price manipulation for DeFi testing
+- Access control simulation (owner, admin roles)
+- Protocol-specific parameter adjustment
+
+**REALISM REQUIREMENTS:**
+- State changes reflect real-world contract behavior
+- Gas consumption considerations in complex operations
+- Proper handling of edge cases (zero amounts, invalid addresses)
+- Realistic timing constraints and block dependencies
+- Economic incentive alignment with target protocol
+
+## 4. DOMAIN-SPECIFIC MOCK PATTERNS
+
+**DeFi Mocks Must Include:**
+- Price oracle manipulation with realistic bounds
+- Liquidity provider behavior simulation
+- Flash loan attack scenario support
+- Slippage and MEV simulation capabilities
+- Protocol fee and reward distribution logic
+
+**NFT Mocks Must Include:**
+- Metadata URI handling and validation
+- Royalty calculation and distribution
+- Transfer restriction and approval patterns
+- Batch operation support where applicable
+- Marketplace interaction simulation
+
+**Governance Mocks Must Include:**
+- Voting power calculation and delegation
+- Proposal lifecycle simulation
+- Timelock and execution delay handling
+- Quorum and threshold validation
+- Vote manipulation resistance testing
+
+## 5. FAILURE MODE ANALYSIS
+
+**REQUIRED FAILURE MODES:**
+- Insufficient balance/allowance scenarios
+- Unauthorized access attempts
+- Invalid parameter inputs (zero addresses, overflow amounts)
+- Reentrancy attack simulation
+- Front-running and MEV exploitation scenarios
+- Network congestion and gas limit scenarios
+
+## 6. STATE TRACKING SOPHISTICATION
+
+**BASIC STATE TRACKING:**
+- Balance mappings with proper updates
+- Allowance tracking for ERC20 patterns
+- Ownership and access control state
+
+**ADVANCED STATE TRACKING:**
+- Transaction history and call pattern analysis
+- Cross-contract dependency simulation
+- Time-based state evolution
+- Complex business logic state machines
+
+## 7. IMPROVEMENT RECOMMENDATIONS
+
+**STRUCTURE YOUR ANALYSIS AS JSON:**
+{{
+  "overall_sophistication_score": 0.0,
+  "mock_analyses": [
+    {{
+      "mock_name": "string",
+      "mock_type": "ERC20|ERC721|Oracle|Custom",
+      "sophistication_level": "minimal|basic|intermediate|advanced|sophisticated", 
+      "cheating_indicators": ["specific patterns found"],
+      "sophistication_indicators": ["positive patterns found"],
+      "configurability_score": 0.0,
+      "state_tracking_quality": "none|basic|intermediate|advanced",
+      "failure_modes_supported": ["specific failure scenarios"],
+      "realism_score": 0.0,
+      "critical_issues": ["blocking issues that will cause test failures"],
+      "improvement_recommendations": ["specific code changes needed"]
+    }}
+  ],
+  "suite_level_assessment": {{
+    "mock_coverage_completeness": 0.0,
+    "cross_mock_consistency": 0.0,
+    "integration_test_readiness": 0.0,
+    "security_test_enablement": 0.0
+  }},
+  "critical_gaps": ["missing mock capabilities that will block comprehensive testing"],
+  "immediate_actions": ["priority fixes to prevent test iteration failures"],
+  "enhancement_roadmap": ["strategic improvements for production-grade testing"]
+}}
+
+**FOCUS ON PREVENTING THESE COMMON FAILURES:**
+1. Tests that pass due to mock cheating rather than correct implementation
+2. Missing edge case coverage due to oversimplified mocks
+3. Security vulnerabilities missed due to unrealistic mock behavior
+4. Integration test failures due to mock/real contract behavior mismatches
+5. False security confidence from mocks that don't simulate attack vectors
+
+Provide actionable, specific recommendations that will create bullet-proof test suites.
+                    """
+                }
+            ]
+        
         logger.info("Testing prompts registered successfully")
     
     async def _get_master_system_prompt(self) -> str:
