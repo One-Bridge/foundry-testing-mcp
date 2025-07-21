@@ -1,6 +1,6 @@
 # User Stories & Implementation Outline – Foundry Testing MCP
 
-_Last revised: 2025-07-20_
+_Last revised: 2025-07-21_
 
 This guide shows two practical workflows for teams using the MCP server:
 
@@ -15,7 +15,7 @@ Both paths rely on the same three tools:
 | 2 | `execute_testing_workflow` | Generate phase plan; create or enhance tests |
 | 3 | `analyze_current_test_coverage` | Measure progress toward coverage target |
 
-All analysis is regex-first and requires only the local Foundry tool-chain and access to an MCP-capable LLM coding agent.
+Analysis starts with comprehensive regex heuristics enhanced by AST-based semantic understanding and requires only the local Foundry tool-chain and an MCP-capable LLM coding agent.
 
 ---
 

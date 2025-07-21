@@ -8,7 +8,7 @@ Smart-contract protocols are complex and time-sensitive.  Thorough testing is es
 
 1. **Connect an AI client** (Cursor, Claude Desktop, etc.) to the MCP server running on the developer’s machine.
 2. **Analyse the project** – The server inspects contracts, current tests, coverage and configuration.  No source code leaves the developer’s laptop.
-3. **Detect weaknesses** – Eight common failure patterns (e.g. circular logic, insufficient edge cases) are flagged early.
+3. **Detect weaknesses** – Twelve AI failure patterns (e.g. circular logic, mock cheating, inadequate randomization) are flagged early.
 4. **Generate a plan** – The server proposes a multi-phase workflow that can add or improve unit, integration, fuzz, invariant and security tests.
 5. **Run Foundry commands** – Every step leans on standard `forge` tooling; results are parsed and fed back into the workflow.
 
@@ -24,7 +24,7 @@ Smart-contract protocols are complex and time-sensitive.  Thorough testing is es
 | Capability | What It Delivers |
 |------------|-----------------|
 | Project analysis | Contract inventory, test counts, maturity classification, coverage snapshot |
-| AI-failure detection | Eight static patterns plus AST-based semantic checks |
+| AI-failure detection | Twelve static patterns filtered by AST-based semantic checks |
 | Workflow engine | Create or enhance test suites with phase tracking and progress metrics |
 | Foundry integration | Executes `forge test`, `forge coverage`, gas reporting, invariant runs |
 | Template library | Ready-made Solidity test templates (unit, integration, invariant, security, helper) |

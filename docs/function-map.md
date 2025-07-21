@@ -1,5 +1,5 @@
 # Function Map – Foundry Testing MCP  
-_(concise reference – updated 20 Jul 2025)_
+_(concise reference – updated 21 Jul 2025)_
 
 This index lists the primary entry points exposed to an AI client plus the key internal helpers they rely on.  All functions are implemented in the current codebase unless noted.  Public‐facing functions follow the MCP tooling contract and return JSON-serialisable dictionaries.
 
@@ -17,6 +17,8 @@ This index lists the primary entry points exposed to an AI client plus the key i
 | `debug_directory_detection` | same | Diagnose client/server cwd mismatch |
 | `discover_foundry_projects` | same | Scan disks for Foundry projects (fallback) |
 | `get_server_info` | `testing_server.py` | List tools, parameters, examples |
+| `validate_foundry_config` | same | Validate and auto-suggest fixes for `foundry.toml` (optimizer, viaIR, remappings) |
+| `get_mcp_resources_content` | same | Serve full template/pattern/doc payloads for offline AI use |
 
 _All public tools take an optional `project_path` for explicit targeting._
 
@@ -40,7 +42,7 @@ The adapter exposes *only* these helpers; the tool layer assembles them into hig
 | Module | Key Public API | Responsibility |
 |--------|----------------|----------------|
 | `ProjectAnalyzer` | `analyze_project` | Regex-first classification, risk scores, maturity level |
-| `AIFailureDetector` | `analyze_test_file`, `generate_failure_report` | Detect eight AI test anti-patterns |
+| `AIFailureDetector` | `analyze_test_file`, `generate_failure_report` | Detect twelve AI test anti-patterns with AST-based false-positive filtering |
 | `ASTAnalyzer` | `analyze_solidity_file` (optional) | Semantic enrichments when `solc` present |
 
 These modules are imported by the tool layer; they are **not** exposed directly to the client.

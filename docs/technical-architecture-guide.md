@@ -1,6 +1,6 @@
 # Foundry Testing MCP – Technical Architecture Guide
 
-_Last updated: 2025-07-20_
+_Last updated: 2025-07-21_
 
 The MCP server is a standalone Python service that allows an AI coding assistant to analyse, generate and run Solidity tests through the Foundry tool-chain.  This document explains the architecture, data flow and key design decisions.
 
@@ -11,7 +11,7 @@ The MCP server is a standalone Python service that allows an AI coding assistant
 ```text
 AI Client (Cursor / Claude) ──MCP protocol(stdio/http)──> MCP Server (Python)
                                          │
-                                         ├─► Tool Layer (7 public tools)
+                                         ├─► Tool Layer (10 public tools)
                                          │   initialise • analyse • workflow …
                                          │
                                          ├─► Analysis Layer
@@ -47,7 +47,7 @@ AI Client (Cursor / Claude) ──MCP protocol(stdio/http)──> MCP Server (Py
 
 ### 3.1 Tool Layer (`components/testing_tools.py`)
 
-Defines seven public MCP tools.  Each has:
+Defines ten public MCP tools.  Each has:
 * A clear JSON signature (validated automatically by FastMCP).
 * Inline doc-strings that appear in `get_server_info`.
 * Consistent error handling so that the AI client can reason about failures.
@@ -58,7 +58,7 @@ Defines seven public MCP tools.  Each has:
 |-----------|-----------|
 | `ProjectAnalyzer` | Scans contracts/tests, determines maturity level, classifies contract types, extracts mock requirements.  Pure regex with scoring heuristics. |
 | `ASTAnalyzer` | If `solc` is on the PATH, generates a compact AST (`solc --ast-compact-json`) and enriches the regex results (control-flow, security patterns). |
-| `AIFailureDetector` | Uses AST + regex to flag eight common anti-patterns (circular logic, mock cheating, etc.).  Falls back to regex-only when AST fails. |
+| `AIFailureDetector` | Uses AST + regex to flag twelve common anti-patterns (circular logic, mock cheating, inadequate randomization, etc.).  Employs false-positive suppression for sophisticated suites.  Falls back to regex-only when AST fails. |
 
 ### 3.3 Integration Layer (`components/foundry_adapter.py`)
 
