@@ -1424,10 +1424,10 @@ depth = 100
             
             template_file = template_files.get(template_type)
             if not template_file:
-                return {
-                    "name": f"{template_type.title()} Template",
+            return {
+                "name": f"{template_type.title()} Template",
                     "content": f"# Template type '{template_type}' not found",
-                    "placeholders": [],
+                "placeholders": [],
                     "usage_instructions": ["Template not available"],
                     "error": f"No template file mapped for type: {template_type}"
                 }
