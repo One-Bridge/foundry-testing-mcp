@@ -1331,12 +1331,12 @@ depth = 100
                         ]
                     }
                 
-                # Get templates content
+                # Get templates content directly from filesystem
                 if resource_type in ["all", "templates"]:
                     try:
-                        templates_content = await self.testing_resources.get_available_templates()
+                        templates_content = await self._get_all_templates()
                         resource_content["content"]["templates"] = templates_content
-                        logger.info("✅ Templates content loaded successfully")
+                        logger.info("✅ Templates content loaded successfully from filesystem")
                     except Exception as e:
                         logger.warning(f"Could not load templates: {e}")
                         resource_content["content"]["templates"] = {"error": str(e)}
@@ -1344,7 +1344,7 @@ depth = 100
                 # Get foundry patterns content
                 if resource_type in ["all", "patterns"]:
                     try:
-                        patterns_content = await self.testing_resources.get_foundry_testing_patterns()
+                        patterns_content = await self._get_foundry_patterns()
                         resource_content["content"]["foundry_patterns"] = patterns_content
                         logger.info("✅ Foundry patterns content loaded successfully")
                     except Exception as e:
@@ -1354,7 +1354,7 @@ depth = 100
                 # Get security patterns content
                 if resource_type in ["all", "security"]:
                     try:
-                        security_content = await self.testing_resources.get_security_testing_patterns()
+                        security_content = await self._get_security_patterns()
                         resource_content["content"]["security_patterns"] = security_content
                         logger.info("✅ Security patterns content loaded successfully")
                     except Exception as e:
@@ -1364,7 +1364,7 @@ depth = 100
                 # Get documentation content
                 if resource_type in ["all", "documentation"]:
                     try:
-                        documentation_content = await self.testing_resources.get_testing_documentation()
+                        documentation_content = await self._get_testing_documentation()
                         resource_content["content"]["documentation"] = documentation_content
                         logger.info("✅ Documentation content loaded successfully")
                     except Exception as e:
@@ -1382,10 +1382,12 @@ depth = 100
                 
                 # Add quick access examples
                 resource_content["quick_access_examples"] = [
-                    "📋 Template access: content.templates.test_contract.content",
+                    "📋 Template access: content.templates.unit.content",
                     "🏗️ File structure: content.foundry_patterns.content.test_organization.file_structure_pattern",
                     "🛡️ Security tests: content.security_patterns.categories.reentrancy.test_patterns",
-                    "📚 Best practices: content.documentation.sections.testing_best_practices"
+                    "📚 Best practices: content.documentation.sections.testing_best_practices",
+                    "🔒 Proxy testing: content.security_patterns.categories.proxy_patterns.test_patterns",
+                    "🔄 Proxy template: content.templates.proxy.content"
                 ]
                 
                 logger.info(f"✅ Successfully loaded {resource_type} MCP resources")
@@ -1408,35 +1410,256 @@ depth = 100
     
     # Template access helper methods
     async def _get_template_content(self, template_type: str) -> Dict[str, Any]:
-        """Get template content and placeholders from testing resources."""
-        if not self.testing_resources:
-            return {
-                "name": f"{template_type.title()} Template",
-                "content": f"# {template_type.title()} template not available - TestingResources not initialized",
-                "placeholders": [],
-                "usage_instructions": ["Template system not available"]
-            }
-        
+        """Get template content from actual template files in templates/ directory."""
         try:
-            template_content, placeholders = await self.testing_resources._load_template(template_type)
-            usage_instructions = self.testing_resources._get_template_usage_instructions(template_type)
+            # Map template types to actual file names in your templates/ directory
+            template_files = {
+                "unit": "test_contract_template.sol",
+                "integration": "integration_test_template.sol", 
+                "invariant": "invariant_test_template.sol",
+                "helper": "test_helper_template.sol",
+                "proxy": "proxy_test_template.sol"
+                # Add more as you create them: "security", "fork", etc.
+            }
+            
+            template_file = template_files.get(template_type)
+            if not template_file:
+                return {
+                    "name": f"{template_type.title()} Template",
+                    "content": f"# Template type '{template_type}' not found",
+                    "placeholders": [],
+                    "usage_instructions": ["Template not available"],
+                    "error": f"No template file mapped for type: {template_type}"
+                }
+            
+            # Build path to template file (MCP root/templates/)
+            mcp_root = os.path.dirname(os.path.dirname(__file__))  # Go up from components/
+            template_path = os.path.join(mcp_root, "templates", template_file)
+            
+            if not os.path.exists(template_path):
+                return {
+                    "name": f"{template_type.title()} Template",
+                    "content": f"# Template file not found: {template_path}",
+                    "placeholders": [],
+                    "usage_instructions": ["Template file missing"],
+                    "error": f"Template file does not exist: {template_path}"
+                }
+            
+            # Read the actual template file
+            with open(template_path, 'r', encoding='utf-8') as f:
+                template_content = f.read()
+            
+            # Extract placeholders from the template content
+            import re
+            placeholders = list(set(re.findall(r'\{\{([^}]+)\}\}', template_content)))
             
             return {
                 "name": f"{template_type.title()} Test Template",
-                "description": f"Production-ready template for {template_type} testing scenarios",
+                "description": f"Production-ready template for {template_type} testing scenarios from {template_file}",
                 "template_type": template_type,
                 "content": template_content,
-                "placeholders": placeholders,
-                "usage_instructions": usage_instructions
+                "placeholders": sorted(placeholders),  # Sort for consistency
+                "usage_instructions": self._get_template_usage_instructions(template_type),
+                "source_file": template_path,
+                "file_size": len(template_content),
+                "placeholder_count": len(placeholders)
             }
+            
         except Exception as e:
             logger.warning(f"Could not load {template_type} template: {e}")
             return {
                 "name": f"{template_type.title()} Template",
                 "content": f"# Template loading error: {e}",
                 "placeholders": [],
-                "usage_instructions": ["Template could not be loaded"]
+                "usage_instructions": ["Template could not be loaded"],
+                "error": str(e)
             }
+
+    async def _get_all_templates(self) -> Dict[str, Any]:
+        """Get all available test templates with their content."""
+        try:
+            templates = {}
+            template_types = ["unit", "integration", "invariant", "helper", "proxy"]
+            
+            for template_type in template_types:
+                try:
+                    template_content = await self._get_template_content(template_type)
+                    templates[template_type] = template_content
+                except Exception as e:
+                    logger.warning(f"Could not load {template_type} template: {e}")
+                    templates[template_type] = {"error": str(e)}
+            
+            return {
+                "name": "Available Test Templates",
+                "description": "Comprehensive test templates for different testing scenarios",
+                "templates": templates,
+                "usage_note": "Use templates[template_type].content for the actual Solidity code"
+            }
+        except Exception as e:
+            logger.error(f"Error loading templates: {e}")
+            return {"error": str(e)}
+    
+    async def _get_security_patterns(self) -> Dict[str, Any]:
+        """Get security testing patterns and guidelines."""
+        return {
+            "name": "Security Testing Patterns",
+            "description": "Comprehensive security testing patterns for smart contract auditing",
+            "categories": {
+                "reentrancy": {
+                    "description": "Testing for reentrancy vulnerabilities",
+                    "test_patterns": [
+                        "Mock external contracts to simulate reentrancy attacks",
+                        "Test function state before and after external calls",
+                        "Verify reentrancy guards block recursive calls",
+                        "Test cross-function reentrancy scenarios"
+                    ],
+                    "example_test": '''
+function test_transfer_reentrancyAttack_shouldRevert() public {
+    // Setup malicious contract that attempts reentrancy
+    MaliciousReceiver attacker = new MaliciousReceiver(address(token));
+    
+    vm.expectRevert("ReentrancyGuard: reentrant call");
+    attacker.initiateAttack();
+}'''
+                },
+                "access_control": {
+                    "description": "Testing access control mechanisms",
+                    "test_patterns": [
+                        "Test unauthorized access attempts",
+                        "Verify role-based permissions", 
+                        "Test privilege escalation scenarios",
+                        "Validate ownership transfer security"
+                    ]
+                },
+                "oracle_manipulation": {
+                    "description": "Testing oracle price manipulation resistance",
+                    "test_patterns": [
+                        "Mock oracle to return extreme prices",
+                        "Test time-weighted average price (TWAP) resistance",
+                        "Verify circuit breakers activate",
+                        "Test oracle failure scenarios"
+                    ]
+                },
+                "flash_loan_attacks": {
+                    "description": "Testing flash loan attack resistance",
+                    "test_patterns": [
+                        "Simulate large flash loan operations",
+                        "Test price manipulation via flash loans",
+                        "Verify borrowing limits and restrictions",
+                        "Test arbitrage protection mechanisms"
+                    ]
+                },
+                "proxy_patterns": {
+                    "description": "Testing proxy pattern implementations",
+                    "test_patterns": [
+                        "Test proxy upgrade mechanisms",
+                        "Verify state preservation across upgrades",
+                        "Test admin access controls for upgrades",
+                        "Verify implementation contract isolation"
+                    ]
+                }
+            }
+        }
+    
+    async def _get_testing_documentation(self) -> Dict[str, Any]:
+        """Get comprehensive testing documentation and best practices."""
+        return {
+            "name": "Smart Contract Testing Documentation",
+            "description": "Comprehensive guide for professional smart contract testing",
+            "sections": {
+                "testing_best_practices": {
+                    "title": "Testing Best Practices",
+                    "content": [
+                        "Write descriptive test names that explain what is being tested",
+                        "Use the AAA pattern: Arrange, Act, Assert",
+                        "Test both positive and negative scenarios",
+                        "Mock external dependencies appropriately",
+                        "Aim for high code coverage but focus on critical paths",
+                        "Use property-based testing for complex logic",
+                        "Test edge cases and boundary conditions"
+                    ]
+                },
+                "coverage_guidelines": {
+                    "title": "Coverage Guidelines", 
+                    "content": [
+                        "Aim for 90%+ line coverage on critical contracts",
+                        "Prioritize branch coverage over line coverage",
+                        "Focus coverage on business logic and security-critical functions",
+                        "Don't ignore uncovered error paths",
+                        "Use integration tests to cover cross-contract interactions"
+                    ]
+                },
+                "security_testing": {
+                    "title": "Security Testing Methodology",
+                    "content": [
+                        "Follow the OWASP Smart Contract Security Testing methodology",
+                        "Test for common vulnerabilities: reentrancy, overflow, access control",
+                        "Use invariant testing for critical system properties",
+                        "Simulate economic attacks and arbitrage scenarios",
+                        "Test with realistic attacker models and capabilities"
+                    ]
+                },
+                "proxy_testing": {
+                    "title": "Proxy Pattern Testing",
+                    "content": [
+                        "Always test through the proxy address, not implementation",
+                        "Test state preservation across upgrades",
+                        "Verify admin controls for upgrade functions",
+                        "Test initialization functions can only be called once",
+                        "For Diamond patterns, test facet addition/removal/replacement"
+                    ]
+                }
+            }
+        }
+    
+    def _get_template_usage_instructions(self, template_type: str) -> List[str]:
+        """Get usage instructions for a template type."""
+        instructions = {
+            "unit": [
+                "Replace {{CONTRACT_NAME}} with your contract name",
+                "Replace {{CONTRACT_INSTANCE}} with lowercase instance name", 
+                "Fill in {{CONSTRUCTOR_ARGS}} with actual constructor parameters",
+                "Add specific test functions for your contract's methods",
+                "Update {{CORE_FUNCTION_TESTS}} with your actual function tests",
+                "Customize {{INITIAL_STATE_ASSERTIONS}} for your contract's initial state"
+            ],
+            "integration": [
+                "Replace {{PRIMARY_CONTRACT}} and {{SECONDARY_CONTRACT}} with actual contract names",
+                "Update import paths to match your project structure",
+                "Customize {{PRIMARY_CONSTRUCTOR_ARGS}} and {{SECONDARY_CONSTRUCTOR_ARGS}}",
+                "Define {{ADDITIONAL_CONTRACT_INSTANCES}} if you have more contracts",
+                "Add your specific workflow logic in the test functions"
+            ],
+            "invariant": [
+                "Replace {{CONTRACT_NAME}} with your contract name",
+                "Fill in {{CONSTRUCTOR_ARGS}} with actual constructor parameters",
+                "Define specific invariants in the invariant functions",
+                "Add targeted functions for fuzz testing",
+                "Customize {{STATE_CONSISTENCY_CHECKS}} for your business logic"
+            ],
+            "helper": [
+                "Replace {{CONTRACT_NAME}} with your contract name",
+                "Define {{TEST_DATA_TYPE}} structure for your test data",
+                "Customize scenario setups ({{SCENARIO_1_SETUP}}, etc.)",
+                "Add your specific {{STATE_ASSERTIONS}} logic",
+                "Define workflow steps for your contract's operations"
+            ],
+            "proxy": [
+                "Replace {{IMPLEMENTATION_CONTRACT}} with your implementation contract name",
+                "Replace {{IMPLEMENTATION_V2_CONTRACT}} with your V2 contract for upgrade testing",
+                "Choose {{PROXY_TYPE}} (TransparentUpgradeableProxy, ERC1967Proxy, or Diamond)",
+                "Fill in {{PROXY_SETUP}} with the appropriate setup function call",
+                "Define {{INITIALIZATION_PARAMS}} for your contract's initialize function",
+                "Customize {{STATE_GETTER}} and {{SETTER_FUNCTION}} for your contract's interface",
+                "CRITICAL: Always test through proxy address, never implementation directly"
+            ]
+        }
+        
+        return instructions.get(template_type, [
+            f"Customize the {template_type} template for your specific use case",
+            "Replace placeholder values with your contract details",
+            "Add test logic specific to your contract's functionality"
+        ])
     
     async def _get_foundry_patterns(self) -> Dict[str, Any]:
         """Get Foundry testing patterns from testing resources."""

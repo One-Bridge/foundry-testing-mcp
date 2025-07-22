@@ -110,6 +110,11 @@ class ProjectAnalyzer:
             "governance": [
                 "Governor", "Timelock", "propose", "execute", "vote",
                 "delegation"
+            ],
+            "proxy_patterns": [
+                "delegatecall", "UUPSUpgradeable", "TransparentUpgradeableProxy",
+                "Diamond", "IDiamondCut", "EIP-1967", "implementation",
+                "upgradeTo", "upgradeToAndCall", "beacon", "ProxyAdmin"
             ]
         }
         
@@ -325,8 +330,13 @@ class ProjectAnalyzer:
             else:
                 combined_functions = regex_analysis.functions
             
+            # Detect proxy patterns for the enhanced analysis
+            proxy_analysis = self._detect_proxy_patterns(
+                content, regex_analysis.dependencies
+            )
+            
             # Return enhanced analysis
-            return ContractAnalysis(
+            enhanced_analysis = ContractAnalysis(
                 path=regex_analysis.path,
                 contract_name=regex_analysis.contract_name,
                 contract_type=regex_analysis.contract_type,  # Keep regex classification
@@ -337,6 +347,11 @@ class ProjectAnalyzer:
                 dependencies=regex_analysis.dependencies,
                 mock_requirements=regex_analysis.mock_requirements  # Preserve mock requirements
             )
+            
+            # Add proxy analysis as additional attribute
+            enhanced_analysis.proxy_analysis = proxy_analysis
+            
+            return enhanced_analysis
             
         except Exception as e:
             logger.debug(f"AST enhancement failed: {e}")
@@ -1041,6 +1056,106 @@ class ProjectAnalyzer:
             "avoid_direct_upgrade": has_uups,  # UUPS doesn't expose upgradeTo directly
             "safe_upgrade_testing": not has_upgrade_to or not has_uups
         }
+    
+    def _detect_proxy_patterns(self, content: str, dependencies: List[str]) -> Dict[str, Any]:
+        """
+        Comprehensive proxy pattern detection for enhanced testing guidance.
+        
+        Identifies proxy patterns and provides specific testing requirements based on
+        the user's proxy pattern knowledge base.
+        """
+        content_lower = content.lower()
+        
+        # EIP-1967 Storage Slot Detection
+        eip1967_implementation_slot = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+        eip1967_admin_slot = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6107"
+        has_eip1967_slots = eip1967_implementation_slot in content_lower or eip1967_admin_slot in content_lower
+        
+        # Delegatecall Detection
+        has_delegatecall = "delegatecall" in content_lower
+        
+        # Proxy Pattern Type Detection
+        proxy_patterns = {
+            "transparent": any(pattern in content_lower for pattern in [
+                "transparentupgradeableproxy", "transparent", "proxyadmin"
+            ]),
+            "uups": any(pattern in content_lower for pattern in [
+                "uupsupgradeable", "uups", "_authorizeupgrade"
+            ]),
+            "diamond": any(pattern in content_lower for pattern in [
+                "diamond", "idiamondcut", "facet", "diamondcut"
+            ]),
+            "beacon": any(pattern in content_lower for pattern in [
+                "beacon", "beaconproxy", "upgradeablebeacon"
+            ])
+        }
+        
+        # Determine primary pattern
+        detected_pattern = "none"
+        for pattern, detected in proxy_patterns.items():
+            if detected:
+                detected_pattern = pattern
+                break
+        
+        # Check for proxy dependencies in imports
+        proxy_dependencies = [dep for dep in dependencies if any(proxy_term in dep.lower() 
+                             for proxy_term in ["proxy", "upgradeable", "diamond", "beacon"])]
+        
+        # Generate testing requirements
+        testing_requirements = self._generate_proxy_testing_requirements(detected_pattern, content_lower)
+        
+        return {
+            "is_proxy": detected_pattern != "none" or has_delegatecall or has_eip1967_slots,
+            "pattern_type": detected_pattern,
+            "has_delegatecall": has_delegatecall,
+            "has_eip1967_slots": has_eip1967_slots,
+            "proxy_dependencies": proxy_dependencies,
+            "testing_requirements": testing_requirements,
+            "risk_level": "high" if detected_pattern in ["diamond", "transparent"] else "medium" if detected_pattern == "uups" else "low"
+        }
+    
+    def _generate_proxy_testing_requirements(self, pattern_type: str, content: str) -> List[str]:
+        """Generate specific testing requirements based on proxy pattern."""
+        base_requirements = [
+            "Test all interactions through proxy address, never implementation directly",
+            "Verify state preservation across upgrades",
+            "Test admin access controls for upgrade functions",
+            "Verify initialization functions can only be called once"
+        ]
+        
+        pattern_specific = {
+            "transparent": [
+                "Test ProxyAdmin contract controls upgrade permissions",
+                "Verify admin cannot call implementation functions",
+                "Test changeAdmin functionality",
+                "Verify delegatecall forwarding works correctly"
+            ],
+            "uups": [
+                "Test _authorizeUpgrade access control",
+                "Verify upgradeTo is only callable by authorized addresses",
+                "Test upgradeToAndCall with initialization data",
+                "Verify implementation contract cannot be initialized directly"
+            ],
+            "diamond": [
+                "Test diamondCut function for adding/replacing/removing facets",
+                "Verify function selector routing works correctly",
+                "Test facet address changes via diamondCut",
+                "Verify loupe functions return correct facet information",
+                "Test shared state between facets"
+            ],
+            "beacon": [
+                "Test beacon contract upgrade permissions",
+                "Verify all beacon proxies update when beacon upgrades",
+                "Test beacon implementation address changes",
+                "Verify proxy behavior during beacon upgrades"
+            ]
+        }
+        
+        requirements = base_requirements.copy()
+        if pattern_type in pattern_specific:
+            requirements.extend(pattern_specific[pattern_type])
+        
+        return requirements
 
     def _extract_required_mock_functions(self, content: str, functions: List[str]) -> List[Dict[str, Any]]:
         """Extract function signatures that mocks actually need to implement."""
@@ -1178,7 +1293,10 @@ class ProjectAnalyzer:
             content, contract_name, functions, list(set(dependencies))
         )
         
-        return ContractAnalysis(
+        # Detect proxy patterns for specialized testing guidance
+        proxy_analysis = self._detect_proxy_patterns(content, list(set(dependencies)))
+        
+        contract_analysis = ContractAnalysis(
             path=str(file_path),
             contract_name=contract_name,
             contract_type=contract_type,
@@ -1189,6 +1307,11 @@ class ProjectAnalyzer:
             dependencies=list(set(dependencies)),  # Remove duplicates
             mock_requirements=mock_requirements
         )
+        
+        # Add proxy analysis as additional attribute
+        contract_analysis.proxy_analysis = proxy_analysis
+        
+        return contract_analysis
     
     def _determine_contract_type_comprehensive(self, content: str) -> str:
         """
